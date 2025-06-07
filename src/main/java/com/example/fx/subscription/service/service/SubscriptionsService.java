@@ -31,7 +31,7 @@ public class SubscriptionsService {
   }
 
   public Subscription createSubscription(Subscription subscriptionCreateRequest) {
-    Subscription subscription = subscriptionRepository.save(subscriptionCreateRequest);
+    Subscription subscription = subscriptionRepository.saveAndFlush(subscriptionCreateRequest);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionCreated"));
 
     return subscription;
@@ -44,7 +44,7 @@ public class SubscriptionsService {
     if(subscriptionUpdateRequest.getThreshold() != null) oldSubscription.setThreshold(subscriptionUpdateRequest.getThreshold());
     if(subscriptionUpdateRequest.getNotificationsChannels() != null) oldSubscription.setNotificationsChannels(subscriptionUpdateRequest.getNotificationsChannels());
 
-    Subscription subscription = subscriptionRepository.save(oldSubscription);
+    Subscription subscription = subscriptionRepository.saveAndFlush(oldSubscription);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionUpdated"));
 
     return subscription;

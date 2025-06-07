@@ -6,7 +6,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -34,10 +34,12 @@ public class Subscription implements Serializable {
   private SubscriptionStatus status;
 
   @CreationTimestamp
-  private LocalDateTime createdAt;
+  @Column(nullable = false, updatable = false)
+  private Instant createdAt;
 
   @UpdateTimestamp
-  private LocalDateTime updatedAt;
+  @Column(insertable = false)
+  private Instant updatedAt;
 
   Subscription() {}
 
@@ -95,6 +97,30 @@ public class Subscription implements Serializable {
 
   public void setStatus(SubscriptionStatus status) {
     this.status = status;
+  }
+
+  public FXUser getUser() {
+    return user;
+  }
+
+  public void setUser(FXUser user) {
+    this.user = user;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override
