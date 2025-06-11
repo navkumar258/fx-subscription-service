@@ -20,7 +20,7 @@ public class Subscription implements Serializable {
   private UUID id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
+  @JoinColumn(name = "user_id", nullable = false)
   private FXUser user;
 
   private String currencyPair;
@@ -41,7 +41,7 @@ public class Subscription implements Serializable {
   @Column(insertable = false)
   private Instant updatedAt;
 
-  Subscription() {}
+  public Subscription() {}
 
   Subscription(String currencyPair,
                BigDecimal threshold,

@@ -5,6 +5,7 @@ import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.repository.SubscriptionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,14 +23,15 @@ public class SubscriptionsService {
     this.eventsOutboxRepository = eventsOutboxRepository;
   }
 
-  public Optional<Subscription> getSubscriptionById(String id) {
+  public Optional<Subscription> findSubscriptionById(String id) {
     return subscriptionRepository.findById(UUID.fromString(id));
   }
 
-  public List<Subscription> getSubscriptionsByUserId(String userId) {
+  public List<Subscription> findSubscriptionsByUserId(String userId) {
     return subscriptionRepository.findAllByUserId(UUID.fromString(userId));
   }
 
+  @Transactional
   public Subscription createSubscription(Subscription subscriptionCreateRequest) {
     Subscription subscription = subscriptionRepository.saveAndFlush(subscriptionCreateRequest);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionCreated"));
@@ -37,6 +39,7 @@ public class SubscriptionsService {
     return subscription;
   }
 
+  @Transactional
   public Subscription updateSubscriptionById(Subscription oldSubscription, Subscription subscriptionUpdateRequest) {
     if(subscriptionUpdateRequest.getCurrencyPair() != null) oldSubscription.setCurrencyPair(subscriptionUpdateRequest.getCurrencyPair());
     if(subscriptionUpdateRequest.getDirection() != null) oldSubscription.setDirection(subscriptionUpdateRequest.getDirection());
@@ -50,6 +53,7 @@ public class SubscriptionsService {
     return subscription;
   }
 
+  @Transactional
   public void deleteSubscriptionById(String id) {
     Optional<Subscription> subscription = findSubscriptionById(id);
 
@@ -57,10 +61,6 @@ public class SubscriptionsService {
       subscriptionRepository.deleteById(UUID.fromString(id));
       eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription.get(), "SubscriptionDeleted"));
     }
-  }
-
-  public Optional<Subscription> findSubscriptionById(String id) {
-    return subscriptionRepository.findById(UUID.fromString(id));
   }
 
   private EventsOutbox createSubscriptionsOutboxEvent(Subscription subscription, String eventType) {

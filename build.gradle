@@ -22,12 +22,20 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.10'
+	// Spring AI MCP Server Dependency
+	implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
 
 	runtimeOnly 'com.h2database:h2'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
+	}
 }
 
 tasks.named('test') {

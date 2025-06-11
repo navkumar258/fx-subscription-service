@@ -24,6 +24,7 @@ public class KafkaProducerConfig {
   public ProducerFactory<String, SubscriptionChangeEvent> producerFactory() {
     Map<String, Object> configProps = new HashMap<>();
     configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+    configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000);
     configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
     configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);

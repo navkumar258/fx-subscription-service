@@ -6,7 +6,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "fx_users")
@@ -29,10 +32,19 @@ public class FXUser implements Serializable {
   @UpdateTimestamp
   private LocalDateTime updatedAt;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(
+          mappedBy = "user",
+          cascade = CascadeType.ALL,
+          fetch = FetchType.LAZY,
+          orphanRemoval = true
+  )
   private Set<Subscription> subscriptions = new HashSet<>();
 
-  FXUser() {}
+  public FXUser() {}
+
+  public FXUser(UUID userId) {
+    this.id = userId;
+  }
 
   FXUser(String email, String mobile, String pushDeviceToken) {
     this.email = email;
@@ -70,6 +82,16 @@ public class FXUser implements Serializable {
 
   public void setPushDeviceToken(String pushDeviceToken) {
     this.pushDeviceToken = pushDeviceToken;
+  }
+
+  public void addSubscription(Subscription subscription) {
+    this.subscriptions.add(subscription);
+    subscription.setUser(this); // Set the inverse side
+  }
+
+  public void removeSubscription(Subscription subscription) {
+    this.subscriptions.remove(subscription);
+    subscription.setUser(null); // Remove the inverse side reference
   }
 
   @Override

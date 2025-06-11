@@ -5,9 +5,12 @@ import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @EnableScheduling
@@ -25,6 +28,8 @@ public class SubscriptionChangeScheduler {
   }
 
   @Scheduled(fixedRate = 30000)
+  @Async
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void checkForOutboxSubscriptions() {
     LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
     int count = 0;

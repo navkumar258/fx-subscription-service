@@ -21,7 +21,7 @@ public class SubscriptionsController {
 
   @GetMapping(path = "/subscriptions/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Object> getSubscriptionById(@PathVariable String id) {
-    Optional<Subscription> subscription = subscriptionsService.getSubscriptionById(id);
+    Optional<Subscription> subscription = subscriptionsService.findSubscriptionById(id);
 
     if (subscription.isEmpty()) {
       return ResponseEntity.notFound().build();
@@ -32,7 +32,7 @@ public class SubscriptionsController {
 
   @GetMapping(path = "/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Object> getSubscriptionsByUserId(@RequestParam String userId) {
-    List<Subscription> subscriptions = subscriptionsService.getSubscriptionsByUserId(userId);
+    List<Subscription> subscriptions = subscriptionsService.findSubscriptionsByUserId(userId);
 
     if (CollectionUtils.isEmpty(subscriptions)) {
       return ResponseEntity.notFound().build();
