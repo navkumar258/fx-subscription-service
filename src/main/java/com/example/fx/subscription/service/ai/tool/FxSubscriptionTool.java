@@ -26,7 +26,11 @@ public class FxSubscriptionTool {
    * AI Tool: Creates a new FX rate subscription.
    * Delegates to the core SubscriptionService after adapting parameters.
    */
-  @Tool(name = "createFxSubscription", description = "Creates a new FX rate subscription for a user with a specified currency pair, threshold, and preferred notification method.")
+  @Tool(name = "createFxSubscription",
+          description = """
+                  Creates a new FX rate subscription for a user with a specified currency pair,\s
+                  threshold, and preferred notification method.
+                  """)
   public String createSubscriptionTool(String userId, String currencyPair, double thresholdValue, String notificationMethod) {
     Subscription newSubscription = new Subscription();
     newSubscription.setUser(new FXUser(UUID.fromString(userId)));
@@ -45,7 +49,11 @@ public class FxSubscriptionTool {
    * AI Tool: Updates an existing FX rate subscription.
    * Delegates to the core SubscriptionService after adapting parameters.
    */
-  @Tool(name = "updateFxSubscription", description = "Updates the threshold and/or notification method of an existing FX rate subscription using its ID. At least one of newThresholdValue or newNotificationMethod must be provided.")
+  @Tool(name = "updateFxSubscription",
+          description = """
+                  Updates the threshold and/or notification method of an existing FX rate subscription using its ID.
+                  At least one of newThresholdValue or newNotificationMethod must be provided.
+                  """)
   public String updateSubscriptionTool(String subscriptionId, double newThresholdValue, String newNotificationMethod) {
     Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionById(subscriptionId);
 
@@ -68,7 +76,8 @@ public class FxSubscriptionTool {
    * AI Tool: Deletes an FX rate subscription.
    * Delegates to the core SubscriptionService.
    */
-  @Tool(name = "deleteFxSubscription", description = "Deletes an existing FX rate subscription using its ID.")
+  @Tool(name = "deleteFxSubscription",
+          description = "Deletes an existing FX rate subscription using its ID.")
   public String deleteSubscriptionTool(String subscriptionId) {
     subscriptionService.deleteSubscriptionById(subscriptionId);
 

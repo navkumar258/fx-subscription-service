@@ -22,8 +22,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.10'
-	// Spring AI MCP Server Dependency
-	implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
+	// Spring AI MCP WebMVC Server dependency
+	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
 
 	runtimeOnly 'com.h2database:h2'
 
