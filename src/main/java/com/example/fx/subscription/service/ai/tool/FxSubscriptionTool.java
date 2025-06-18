@@ -1,16 +1,17 @@
 package com.example.fx.subscription.service.ai.tool;
 
-import com.example.fx.subscription.service.model.FXUser;
+import com.example.fx.subscription.service.dto.SubscriptionCreateRequest;
+import com.example.fx.subscription.service.dto.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,19 +29,26 @@ public class FxSubscriptionTool {
    */
   @Tool(name = "createFxSubscription",
           description = """
-                  Creates a new FX rate subscription for a user with a specified currency pair,\s
-                  threshold, and preferred notification method.
-                  """)
-  public String createSubscriptionTool(String userId, String currencyPair, double thresholdValue, String notificationMethod) {
-    Subscription newSubscription = new Subscription();
-    newSubscription.setUser(new FXUser(UUID.fromString(userId)));
+                  Creates a new FX rate subscription for a user with a given user id,\s
+                  specified currency pair, threshold, and preferred notification method.
+                  """
+  )
+  public String createSubscriptionTool(@ToolParam(description = "Given user id") String userId,
+                                       @ToolParam(description = "Given currency pair") String currencyPair,
+                                       @ToolParam(description = "Given threshold") double thresholdValue,
+                                       @ToolParam(description = "Given direction i.e. above or below") String direction,
+                                       @ToolParam(description = "Given notification methods") String notificationMethod) {
+    SubscriptionCreateRequest newSubscription = new SubscriptionCreateRequest();
+    newSubscription.setUserId(userId);
     newSubscription.setCurrencyPair(currencyPair);
     newSubscription.setThreshold(BigDecimal.valueOf(thresholdValue));
-    newSubscription.setNotificationsChannels(Collections.singletonList(notificationMethod));
+    newSubscription.setDirection(direction);
+    newSubscription.setNotificationChannels(Collections.singletonList(notificationMethod));
 
     Subscription savedSubscription = subscriptionService.createSubscription(newSubscription);
     return "Subscription for " + savedSubscription.getCurrencyPair() +
             " at threshold " + savedSubscription.getThreshold() +
+            " with direction " + savedSubscription.getDirection() +
             " created successfully. Your subscription ID is: " + savedSubscription.getId() +
             ". Notifications via " + savedSubscription.getNotificationsChannels() + ".";
   }
@@ -53,14 +61,17 @@ public class FxSubscriptionTool {
           description = """
                   Updates the threshold and/or notification method of an existing FX rate subscription using its ID.
                   At least one of newThresholdValue or newNotificationMethod must be provided.
-                  """)
-  public String updateSubscriptionTool(String subscriptionId, double newThresholdValue, String newNotificationMethod) {
+                  """
+  )
+  public String updateSubscriptionTool(@ToolParam(description = "Existing subscription id") String subscriptionId,
+                                       @ToolParam(description = "New threshold value") double newThresholdValue,
+                                       @ToolParam(description = "New notification methods", required = false) String newNotificationMethod) {
     Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionById(subscriptionId);
 
     if (oldSubscription.isPresent()) {
-      Subscription newSubscription = new Subscription();
+      SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest();
       newSubscription.setThreshold(BigDecimal.valueOf(newThresholdValue));
-      newSubscription.setNotificationsChannels(Collections.singletonList(newNotificationMethod));
+      newSubscription.setNotificationChannels(Collections.singletonList(newNotificationMethod));
       Subscription updatedSub = subscriptionService.updateSubscriptionById(oldSubscription.get(), newSubscription);
       return "Subscription: " + subscriptionId
               + " updated successfully. New threshold: "
@@ -77,8 +88,9 @@ public class FxSubscriptionTool {
    * Delegates to the core SubscriptionService.
    */
   @Tool(name = "deleteFxSubscription",
-          description = "Deletes an existing FX rate subscription using its ID.")
-  public String deleteSubscriptionTool(String subscriptionId) {
+          description = "Deletes an existing FX rate subscription using its ID."
+  )
+  public String deleteSubscriptionTool(@ToolParam(description = "Subscription id to delete") String subscriptionId) {
     subscriptionService.deleteSubscriptionById(subscriptionId);
 
     return "Subscription " + subscriptionId + " deleted successfully.";
@@ -92,8 +104,9 @@ public class FxSubscriptionTool {
           description = """
                   Retrieves a detailed list of all active FX rate subscriptions for a specific user\s
                   including IDs, currency pairs, thresholds, and notification methods.
-                  """)
-  public String getFxSubscriptionsForUserTool(String userId) {
+                  """
+  )
+  public String getFxSubscriptionsForUserTool(@ToolParam(description = "User id to get all subscriptions") String userId) {
     List<Subscription> subscriptions = subscriptionService.findSubscriptionsByUserId(userId);
 
     if (subscriptions.isEmpty()) {

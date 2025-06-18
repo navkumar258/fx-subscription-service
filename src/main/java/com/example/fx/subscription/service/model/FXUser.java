@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -19,11 +20,14 @@ public class FXUser implements Serializable {
   private UUID id;
 
   @Column(unique = true)
+  @JsonIgnore
   private String email;
 
   @Column(nullable = false)
+  @JsonIgnore
   private String mobile;
 
+  @JsonIgnore
   private String pushDeviceToken;
 
   @CreationTimestamp

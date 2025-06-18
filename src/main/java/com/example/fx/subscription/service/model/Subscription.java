@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -21,6 +22,7 @@ public class Subscription implements Serializable {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private FXUser user;
 
   private String currencyPair;
@@ -127,7 +129,6 @@ public class Subscription implements Serializable {
   public boolean equals(Object o) {
     if (!(o instanceof Subscription that)) return false;
     return Objects.equals(id, that.id)
-            && Objects.equals(user, that.user)
             && Objects.equals(getCurrencyPair(), that.getCurrencyPair())
             && Objects.equals(getThreshold(), that.getThreshold())
             && getDirection() == that.getDirection()
