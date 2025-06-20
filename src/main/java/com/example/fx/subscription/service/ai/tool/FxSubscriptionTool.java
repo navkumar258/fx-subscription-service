@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -65,17 +66,22 @@ public class FxSubscriptionTool {
   )
   public String updateSubscriptionTool(@ToolParam(description = "Existing subscription id") String subscriptionId,
                                        @ToolParam(description = "New threshold value") double newThresholdValue,
+                                       @ToolParam(description = "New direction i.e. above or below", required = false) String direction,
                                        @ToolParam(description = "New notification methods", required = false) String newNotificationMethod) {
     Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionById(subscriptionId);
 
     if (oldSubscription.isPresent()) {
       SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest();
       newSubscription.setThreshold(BigDecimal.valueOf(newThresholdValue));
-      newSubscription.setNotificationChannels(Collections.singletonList(newNotificationMethod));
+      if (Objects.nonNull(newNotificationMethod)) newSubscription.setNotificationChannels(Collections.singletonList(newNotificationMethod));
+      if (Objects.nonNull(direction)) newSubscription.setDirection(direction);
+
       Subscription updatedSub = subscriptionService.updateSubscriptionById(oldSubscription.get(), newSubscription);
       return "Subscription: " + subscriptionId
               + " updated successfully. New threshold: "
               + updatedSub.getThreshold()
+              + ", New direction: "
+              + updatedSub.getDirection().name()
               + ", New notification methods: "
               + updatedSub.getNotificationsChannels() + ".";
     }
@@ -110,11 +116,11 @@ public class FxSubscriptionTool {
     List<Subscription> subscriptions = subscriptionService.findSubscriptionsByUserId(userId);
 
     if (subscriptions.isEmpty()) {
-      return "No active subscriptions found for user " + userId + ".";
+      return "No active subscriptions found for the user " + userId + ".";
     }
 
     return subscriptions.stream()
-            .map(sub -> String.format("ID: %s, Pair: %s, Threshold: %.4f, Notify via: %s",
+            .map(sub -> String.format("ID: %s, Pair: %s, Threshold: %.2f, Notify via: %s",
                     sub.getId(), sub.getCurrencyPair(), sub.getThreshold(), sub.getNotificationsChannels()))
             .collect(Collectors.joining("\n"));
   }
