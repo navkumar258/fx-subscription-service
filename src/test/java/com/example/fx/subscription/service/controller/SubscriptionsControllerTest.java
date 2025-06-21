@@ -32,7 +32,7 @@ class SubscriptionsControllerTest {
 
   @Test
   void whenInvalidUri_shouldReturn404() {
-    assertThat(this.mockMvc.get().uri("/subscription"))
+    assertThat(mockMvc.get().uri("/subscription"))
             .hasStatus(HttpStatus.NOT_FOUND);
   }
 
@@ -57,7 +57,7 @@ class SubscriptionsControllerTest {
     Mockito.when(subscriptionsService.findSubscriptionsByUserId(anyString()))
             .thenReturn(subscriptions);
 
-    assertThat(this.mockMvc.get().uri("/subscriptions?userId=test_user_1"))
+    assertThat(mockMvc.get().uri("/subscriptions?userId=test_user_1"))
             .hasStatusOk()
             .hasContentType(MediaType.APPLICATION_JSON_VALUE)
             .bodyJson()
@@ -70,7 +70,7 @@ class SubscriptionsControllerTest {
     Mockito.when(subscriptionsService.findSubscriptionsByUserId(anyString()))
             .thenReturn(new ArrayList<>());
 
-    assertThat(this.mockMvc.get().uri("/subscriptions?userId=test_user_1"))
+    assertThat(mockMvc.get().uri("/subscriptions?userId=test_user_1"))
             .hasStatus(HttpStatus.NOT_FOUND)
             .bodyText()
             .isEqualTo("No Subscriptions found for the user ID: test_user_1, please try with a different user!");

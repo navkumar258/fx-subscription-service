@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.concurrent.TimeUnit;
-
 @Service
 @EnableScheduling
 public class SubscriptionChangeScheduler {
@@ -29,7 +27,7 @@ public class SubscriptionChangeScheduler {
     this.subscriptionChangePublisher = subscriptionChangePublisher;
   }
 
-  @Scheduled(fixedRate = 300, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
+  @Scheduled(initialDelay = 30, fixedRateString = "${outbox.subscriptions.check.rate:30000}")
   @Async
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void checkForOutboxSubscriptions() {
