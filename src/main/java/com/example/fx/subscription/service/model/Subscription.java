@@ -45,11 +45,13 @@ public class Subscription implements Serializable {
 
   public Subscription() {}
 
-  Subscription(String currencyPair,
-               BigDecimal threshold,
-               ThresholdDirection direction,
-               List<String> notificationsChannels,
-               SubscriptionStatus status) {
+  public Subscription(UUID id,
+                      String currencyPair,
+                      BigDecimal threshold,
+                      ThresholdDirection direction,
+                      List<String> notificationsChannels,
+                      SubscriptionStatus status) {
+    this.id = id;
     this.currencyPair = currencyPair;
     this.threshold = threshold;
     this.direction = direction;
