@@ -34,6 +34,7 @@ class SubscriptionsControllerIT {
   @Autowired
   UserRepository userRepository;
 
+  // Declaring these mock beans to exclude real object dependency injection into the application context, which may slow the tests
   @MockitoBean
   KafkaAdmin kafkaAdmin;
 
