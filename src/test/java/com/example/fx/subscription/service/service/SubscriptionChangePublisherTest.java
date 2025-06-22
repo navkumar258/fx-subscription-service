@@ -31,10 +31,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.springframework.kafka.test.hamcrest.KafkaMatchers.*;
+import static org.springframework.kafka.test.hamcrest.KafkaMatchers.hasKey;
+import static org.springframework.kafka.test.hamcrest.KafkaMatchers.hasValue;
 
 @SpringBootTest
 @EmbeddedKafka(kraft = true, partitions = 1, topics = {"${spring.kafka.topic.subscription-changes}"})
+@DirtiesContext
 class SubscriptionChangePublisherTest {
 
   @Value(value = "${spring.kafka.topic.subscription-changes}")
@@ -67,7 +69,6 @@ class SubscriptionChangePublisherTest {
   }
 
   @Test
-  @DirtiesContext
   void test_sendMessage() {
     UUID uuid  = UUID.randomUUID();
     Subscription subscription = new Subscription(
