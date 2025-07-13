@@ -4,22 +4,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.time.Instant;
+import java.util.*;
 
 @Entity
 @Table(name = "fx_users")
-public class FXUser implements Serializable {
+public class FxUser implements Serializable, UserDetails {
   @Id
   @GeneratedValue
   private UUID id;
 
-  @Column(unique = true)
+  @Column(nullable = false, unique = true)
   @JsonIgnore
   private String email;
 
@@ -27,14 +27,24 @@ public class FXUser implements Serializable {
   @JsonIgnore
   private String mobile;
 
+  @Column(nullable = false)
+  private String password;
+
+  @Column(nullable = false)
+  private boolean enabled;
+
   @JsonIgnore
   private String pushDeviceToken;
 
   @CreationTimestamp
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   @UpdateTimestamp
-  private LocalDateTime updatedAt;
+  private Instant updatedAt;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private UserRole role = UserRole.USER;
 
   @OneToMany(
           mappedBy = "user",
@@ -44,16 +54,17 @@ public class FXUser implements Serializable {
   )
   private Set<Subscription> subscriptions = new HashSet<>();
 
-  public FXUser() {}
+  public FxUser() {}
 
-  public FXUser(UUID userId) {
+  public FxUser(UUID userId) {
     this.id = userId;
   }
 
-  FXUser(String email, String mobile, String pushDeviceToken) {
+  public FxUser(UUID userId, String email, String password, UserRole role) {
+    this.id = userId;
     this.email = email;
-    this.mobile = mobile;
-    this.pushDeviceToken = pushDeviceToken;
+    this.password = password;
+    this.role = role;
   }
 
   public UUID getId() {
@@ -80,6 +91,80 @@ public class FXUser implements Serializable {
     this.mobile = mobile;
   }
 
+  public Set<Subscription> getSubscriptions() {
+    return subscriptions;
+  }
+
+  public void setSubscriptions(Set<Subscription> subscriptions) {
+    this.subscriptions = subscriptions;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  @Override
+  public String getUsername() {
+    return email;
+  }
+
+  @Override
+  public boolean isAccountNonExpired() {
+    return true;
+  }
+
+  @Override
+  public boolean isAccountNonLocked() {
+    return true;
+  }
+
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return true;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public UserRole getRole() {
+    return role;
+  }
+
+  public void setRole(UserRole role) {
+    this.role = role;
+  }
+
   public String getPushDeviceToken() {
     return pushDeviceToken;
   }
@@ -100,7 +185,7 @@ public class FXUser implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof FXUser that)) return false;
+    if (!(o instanceof FxUser that)) return false;
     return Objects.equals(getId(), that.getId())
             && Objects.equals(getEmail(), that.getEmail())
             && Objects.equals(getMobile(), that.getMobile())
@@ -114,7 +199,7 @@ public class FXUser implements Serializable {
 
   @Override
   public String toString() {
-    return "FXUser{" +
+    return "FxUser{" +
             "id=" + id +
             ", email='" + email + '\'' +
             ", mobile='" + mobile + '\'' +

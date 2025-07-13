@@ -2,5 +2,9 @@ services:
   web-service:
     container_name: web-service
     build: .
+    environment:
+      - KEYSTORE_PASSWORD
+      - KEY_PASSWORD
+      - JWT_SECRET_KEY
     ports:
-      - "8080:8080"
+      - "8443:8443"

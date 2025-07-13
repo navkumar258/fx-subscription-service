@@ -1,7 +1,8 @@
 package com.example.fx.subscription.service.ai.tool;
 
-import com.example.fx.subscription.service.dto.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.springframework.ai.tool.annotation.Tool;
@@ -9,10 +10,7 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,14 +37,14 @@ public class FxSubscriptionTool {
                                        @ToolParam(description = "Given threshold") double thresholdValue,
                                        @ToolParam(description = "Given direction i.e. above or below") String direction,
                                        @ToolParam(description = "Given notification methods") String notificationMethod) {
-    SubscriptionCreateRequest newSubscription = new SubscriptionCreateRequest();
-    newSubscription.setUserId(userId);
-    newSubscription.setCurrencyPair(currencyPair);
-    newSubscription.setThreshold(BigDecimal.valueOf(thresholdValue));
-    newSubscription.setDirection(direction);
-    newSubscription.setNotificationChannels(Collections.singletonList(notificationMethod));
+    SubscriptionCreateRequest newSubscription = new SubscriptionCreateRequest(
+            currencyPair,
+            BigDecimal.valueOf(thresholdValue),
+            direction,
+            Collections.singletonList(notificationMethod)
+    );
 
-    Subscription savedSubscription = subscriptionService.createSubscription(newSubscription);
+    Subscription savedSubscription = subscriptionService.createSubscription(newSubscription, UUID.fromString(userId));
     return "Subscription for " + savedSubscription.getCurrencyPair() +
             " at threshold " + savedSubscription.getThreshold() +
             " with direction " + savedSubscription.getDirection() +
@@ -68,13 +66,16 @@ public class FxSubscriptionTool {
                                        @ToolParam(description = "New threshold value") double newThresholdValue,
                                        @ToolParam(description = "New direction i.e. above or below", required = false) String direction,
                                        @ToolParam(description = "New notification methods", required = false) String newNotificationMethod) {
-    Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionById(subscriptionId);
+    Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionEntityById(subscriptionId);
 
     if (oldSubscription.isPresent()) {
-      SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest();
-      newSubscription.setThreshold(BigDecimal.valueOf(newThresholdValue));
-      if (Objects.nonNull(newNotificationMethod)) newSubscription.setNotificationChannels(Collections.singletonList(newNotificationMethod));
-      if (Objects.nonNull(direction)) newSubscription.setDirection(direction);
+      SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest(
+              oldSubscription.get().getCurrencyPair(),
+              BigDecimal.valueOf(newThresholdValue),
+              Objects.nonNull(direction) ? direction : oldSubscription.get().getDirection().name(),
+              oldSubscription.get().getStatus().name(),
+              Objects.nonNull(newNotificationMethod) ? Collections.singletonList(newNotificationMethod) : null
+      );
 
       Subscription updatedSub = subscriptionService.updateSubscriptionById(oldSubscription.get(), newSubscription);
       return "Subscription: " + subscriptionId
@@ -113,7 +114,7 @@ public class FxSubscriptionTool {
                   """
   )
   public String getFxSubscriptionsForUserTool(@ToolParam(description = "User id to get all subscriptions") String userId) {
-    List<Subscription> subscriptions = subscriptionService.findSubscriptionsByUserId(userId);
+    List<SubscriptionResponse> subscriptions = subscriptionService.findSubscriptionResponsesByUserId(userId);
 
     if (subscriptions.isEmpty()) {
       return "No active subscriptions found for the user " + userId + ".";
@@ -121,7 +122,7 @@ public class FxSubscriptionTool {
 
     return subscriptions.stream()
             .map(sub -> String.format("ID: %s, Pair: %s, Threshold: %.2f, Notify via: %s",
-                    sub.getId(), sub.getCurrencyPair(), sub.getThreshold(), sub.getNotificationsChannels()))
+                    sub.id(), sub.currencyPair(), sub.threshold(), sub.notificationsChannels()))
             .collect(Collectors.joining("\n"));
   }
 }

@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.example'
@@ -24,17 +25,29 @@ ext {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.1'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 //	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
 	implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 	// for micrometer observation and metrics
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation "org.springframework.boot:spring-boot-starter-aop"
+	implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 
 	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'net.bytebuddy:byte-buddy-agent'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -44,6 +57,89 @@ dependencyManagement {
 	}
 }
 
+jacoco {
+	toolVersion = "0.8.13"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = false
+		html.required = true
+		csv.required = false
+	}
+
+	// Exclude specific classes/packages from coverage
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+					'**/FxSubscriptionServiceApplication.class',
+					'**/dto/**',
+					'**/exception/**',
+					'**/model/**',
+					'**/repository/**',
+					'**/helper/**'
+			])
+		}))
+	}
+}
+
+jacocoTestCoverageVerification {
+	dependsOn test
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.90  // 80% line coverage required
+			}
+		}
+		rule {
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.70  // 70% branch coverage required
+			}
+		}
+		rule {
+			limit {
+				counter = 'METHOD'
+				value = 'COVEREDRATIO'
+				minimum = 0.90  // 85% method coverage required
+			}
+		}
+		rule {
+			limit {
+				counter = 'CLASS'
+				value = 'COVEREDRATIO'
+				minimum = 0.90  // 80% class coverage required
+			}
+		}
+	}
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+	doFirst {
+		if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
+			jvmArgs = [
+					"-javaagent:${classpath.find { it.name.contains("byte-buddy-agent") }.absolutePath}"
+			]
+		}
+	}
+}
+
+// Task to run tests with coverage verification
+tasks.register('testWithCoverage') {
+	dependsOn test, jacocoTestReport, jacocoTestCoverageVerification
+	group = 'verification'
+	description = 'Run tests and verify code coverage'
+}
+
+// Task to generate coverage report only
+tasks.register('coverageReport') {
+	dependsOn jacocoTestReport
+	group = 'reporting'
+	description = 'Generate code coverage report'
 }

@@ -1,12 +1,15 @@
 package com.example.fx.subscription.service.service;
 
-import com.example.fx.subscription.service.dto.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
+import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.repository.SubscriptionRepository;
-import com.example.fx.subscription.service.repository.UserRepository;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,34 +18,64 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Observed(name = "subscriptions.service")
 public class SubscriptionsService {
 
   private final SubscriptionRepository subscriptionRepository;
-  private final UserRepository userRepository;
+  private final FxUserRepository fxUserRepository;
   private final EventsOutboxRepository eventsOutboxRepository;
 
   public SubscriptionsService(SubscriptionRepository subscriptionRepository,
-                              UserRepository userRepository,
+                              FxUserRepository fxUserRepository,
                               EventsOutboxRepository eventsOutboxRepository) {
     this.subscriptionRepository = subscriptionRepository;
-    this.userRepository = userRepository;
+    this.fxUserRepository = fxUserRepository;
     this.eventsOutboxRepository = eventsOutboxRepository;
   }
 
-  public Optional<Subscription> findSubscriptionById(String id) {
+  @Transactional(readOnly = true)
+  public Optional<SubscriptionResponse> findSubscriptionById(String id) {
+    return subscriptionRepository.findById(UUID.fromString(id))
+            .map(SubscriptionResponse::fromSubscription);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Subscription> findSubscriptionEntityById(String id) {
     return subscriptionRepository.findById(UUID.fromString(id));
   }
 
+  @Transactional(readOnly = true)
   public List<Subscription> findSubscriptionsByUserId(String userId) {
     return subscriptionRepository.findAllByUserId(UUID.fromString(userId));
   }
 
+  @Transactional(readOnly = true)
+  public List<SubscriptionResponse> findSubscriptionResponsesByUserId(String userId) {
+    return subscriptionRepository.findAllByUserId(UUID.fromString(userId))
+            .stream()
+            .map(SubscriptionResponse::fromSubscription)
+            .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SubscriptionResponse> findAllSubscriptionResponses() {
+    return subscriptionRepository.findAll()
+            .stream()
+            .map(SubscriptionResponse::fromSubscription)
+            .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public boolean isSubscriptionOwner(String subscriptionId, UUID userId) {
+    Optional<Subscription> subscription = subscriptionRepository.findById(UUID.fromString(subscriptionId));
+    return subscription.isPresent() && subscription.get().getUser().getId().equals(userId);
+  }
+
   @Transactional
-  public Subscription createSubscription(SubscriptionCreateRequest createRequest) {
-    UUID userId = UUID.fromString(createRequest.getUserId());
-    FXUser user = userRepository.findById(userId)
+  public Subscription createSubscription(SubscriptionCreateRequest createRequest, UUID userId) {
+    FxUser user = fxUserRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(
-                    "User not found with ID: %s, please try with a different user!".formatted(createRequest.getUserId())));
+                    "User not found with ID: %s, please try with a different user!".formatted(userId)));
 
     Subscription subscription = subscriptionRepository.saveAndFlush(
             mapSubscriptionCreateRequestToSubscription(createRequest, user));
@@ -53,11 +86,11 @@ public class SubscriptionsService {
 
   @Transactional
   public Subscription updateSubscriptionById(Subscription oldSubscription, SubscriptionUpdateRequest subscriptionUpdateRequest) {
-    if(subscriptionUpdateRequest.getCurrencyPair() != null) oldSubscription.setCurrencyPair(subscriptionUpdateRequest.getCurrencyPair());
-    if(subscriptionUpdateRequest.getDirection() != null) oldSubscription.setDirection(ThresholdDirection.valueOf(subscriptionUpdateRequest.getDirection()));
-    if(subscriptionUpdateRequest.getStatus() != null) oldSubscription.setStatus(SubscriptionStatus.valueOf(subscriptionUpdateRequest.getStatus()));
-    if(subscriptionUpdateRequest.getThreshold() != null) oldSubscription.setThreshold(subscriptionUpdateRequest.getThreshold());
-    if(subscriptionUpdateRequest.getNotificationChannels() != null) oldSubscription.setNotificationsChannels(subscriptionUpdateRequest.getNotificationChannels());
+    if(subscriptionUpdateRequest.currencyPair() != null) oldSubscription.setCurrencyPair(subscriptionUpdateRequest.currencyPair());
+    if(subscriptionUpdateRequest.direction() != null) oldSubscription.setDirection(ThresholdDirection.valueOf(subscriptionUpdateRequest.direction()));
+    if(subscriptionUpdateRequest.status() != null) oldSubscription.setStatus(SubscriptionStatus.valueOf(subscriptionUpdateRequest.status()));
+    if(subscriptionUpdateRequest.threshold() != null) oldSubscription.setThreshold(subscriptionUpdateRequest.threshold());
+    if(subscriptionUpdateRequest.notificationChannels() != null) oldSubscription.setNotificationsChannels(subscriptionUpdateRequest.notificationChannels());
 
     Subscription subscription = subscriptionRepository.saveAndFlush(oldSubscription);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionUpdated"));
@@ -67,23 +100,22 @@ public class SubscriptionsService {
 
   @Transactional
   public void deleteSubscriptionById(String id) {
-    Optional<Subscription> subscription = findSubscriptionById(id);
+    Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
+            .orElseThrow(() -> new SubscriptionNotFoundException("Subscription not found with ID: " + id, id));
 
-    if(subscription.isPresent()) {
-      subscriptionRepository.deleteById(UUID.fromString(id));
-      eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription.get(), "SubscriptionDeleted"));
-    }
+    subscriptionRepository.deleteById(UUID.fromString(id));
+    eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionDeleted"));
   }
 
   private Subscription mapSubscriptionCreateRequestToSubscription(
           SubscriptionCreateRequest createRequest,
-          FXUser user) {
+          FxUser user) {
     Subscription subscription = new Subscription();
     subscription.setUser(user);
-    subscription.setCurrencyPair(createRequest.getCurrencyPair());
-    subscription.setThreshold(createRequest.getThreshold());
-    subscription.setDirection(ThresholdDirection.valueOf(createRequest.getDirection()));
-    subscription.setNotificationsChannels(createRequest.getNotificationChannels());
+    subscription.setCurrencyPair(createRequest.currencyPair());
+    subscription.setThreshold(createRequest.threshold());
+    subscription.setDirection(ThresholdDirection.valueOf(createRequest.direction()));
+    subscription.setNotificationsChannels(createRequest.notificationChannels());
     subscription.setStatus(SubscriptionStatus.ACTIVE);
 
     return subscription;
@@ -94,11 +126,10 @@ public class SubscriptionsService {
     eventsOutbox.setAggregateType("Subscription");
     eventsOutbox.setAggregateId(subscription.getId());
     eventsOutbox.setEventType(eventType);
-    eventsOutbox.setPayload(subscription);
+    eventsOutbox.setPayload(SubscriptionResponse.fromSubscription(subscription));
     eventsOutbox.setStatus("PENDING");
     eventsOutbox.setTimestamp(System.currentTimeMillis());
 
     return eventsOutbox;
   }
-
 }

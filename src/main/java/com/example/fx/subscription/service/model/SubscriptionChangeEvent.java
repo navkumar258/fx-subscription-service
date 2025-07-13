@@ -1,5 +1,7 @@
 package com.example.fx.subscription.service.model;
 
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
+
 import java.util.Objects;
 
 public class SubscriptionChangeEvent {
@@ -7,7 +9,7 @@ public class SubscriptionChangeEvent {
   private String eventId;
   private long timestamp;
   private String eventType;
-  private Subscription payload;
+  private SubscriptionResponse payload;
 
   public String getEventId() {
     return eventId;
@@ -33,11 +35,11 @@ public class SubscriptionChangeEvent {
     this.eventType = eventType;
   }
 
-  public Subscription getPayload() {
+  public SubscriptionResponse getPayload() {
     return payload;
   }
 
-  public void setPayload(Subscription payload) {
+  public void setPayload(SubscriptionResponse payload) {
     this.payload = payload;
   }
 

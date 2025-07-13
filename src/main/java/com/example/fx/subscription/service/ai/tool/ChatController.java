@@ -21,7 +21,7 @@ public class ChatController {
     this.chatClient = chatClient;
   }
 
-  @GetMapping("/ai/fx")
+  @GetMapping("/api/ai/fx")
   public String fxChat(@RequestParam(value = "query") String userQuery) {
     String systemMessage = """
             You are an intelligent FX Rate Subscription Manager AI. Your primary role is to assist users with managing their foreign exchange rate subscriptions.

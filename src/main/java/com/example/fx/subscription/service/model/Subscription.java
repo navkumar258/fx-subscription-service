@@ -23,7 +23,7 @@ public class Subscription implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private FXUser user;
+  private FxUser user;
 
   private String currencyPair;
 
@@ -61,6 +61,10 @@ public class Subscription implements Serializable {
 
   public UUID getId() {
     return id;
+  }
+
+  public void setId(UUID id) {
+    this.id = id;
   }
 
   public String getCurrencyPair() {
@@ -103,11 +107,11 @@ public class Subscription implements Serializable {
     this.status = status;
   }
 
-  public FXUser getUser() {
+  public FxUser getUser() {
     return user;
   }
 
-  public void setUser(FXUser user) {
+  public void setUser(FxUser user) {
     this.user = user;
   }
 

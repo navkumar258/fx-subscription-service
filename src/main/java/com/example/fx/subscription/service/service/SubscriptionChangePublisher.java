@@ -38,14 +38,14 @@ public class SubscriptionChangePublisher {
   public void sendMessage(SubscriptionChangeEvent subscriptionChangeEvent) {
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future = kafkaTemplate.send(
             subscriptionChangesTopic,
-            subscriptionChangeEvent.getPayload().getId().toString(),
+            subscriptionChangeEvent.getPayload().id().toString(),
             subscriptionChangeEvent
     );
 
     future.whenComplete((result, exception) -> {
       if (exception != null) {
         // handle failure
-        LOGGER.info("[SubscriptionChangePublisher] Unable to send message: [{}] due to: [{}]",
+        LOGGER.error("[SubscriptionChangePublisher] Unable to send message: [{}] due to: [{}]",
                 subscriptionChangeEvent,
                 exception.getMessage());
 

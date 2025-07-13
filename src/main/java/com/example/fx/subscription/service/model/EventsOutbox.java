@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.model;
 
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -27,7 +28,7 @@ public class EventsOutbox implements Serializable {
   @Type(JsonType.class)
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(columnDefinition = "json")
-  private Subscription payload;
+  private SubscriptionResponse payload;
 
   private String status;
 
@@ -65,11 +66,11 @@ public class EventsOutbox implements Serializable {
     this.eventType = eventType;
   }
 
-  public Subscription getPayload() {
+  public SubscriptionResponse getPayload() {
     return payload;
   }
 
-  public void setPayload(Subscription payload) {
+  public void setPayload(SubscriptionResponse payload) {
     this.payload = payload;
   }
 
