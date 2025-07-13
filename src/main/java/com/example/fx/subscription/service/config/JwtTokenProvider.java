@@ -21,7 +21,7 @@ import java.util.Set;
 
 @Component
 public class JwtTokenProvider {
-  private final static Logger LOGGER = LoggerFactory.getLogger(JwtTokenProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenProvider.class);
 
   @Value("${security.jwt.token.secret-key}")
   private String secret;
