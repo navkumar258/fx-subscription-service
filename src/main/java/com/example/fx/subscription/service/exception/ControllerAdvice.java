@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +27,7 @@ public class ControllerAdvice {
   private static final String TIMESTAMP = "timestamp";
   private static final String ERROR_CODE = "errorCode";
   private static final String ACCESS_DENIED = "Access denied";
+  private static final String BAD_REQUEST = "BAD_REQUEST";
 
   @ExceptionHandler(SubscriptionNotFoundException.class)
   public ResponseEntity<ProblemDetail> handleSubscriptionNotFoundException(
@@ -103,7 +106,7 @@ public class ControllerAdvice {
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST,
-            "Validation failed"
+            "Argument validation failed"
     );
 
     problemDetail.setProperty(TIMESTAMP, Instant.now());
@@ -123,7 +126,35 @@ public class ControllerAdvice {
     return createProblemDetail(
             HttpStatus.BAD_REQUEST,
             ex.getMessage(),
-            "BAD_REQUEST"
+            BAD_REQUEST
+    );
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ProblemDetail> handleHttpRequestMethodNotSupportedException(
+          HttpRequestMethodNotSupportedException ex,
+          WebRequest request
+  ) {
+    logException(ex.getMessage(), ex, request);
+
+    return createProblemDetail(
+            HttpStatus.BAD_REQUEST,
+            ex.getMessage(),
+            BAD_REQUEST
+    );
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(
+          HttpMessageNotReadableException e,
+          WebRequest request
+  ) {
+    logException(e.getMessage(), e, request);
+
+    return createProblemDetail(
+            HttpStatus.BAD_REQUEST,
+            e.getMessage(),
+            BAD_REQUEST
     );
   }
 
@@ -135,7 +166,7 @@ public class ControllerAdvice {
 
     return createProblemDetail(
             HttpStatus.FORBIDDEN,
-            ACCESS_DENIED,
+            e.getMessage(),
             "ACCESS_DENIED"
     );
   }
@@ -148,7 +179,7 @@ public class ControllerAdvice {
 
     return createProblemDetail(
             HttpStatus.UNAUTHORIZED,
-            "Authentication failed",
+            e.getMessage(),
             "AUTHENTICATION_ERROR"
     );
   }
@@ -162,7 +193,7 @@ public class ControllerAdvice {
 
     return createProblemDetail(
             HttpStatus.UNAUTHORIZED,
-            "JWT validation failed",
+            e.getMessage(),
             "JWT_VALIDATION_ERROR"
     );
   }
@@ -201,8 +232,8 @@ public class ControllerAdvice {
 
     return createProblemDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
-            "Unexpected error occurred!",
-            "INTERNAL_ERROR"
+            e.getMessage(),
+            "INTERNAL_SERVER_ERROR"
     );
   }
 

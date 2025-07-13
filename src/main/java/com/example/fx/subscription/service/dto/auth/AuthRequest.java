@@ -1,9 +1,9 @@
 package com.example.fx.subscription.service.dto.auth;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
-public record AuthRequest(@NotNull(message = "Username is required")
+public record AuthRequest(@NotBlank(message = "Username is required")
                           String username,
 
-                          @NotNull(message = "Password is required")
+                          @NotBlank(message = "Password is required")
                           String password) {}

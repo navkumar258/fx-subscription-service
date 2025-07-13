@@ -56,7 +56,7 @@ public class SubscriptionsController {
 
     if (CollectionUtils.isEmpty(subscriptions)) {
       String message = "No Subscriptions found for the user ID: %s, please try with a different user!".formatted(userId);
-      throw new SubscriptionNotFoundException(message, userId, "SUBSCRIPTIONS_NOT_FOUND");
+      throw new SubscriptionNotFoundException(message);
     }
 
     if (LOGGER.isInfoEnabled()) {
@@ -73,7 +73,7 @@ public class SubscriptionsController {
 
     if (CollectionUtils.isEmpty(subscriptions)) {
       String message = "No Subscriptions found for your account";
-      throw new SubscriptionNotFoundException(message, currentUser.getId().toString(), "SUBSCRIPTIONS_NOT_FOUND");
+      throw new SubscriptionNotFoundException(message);
     }
 
     if (LOGGER.isInfoEnabled()) {

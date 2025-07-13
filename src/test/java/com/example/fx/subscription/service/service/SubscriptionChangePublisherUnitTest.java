@@ -1,7 +1,10 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.model.*;
+import com.example.fx.subscription.service.model.Subscription;
+import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
+import com.example.fx.subscription.service.model.SubscriptionStatus;
+import com.example.fx.subscription.service.model.ThresholdDirection;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
