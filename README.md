@@ -8,7 +8,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 - **User Management**: Complete user registration, authentication, and profile management
 - **FX Subscription Management**: Create, update, delete, and monitor currency pair subscriptions
 - **Real-time Notifications**: Multi-channel notification support (email, SMS, push)
-- **AI Integration**: Natural language processing for subscription management via Ollama
+- **Spring AI Integration**: Natural language processing for subscription management via (locally via docker) Ollama
 - **Event-Driven Architecture**: Kafka-based event publishing for subscription changes
 - **Security**: JWT-based authentication with role-based access control
 
