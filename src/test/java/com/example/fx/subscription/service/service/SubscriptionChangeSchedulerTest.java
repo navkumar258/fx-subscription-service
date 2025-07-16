@@ -122,10 +122,10 @@ class SubscriptionChangeSchedulerTest {
 
             // Then
             assertNotNull(result);
-            assertEquals(testEventId.toString(), result.getEventId());
-            assertEquals("SubscriptionCreated", result.getEventType());
-            assertEquals(testEventsOutbox.getTimestamp(), result.getTimestamp());
-            assertEquals(testEventsOutbox.getPayload(), result.getPayload());
+            assertEquals(testEventId.toString(), result.eventId());
+            assertEquals("SubscriptionCreated", result.eventType());
+            assertEquals(testEventsOutbox.getTimestamp(), result.timestamp());
+            assertEquals(testEventsOutbox.getPayload(), result.payload());
         } catch (Exception e) {
             fail("Failed to test private method: " + e.getMessage());
         }

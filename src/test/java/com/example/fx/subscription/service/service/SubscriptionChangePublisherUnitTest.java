@@ -45,19 +45,12 @@ class SubscriptionChangePublisherUnitTest {
   void setUp() {
     UUID testEventId = UUID.randomUUID();
 
-    Subscription testSubscription = new Subscription();
-    testSubscription.setId(UUID.randomUUID());
-    testSubscription.setCurrencyPair("GBP/USD");
-    testSubscription.setThreshold(BigDecimal.valueOf(1.25));
-    testSubscription.setDirection(ThresholdDirection.ABOVE);
-    testSubscription.setNotificationsChannels(List.of("email", "sms"));
-    testSubscription.setStatus(SubscriptionStatus.ACTIVE);
-
-    testEvent = new SubscriptionChangeEvent();
-    testEvent.setEventId(testEventId.toString());
-    testEvent.setEventType("SubscriptionCreated");
-    testEvent.setPayload(SubscriptionResponse.fromSubscription(testSubscription));
-    testEvent.setTimestamp(System.currentTimeMillis());
+    testEvent = new SubscriptionChangeEvent(
+            testEventId.toString(),
+            System.currentTimeMillis(),
+            "SubscriptionCreated",
+            SubscriptionResponse.fromSubscription(createTestSubscription())
+    );
 
     // Set the topic value using reflection
     ReflectionTestUtils.setField(subscriptionChangePublisher, "subscriptionChangesTopic", "test-topic");
@@ -77,7 +70,7 @@ class SubscriptionChangePublisherUnitTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.getPayload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
   }
 
   @Test
@@ -103,7 +96,7 @@ class SubscriptionChangePublisherUnitTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.getPayload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
     // Exception should be handled in async callback
   }
 
@@ -125,7 +118,7 @@ class SubscriptionChangePublisherUnitTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.getPayload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
     // The exception should be re-thrown in the async callback
     verify(eventsOutboxRepository, never()).findById(any(UUID.class));
   }
@@ -133,7 +126,12 @@ class SubscriptionChangePublisherUnitTest {
   @Test
   void sendMessage_WhenEventIdIsInvalid_ShouldHandleGracefully() {
     // Given
-    testEvent.setEventId("invalid-uuid");
+    testEvent = new SubscriptionChangeEvent(
+            UUID.randomUUID().toString(),
+            System.currentTimeMillis(),
+            "SubscriptionCreated",
+            SubscriptionResponse.fromSubscription(createTestSubscription())
+    );
     SendResult<String, SubscriptionChangeEvent> sendResult = mock(SendResult.class);
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future =
             CompletableFuture.completedFuture(sendResult);
@@ -145,8 +143,20 @@ class SubscriptionChangePublisherUnitTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.getPayload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
     // Should handle invalid UUID gracefully
     verify(eventsOutboxRepository, never()).findById(any(UUID.class));
+  }
+
+  private Subscription createTestSubscription() {
+    Subscription testSubscription = new Subscription();
+    testSubscription.setId(UUID.randomUUID());
+    testSubscription.setCurrencyPair("GBP/USD");
+    testSubscription.setThreshold(BigDecimal.valueOf(1.25));
+    testSubscription.setDirection(ThresholdDirection.ABOVE);
+    testSubscription.setNotificationsChannels(List.of("email", "sms"));
+    testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+
+    return testSubscription;
   }
 } 

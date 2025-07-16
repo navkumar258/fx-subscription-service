@@ -38,7 +38,7 @@ public class SubscriptionChangePublisher {
   public void sendMessage(SubscriptionChangeEvent subscriptionChangeEvent) {
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future = kafkaTemplate.send(
             subscriptionChangesTopic,
-            subscriptionChangeEvent.getPayload().id().toString(),
+            subscriptionChangeEvent.payload().id().toString(),
             subscriptionChangeEvent
     );
 
@@ -56,7 +56,7 @@ public class SubscriptionChangePublisher {
         LOGGER.info("[SubscriptionChangePublisher] Sent message: [{}] with offset: [{}]",
                 subscriptionChangeEvent,
                 result.getRecordMetadata().offset());
-        Optional<EventsOutbox> eventsOutbox = eventsOutboxRepository.findById(UUID.fromString(subscriptionChangeEvent.getEventId()));
+        Optional<EventsOutbox> eventsOutbox = eventsOutboxRepository.findById(UUID.fromString(subscriptionChangeEvent.eventId()));
         eventsOutbox.ifPresent(this::updateOutboxEventStatus);
       }
     });

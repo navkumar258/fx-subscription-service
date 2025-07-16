@@ -82,11 +82,12 @@ class SubscriptionChangePublisherIT {
             List.of("sms"),
             SubscriptionStatus.ACTIVE);
 
-    SubscriptionChangeEvent testEvent = new SubscriptionChangeEvent();
-    testEvent.setEventId(UUID.randomUUID().toString());
-    testEvent.setEventType("SubscriptionCreated");
-    testEvent.setPayload(SubscriptionResponse.fromSubscription(subscription));
-    testEvent.setTimestamp(System.currentTimeMillis());
+    SubscriptionChangeEvent testEvent = new SubscriptionChangeEvent(
+            UUID.randomUUID().toString(),
+            System.currentTimeMillis(),
+            "SubscriptionCreated",
+            SubscriptionResponse.fromSubscription(subscription)
+    );
 
     subscriptionChangePublisher.sendMessage(testEvent);
 
@@ -100,7 +101,7 @@ class SubscriptionChangePublisherIT {
     
     // Get the first record and verify it
     var record = received.iterator().next();
-    assertThat(record, hasKey(testEvent.getPayload().id().toString()));
+    assertThat(record, hasKey(testEvent.payload().id().toString()));
     assertThat(record, hasValue(testEvent));
   }
 
@@ -114,11 +115,12 @@ class SubscriptionChangePublisherIT {
             List.of("email"),
             SubscriptionStatus.ACTIVE);
 
-    SubscriptionChangeEvent updateEvent = new SubscriptionChangeEvent();
-    updateEvent.setEventId(UUID.randomUUID().toString());
-    updateEvent.setEventType("SubscriptionUpdated");
-    updateEvent.setPayload(SubscriptionResponse.fromSubscription(subscription));
-    updateEvent.setTimestamp(System.currentTimeMillis());
+    SubscriptionChangeEvent updateEvent = new SubscriptionChangeEvent(
+            UUID.randomUUID().toString(),
+            System.currentTimeMillis(),
+            "SubscriptionUpdated",
+            SubscriptionResponse.fromSubscription(subscription)
+    );
 
     subscriptionChangePublisher.sendMessage(updateEvent);
 
@@ -136,7 +138,7 @@ class SubscriptionChangePublisherIT {
     assertThat(record, hasValue(updateEvent));
 
     SubscriptionChangeEvent receivedEvent = record.value();
-    Assertions.assertEquals("SubscriptionUpdated", receivedEvent.getEventType());
+    Assertions.assertEquals("SubscriptionUpdated", receivedEvent.eventType());
   }
 
   @Test
@@ -149,11 +151,12 @@ class SubscriptionChangePublisherIT {
             List.of("sms"),
             SubscriptionStatus.INACTIVE);
 
-    SubscriptionChangeEvent deleteEvent = new SubscriptionChangeEvent();
-    deleteEvent.setEventId(UUID.randomUUID().toString());
-    deleteEvent.setEventType("SubscriptionDeleted");
-    deleteEvent.setPayload(SubscriptionResponse.fromSubscription(subscription));
-    deleteEvent.setTimestamp(System.currentTimeMillis());
+    SubscriptionChangeEvent deleteEvent = new SubscriptionChangeEvent(
+            UUID.randomUUID().toString(),
+            System.currentTimeMillis(),
+            "SubscriptionDeleted",
+            SubscriptionResponse.fromSubscription(subscription)
+    );
 
     subscriptionChangePublisher.sendMessage(deleteEvent);
 
@@ -171,7 +174,7 @@ class SubscriptionChangePublisherIT {
     assertThat(record, hasValue(deleteEvent));
 
     SubscriptionChangeEvent receivedEvent = record.value();
-    Assertions.assertEquals("SubscriptionDeleted", receivedEvent.getEventType());
+    Assertions.assertEquals("SubscriptionDeleted", receivedEvent.eventType());
   }
 
   @Test
@@ -200,11 +203,12 @@ class SubscriptionChangePublisherIT {
             List.of("email"),
             SubscriptionStatus.ACTIVE);
 
-    SubscriptionChangeEvent event = new SubscriptionChangeEvent();
-    event.setEventId(UUID.randomUUID().toString());
-    event.setEventType(eventType);
-    event.setPayload(SubscriptionResponse.fromSubscription(subscription));
-    event.setTimestamp(System.currentTimeMillis());
+    SubscriptionChangeEvent event = new SubscriptionChangeEvent(
+            UUID.randomUUID().toString(),
+            System.currentTimeMillis(),
+            eventType,
+            SubscriptionResponse.fromSubscription(subscription)
+    );
 
     return event;
   }

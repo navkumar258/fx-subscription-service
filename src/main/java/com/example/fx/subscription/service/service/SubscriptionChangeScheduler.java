@@ -43,13 +43,11 @@ public class SubscriptionChangeScheduler {
   }
 
   private SubscriptionChangeEvent createSubscriptionChangeEvent(EventsOutbox eventsOutbox) {
-    SubscriptionChangeEvent subscriptionChangeEvent = new SubscriptionChangeEvent();
-    subscriptionChangeEvent.setEventId(eventsOutbox.getId().toString());
-    subscriptionChangeEvent.setEventType(eventsOutbox.getEventType());
-    subscriptionChangeEvent.setTimestamp(eventsOutbox.getTimestamp());
-    subscriptionChangeEvent.setPayload(eventsOutbox.getPayload());
-
-    return subscriptionChangeEvent;
+    return new SubscriptionChangeEvent(
+            eventsOutbox.getId().toString(),
+            eventsOutbox.getTimestamp(),
+            eventsOutbox.getEventType(),
+            eventsOutbox.getPayload()
+    );
   }
-
 }
