@@ -67,8 +67,11 @@ public class SubscriptionsService {
 
   @Transactional(readOnly = true)
   public boolean isSubscriptionOwner(String subscriptionId, UUID userId) {
-    Optional<Subscription> subscription = subscriptionRepository.findById(UUID.fromString(subscriptionId));
-    return subscription.isPresent() && subscription.get().getUser().getId().equals(userId);
+    return subscriptionRepository.findById(UUID.fromString(subscriptionId))
+            .map(Subscription::getUser)
+            .map(FxUser::getId)
+            .filter(id -> id.equals(userId))
+            .isPresent();
   }
 
   @Transactional
@@ -86,11 +89,22 @@ public class SubscriptionsService {
 
   @Transactional
   public Subscription updateSubscriptionById(Subscription oldSubscription, SubscriptionUpdateRequest subscriptionUpdateRequest) {
-    if(subscriptionUpdateRequest.currencyPair() != null) oldSubscription.setCurrencyPair(subscriptionUpdateRequest.currencyPair());
-    if(subscriptionUpdateRequest.direction() != null) oldSubscription.setDirection(ThresholdDirection.valueOf(subscriptionUpdateRequest.direction()));
-    if(subscriptionUpdateRequest.status() != null) oldSubscription.setStatus(SubscriptionStatus.valueOf(subscriptionUpdateRequest.status()));
-    if(subscriptionUpdateRequest.threshold() != null) oldSubscription.setThreshold(subscriptionUpdateRequest.threshold());
-    if(subscriptionUpdateRequest.notificationChannels() != null) oldSubscription.setNotificationsChannels(subscriptionUpdateRequest.notificationChannels());
+    Optional.ofNullable(subscriptionUpdateRequest.currencyPair())
+            .ifPresent(oldSubscription::setCurrencyPair);
+
+    Optional.ofNullable(subscriptionUpdateRequest.direction())
+            .map(ThresholdDirection::valueOf)
+            .ifPresent(oldSubscription::setDirection);
+
+    Optional.ofNullable(subscriptionUpdateRequest.status())
+            .map(SubscriptionStatus::valueOf)
+            .ifPresent(oldSubscription::setStatus);
+
+    Optional.ofNullable(subscriptionUpdateRequest.threshold())
+            .ifPresent(oldSubscription::setThreshold);
+
+    Optional.ofNullable(subscriptionUpdateRequest.notificationChannels())
+            .ifPresent(oldSubscription::setNotificationsChannels);
 
     Subscription subscription = subscriptionRepository.saveAndFlush(oldSubscription);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionUpdated"));

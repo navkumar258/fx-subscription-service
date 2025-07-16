@@ -17,10 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @Observed(name = "users.controller")
 public class UsersController {
 
@@ -35,7 +34,6 @@ public class UsersController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserListResponse> getAllUsers(
           @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-    
     Page<FxUser> usersPage = fxUsersService.findAllUsers(pageable);
     List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
             .map(UserSummaryResponse::fromFxUser)
@@ -49,10 +47,8 @@ public class UsersController {
             usersPage.getSize()
     );
 
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Retrieved {} users from page {} of {}", 
-          usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
-    }
+    LOGGER.info("Retrieved {} users from page {} of {}",
+            usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
 
     return ResponseEntity.ok(response);
   }
@@ -60,19 +56,13 @@ public class UsersController {
   @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
   public ResponseEntity<UserDetailResponse> getUserById(@PathVariable String id) {
-    Optional<FxUser> user = fxUsersService.findUserById(id);
+    FxUser fxUser = fxUsersService.findUserById(id)
+            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
-    if (user.isPresent()) {
-      UserDetailResponse response = UserDetailResponse.fromFxUser(user.get());
-      
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("Retrieved user: userId={}", id);
-      }
-      
-      return ResponseEntity.ok(response);
-    }
+    LOGGER.info("Retrieved user: userId={}", id);
 
-    throw new UserNotFoundException("User not found with ID: " + id, id);
+    UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping(path = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -82,7 +72,6 @@ public class UsersController {
           @RequestParam(required = false) String mobile,
           @RequestParam(defaultValue = "true") boolean enabled,
           @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-    
     Page<FxUser> usersPage = fxUsersService.searchUsers(email, mobile, enabled, pageable);
     List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
             .map(UserSummaryResponse::fromFxUser)
@@ -96,10 +85,8 @@ public class UsersController {
             usersPage.getSize()
     );
 
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Search results: {} users found with email={}, mobile={}, enabled={}", 
-          usersPage.getTotalElements(), email, mobile, enabled);
-    }
+    LOGGER.info("Search results: {} users found with email={}, mobile={}, enabled={}",
+            usersPage.getTotalElements(), email, mobile, enabled);
 
     return ResponseEntity.ok(response);
   }
@@ -109,57 +96,33 @@ public class UsersController {
   public ResponseEntity<UserUpdateResponse> updateUser(
           @PathVariable String id,
           @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
-    
-    Optional<FxUser> existingUser = fxUsersService.findUserById(id);
-    
-    if (existingUser.isPresent()) {
-      FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
-      UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
-      
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("User updated successfully: userId={}", id);
-      }
-      
-      return ResponseEntity.ok(response);
-    }
+    FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
+    UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
 
-    throw new UserNotFoundException("User not found with ID: " + id, id);
+    LOGGER.info("User updated successfully: userId={}", id);
+
+    return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{id}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-    Optional<FxUser> existingUser = fxUsersService.findUserById(id);
-    
-    if (existingUser.isPresent()) {
-      fxUsersService.deleteUser(id);
-      
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("User deleted successfully: userId={}", id);
-      }
-      
-      return ResponseEntity.noContent().build(); // 204 No Content
-    }
+    fxUsersService.deleteUser(id);
+    LOGGER.info("User deleted successfully: userId={}", id);
 
-    throw new UserNotFoundException("User not found with ID: " + id, id);
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping(path = "/{id}/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
   public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
-    Optional<FxUser> user = fxUsersService.findUserById(id);
-    
-    if (user.isPresent()) {
-      UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
-      
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", 
-            id, response.subscriptions().size());
-      }
-      
-      return ResponseEntity.ok(response);
-    }
+    fxUsersService.findUserById(id)
+            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
-    throw new UserNotFoundException("User not found with ID: " + id, id);
+    UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
+
+    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", id, response.subscriptions().size());
+
+    return ResponseEntity.ok(response);
   }
 } 

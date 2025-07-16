@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,7 +29,7 @@ import javax.validation.Valid;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
@@ -69,20 +70,16 @@ public class AuthController {
                       .collect(Collectors.toSet())
       );
 
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("User logged in successfully: username={}", authRequest.username());
-      }
+      LOGGER.info("User logged in successfully: username={}", authRequest.username());
 
       return ResponseEntity.ok(new AuthLoginResponse(token, "Login successful"));
 
-    } catch (org.springframework.security.core.AuthenticationException ex) {
-      if (LOGGER.isWarnEnabled()) {
-        LOGGER.warn("Authentication failed: username={}, message={}",
+    } catch (AuthenticationException ex) {
+      LOGGER.warn("Authentication failed: username={}, message={}",
                 authRequest.username(), ex.getMessage());
-      }
 
       // Let the ControllerAdvice handle this exception
-      throw new org.springframework.security.core.AuthenticationException("Invalid username/password") {
+      throw new AuthenticationException("Invalid username/password") {
         @Override
         public String getMessage() {
           return "Invalid username/password";
@@ -93,30 +90,36 @@ public class AuthController {
 
   @PostMapping("/signup")
   public ResponseEntity<AuthSignupResponse> signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
-    if (fxUserRepository.existsByEmail(userSignUpRequest.email())) {
-      throw new UserAlreadyExistsException("Email is already registered", userSignUpRequest.email());
-    }
+    validateEmailNotExists(userSignUpRequest.email());
 
-    FxUser user = new FxUser();
-    user.setEmail(userSignUpRequest.email());
-    user.setPassword(passwordEncoder.encode(userSignUpRequest.password()));
-    user.setMobile(userSignUpRequest.mobile());
-    user.setEnabled(true);
-
-    user.setRole(userSignUpRequest.admin() ? UserRole.ADMIN : UserRole.USER);
-
+    FxUser user = createUserFromRequest(userSignUpRequest);
     FxUser savedUser = fxUserRepository.save(user);
 
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("User registered successfully: email={}, userId={}",
-              userSignUpRequest.email(), savedUser.getId());
-    }
+    LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
 
-    return ResponseEntity.status(HttpStatus.CREATED)
-            .body(new AuthSignupResponse(savedUser.getId(),
-                    userSignUpRequest.admin() ?
-                            "Admin registered successfully" : "User registered successfully"));
+    return buildSignupResponse(savedUser, userSignUpRequest.admin());
   }
 
+  private void validateEmailNotExists(String email) {
+    if (fxUserRepository.existsByEmail(email)) {
+      throw new UserAlreadyExistsException("Email is already registered", email);
+    }
+  }
+
+  private FxUser createUserFromRequest(UserSignUpRequest request) {
+    FxUser user = new FxUser();
+    user.setEmail(request.email());
+    user.setPassword(passwordEncoder.encode(request.password()));
+    user.setMobile(request.mobile());
+    user.setEnabled(true);
+    user.setRole(request.admin() ? UserRole.ADMIN : UserRole.USER);
+    return user;
+  }
+
+  private ResponseEntity<AuthSignupResponse> buildSignupResponse(FxUser user, boolean isAdmin) {
+    String message = isAdmin ? "Admin registered successfully" : "User registered successfully";
+    AuthSignupResponse response = new AuthSignupResponse(user.getId(), message);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
 }
 

@@ -83,7 +83,7 @@ class AiChatIntegrationIT {
         SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
                 "GBP/USD", BigDecimal.valueOf(1.25), "ABOVE", List.of("email"));
 
-        mockMvc.perform(post("/api/subscriptions")
+        mockMvc.perform(post("/api/v1/subscriptions")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
@@ -96,7 +96,7 @@ class AiChatIntegrationIT {
         // Mock specific response for this query
         setupChatClientMockWithResponse(expectedResponse);
 
-        mockMvc.perform(get("/api/ai/fx?query=" + chatRequest)
+        mockMvc.perform(get("/api/v1/ai/fx?query=" + chatRequest)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8"))
@@ -114,7 +114,7 @@ class AiChatIntegrationIT {
         // Mock specific response for subscription creation
         setupChatClientMockWithResponse(expectedResponse);
 
-        mockMvc.perform(get("/api/ai/fx?query=" + chatRequest)
+        mockMvc.perform(get("/api/v1/ai/fx?query=" + chatRequest)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8"))
@@ -131,7 +131,7 @@ class AiChatIntegrationIT {
         // Mock error response
         setupChatClientMockWithException(new RuntimeException("AI service error"));
 
-        mockMvc.perform(get("/api/ai/fx?query=" + chatRequest)
+        mockMvc.perform(get("/api/v1/ai/fx?query=" + chatRequest)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isInternalServerError());
 
@@ -146,7 +146,7 @@ class AiChatIntegrationIT {
 
         setupChatClientMockWithResponse(expectedResponse);
 
-        mockMvc.perform(get("/api/ai/fx?query=" + chatRequest)
+        mockMvc.perform(get("/api/v1/ai/fx?query=" + chatRequest)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(expectedResponse)));
@@ -167,7 +167,7 @@ class AiChatIntegrationIT {
     private String loginUser(String email, String password) throws Exception {
         AuthRequest authRequest = new AuthRequest(email, password);
         
-        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/login")
+        MockHttpServletResponse response = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())

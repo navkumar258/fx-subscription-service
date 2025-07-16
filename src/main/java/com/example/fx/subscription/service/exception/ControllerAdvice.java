@@ -33,10 +33,8 @@ public class ControllerAdvice {
   public ResponseEntity<ProblemDetail> handleSubscriptionNotFoundException(
           SubscriptionNotFoundException e,
           WebRequest request) {
-    if (LOGGER.isWarnEnabled()) {
-      LOGGER.warn("Subscription not found: subscriptionId={}, path={}, message={}",
-              e.getSubscriptionId(), request.getDescription(false), e.getMessage());
-    }
+    LOGGER.warn("Subscription not found: subscriptionId={}, path={}, message={}",
+            e.getSubscriptionId(), request.getDescription(false), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
@@ -57,10 +55,8 @@ public class ControllerAdvice {
   public ResponseEntity<ProblemDetail> handleUserNotFoundException(
           UserNotFoundException e,
           WebRequest request) {
-    if (LOGGER.isWarnEnabled()) {
-      LOGGER.warn("User not found: userId={}, path={}, message={}",
-              e.getUserId(), request.getDescription(false), e.getMessage());
-    }
+    LOGGER.warn("User not found: userId={}, path={}, message={}",
+            e.getUserId(), request.getDescription(false), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
@@ -99,10 +95,9 @@ public class ControllerAdvice {
     Map<String, String> fieldErrors = new HashMap<>();
     ex.getBindingResult().getFieldErrors().forEach(error ->
             fieldErrors.put(error.getField(), error.getDefaultMessage()));
-    if (LOGGER.isWarnEnabled()) {
-      LOGGER.warn("Validation failed: path={}, fieldErrors={}",
-              request.getDescription(false), fieldErrors);
-    }
+
+    LOGGER.warn("Validation failed: path={}, fieldErrors={}",
+            request.getDescription(false), fieldErrors);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST,
@@ -202,11 +197,8 @@ public class ControllerAdvice {
   public ResponseEntity<ProblemDetail> handleUserAlreadyExistsException(
           UserAlreadyExistsException e,
           WebRequest request) {
-
-    if (LOGGER.isWarnEnabled()) {
-      LOGGER.warn("User already exists: email={}, path={}, message={}",
-              e.getEmail(), request.getDescription(false), e.getMessage());
-    }
+    LOGGER.warn("User already exists: email={}, path={}, message={}",
+            e.getEmail(), request.getDescription(false), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.CONFLICT,
@@ -225,10 +217,8 @@ public class ControllerAdvice {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ProblemDetail> handleGenericException(Exception e, WebRequest request) {
-    if (LOGGER.isErrorEnabled()) {
-      LOGGER.error("Unexpected error occurred: path={}, message={}",
-              request.getDescription(false), e.getMessage(), e);
-    }
+    LOGGER.error("Unexpected error occurred: path={}, message={}",
+            request.getDescription(false), e.getMessage(), e);
 
     return createProblemDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
@@ -238,9 +228,7 @@ public class ControllerAdvice {
   }
 
   private void logException(String message, Exception e, WebRequest request) {
-    if (LOGGER.isWarnEnabled()) {
-      LOGGER.warn("{}: path={}, message={}", message, request.getDescription(false), e.getMessage());
-    }
+    LOGGER.warn("{}: path={}, message={}", message, request.getDescription(false), e.getMessage());
   }
 
   private ResponseEntity<ProblemDetail> createProblemDetail(

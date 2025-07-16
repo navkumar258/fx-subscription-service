@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/subscriptions")
+@RequestMapping("/api/v1/subscriptions")
 @Observed(name = "subscriptions.controller")
 public class SubscriptionsController {
 
@@ -37,16 +36,12 @@ public class SubscriptionsController {
   @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN') or @subscriptionsService.isSubscriptionOwner(#id, authentication.principal.id)")
   public ResponseEntity<SubscriptionResponse> getSubscriptionById(@PathVariable String id) {
-    Optional<SubscriptionResponse> subscription = subscriptionsService.findSubscriptionById(id);
+    SubscriptionResponse response = subscriptionsService.findSubscriptionById(id)
+            .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id));
 
-    if (subscription.isPresent()) {
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("Retrieved subscription: subscriptionId={}", id);
-      }
-      return ResponseEntity.ok(subscription.get());
-    }
+    LOGGER.info("Retrieved subscription: subscriptionId={}", id);
 
-    throw new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id);
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -54,14 +49,12 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionListResponse> getSubscriptionsByUserId(@RequestParam String userId) {
     List<SubscriptionResponse> subscriptions = subscriptionsService.findSubscriptionResponsesByUserId(userId);
 
-    if (CollectionUtils.isEmpty(subscriptions)) {
+    if (subscriptions == null || subscriptions.isEmpty()) {
       String message = "No Subscriptions found for the user ID: %s, please try with a different user!".formatted(userId);
       throw new SubscriptionNotFoundException(message);
     }
 
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Retrieved {} subscriptions for user: userId={}", subscriptions.size(), userId);
-    }
+    LOGGER.info("Retrieved {} subscriptions for user: userId={}", subscriptions.size(), userId);
 
     return ResponseEntity.ok(new SubscriptionListResponse(subscriptions, subscriptions.size()));
   }
@@ -71,14 +64,12 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionListResponse> getMySubscriptions(@AuthenticationPrincipal FxUser currentUser) {
     List<SubscriptionResponse> subscriptions = subscriptionsService.findSubscriptionResponsesByUserId(currentUser.getId().toString());
 
-    if (CollectionUtils.isEmpty(subscriptions)) {
+    if (subscriptions == null || subscriptions.isEmpty()) {
       String message = "No Subscriptions found for your account";
       throw new SubscriptionNotFoundException(message);
     }
 
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Retrieved {} subscriptions for current user: userId={}", subscriptions.size(), currentUser.getId());
-    }
+    LOGGER.info("Retrieved {} subscriptions for current user: userId={}", subscriptions.size(), currentUser.getId());
 
     return ResponseEntity.ok(new SubscriptionListResponse(subscriptions, subscriptions.size()));
   }
@@ -88,11 +79,9 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionCreateResponse> createSubscription(@AuthenticationPrincipal FxUser currentUser,
                                                                        @Valid @RequestBody SubscriptionCreateRequest subscriptionCreateRequest) {
     Subscription createdSubscription = subscriptionsService.createSubscription(subscriptionCreateRequest, currentUser.getId());
-    
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Created subscription: subscriptionId={}, userId={}, currencyPair={}", 
-          createdSubscription.getId(), currentUser.getId(), subscriptionCreateRequest.currencyPair());
-    }
+
+    LOGGER.info("Created subscription: subscriptionId={}, userId={}, currencyPair={}",
+            createdSubscription.getId(), currentUser.getId(), subscriptionCreateRequest.currencyPair());
     
     return ResponseEntity.status(HttpStatus.CREATED)
             .body(SubscriptionCreateResponse.fromSubscription(createdSubscription));
@@ -107,11 +96,9 @@ public class SubscriptionsController {
     return oldSubscription
             .map(subscription -> {
               Subscription updatedSubscription = subscriptionsService.updateSubscriptionById(subscription, subscriptionUpdateRequest);
-              
-              if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Updated subscription: subscriptionId={}, currencyPair={}", 
-                    id, subscriptionUpdateRequest.currencyPair());
-              }
+
+              LOGGER.info("Updated subscription: subscriptionId={}, currencyPair={}",
+                      id, subscriptionUpdateRequest.currencyPair());
               
               return ResponseEntity.ok(SubscriptionUpdateResponse.fromSubscription(updatedSubscription));
             })
@@ -121,22 +108,19 @@ public class SubscriptionsController {
   @DeleteMapping("/{id}")
   @PreAuthorize("hasRole('ADMIN') or @subscriptionsService.isSubscriptionOwner(#id, authentication.principal.id)")
   public ResponseEntity<Void> deleteSubscriptionById(@PathVariable String id) {
-      subscriptionsService.deleteSubscriptionById(id);
+    subscriptionsService.deleteSubscriptionById(id);
 
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("Deleted subscription: subscriptionId={}", id);
-      }
-      return ResponseEntity.noContent().build();
+    LOGGER.info("Deleted subscription: subscriptionId={}", id);
+
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<SubscriptionListResponse> getAllSubscriptions() {
     List<SubscriptionResponse> allSubscriptions = subscriptionsService.findAllSubscriptionResponses();
-    
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Admin retrieved all subscriptions: count={}", allSubscriptions.size());
-    }
+
+    LOGGER.info("Admin retrieved all subscriptions: count={}", allSubscriptions.size());
     
     return ResponseEntity.ok(new SubscriptionListResponse(allSubscriptions, allSubscriptions.size()));
   }

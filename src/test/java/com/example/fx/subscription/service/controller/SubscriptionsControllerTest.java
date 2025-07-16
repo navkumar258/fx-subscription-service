@@ -48,7 +48,7 @@ class SubscriptionsControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void whenInvalidUri_shouldReturn404() {
-        assertThat(mockMvc.get().uri("/api/subscriptions/123"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/123"))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 
@@ -81,7 +81,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
                 .thenReturn(subscriptions);
 
-        assertThat(mockMvc.get().uri("/api/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
                 .hasStatusOk()
                 .hasContentType(MediaType.APPLICATION_JSON_VALUE)
                 .bodyJson()
@@ -96,7 +96,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
                 .thenReturn(List.of());
 
-        assertThat(mockMvc.get().uri("/api/subscriptions?userId=test_user_id"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=test_user_id"))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson()
                 .extractingPath("$.detail")
@@ -124,7 +124,7 @@ class SubscriptionsControllerTest {
         
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/" + subscriptionId))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/" + subscriptionId))
                 .hasStatusOk()
                 .hasContentType(MediaType.APPLICATION_JSON_VALUE)
                 .bodyJson()
@@ -142,7 +142,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionById(subscriptionId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/" + subscriptionId))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/" + subscriptionId))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson()
                 .extractingPath("$.detail")
@@ -171,7 +171,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(subscriptions);
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/my"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
                 .hasStatusOk()
                 .hasContentType(MediaType.APPLICATION_JSON_VALUE)
                 .bodyJson()
@@ -187,7 +187,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(List.of());
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/my"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson()
                 .extractingPath("$.detail")
@@ -212,7 +212,7 @@ class SubscriptionsControllerTest {
                 .thenReturn(createdSubscription);
 
         // When & Then
-        assertThat(mockMvc.post().uri("/api/subscriptions")
+        assertThat(mockMvc.post().uri("/api/v1/subscriptions")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(createRequest)))
                 .hasStatus(HttpStatus.CREATED)
@@ -232,7 +232,7 @@ class SubscriptionsControllerTest {
                 List.of()); // empty notifications
 
         // When & Then
-        assertThat(mockMvc.post().uri("/api/subscriptions")
+        assertThat(mockMvc.post().uri("/api/v1/subscriptions")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(createRequest)))
                 .hasStatus(HttpStatus.BAD_REQUEST);
@@ -261,7 +261,7 @@ class SubscriptionsControllerTest {
                 .thenReturn(updatedSubscription);
 
         // When & Then
-        assertThat(mockMvc.put().uri("/api/subscriptions/" + subscriptionId)
+        assertThat(mockMvc.put().uri("/api/v1/subscriptions/" + subscriptionId)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateRequest)))
                 .hasStatusOk()
@@ -286,7 +286,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findSubscriptionEntityById(subscriptionId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThat(mockMvc.put().uri("/api/subscriptions/" + subscriptionId)
+        assertThat(mockMvc.put().uri("/api/v1/subscriptions/" + subscriptionId)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateRequest)))
                 .hasStatus(HttpStatus.NOT_FOUND)
@@ -311,7 +311,7 @@ class SubscriptionsControllerTest {
                 List.of()); // empty notifications
 
         // When & Then
-        assertThat(mockMvc.put().uri("/api/subscriptions/" + subscriptionId)
+        assertThat(mockMvc.put().uri("/api/v1/subscriptions/" + subscriptionId)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateRequest)))
                 .hasStatus(HttpStatus.BAD_REQUEST);
@@ -329,7 +329,7 @@ class SubscriptionsControllerTest {
         doNothing().when(subscriptionsService).deleteSubscriptionById(subscriptionId);
 
         // When & Then
-        assertThat(mockMvc.delete().uri("/api/subscriptions/" + subscriptionId))
+        assertThat(mockMvc.delete().uri("/api/v1/subscriptions/" + subscriptionId))
                 .hasStatus(HttpStatus.NO_CONTENT);
 
         verify(subscriptionsService).deleteSubscriptionById(subscriptionId);
@@ -365,7 +365,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findAllSubscriptionResponses()).thenReturn(allSubscriptions);
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/all"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/all"))
                 .hasStatusOk()
                 .hasContentType(MediaType.APPLICATION_JSON_VALUE)
                 .bodyJson()
@@ -378,7 +378,7 @@ class SubscriptionsControllerTest {
     @WithMockUser
     void getAllSubscriptions_WithNonAdminUser_ShouldReturn403() {
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/all"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/all"))
                 .hasStatus(HttpStatus.FORBIDDEN);
 
         verify(subscriptionsService, never()).findAllSubscriptionResponses();
@@ -391,7 +391,7 @@ class SubscriptionsControllerTest {
         when(subscriptionsService.findAllSubscriptionResponses()).thenReturn(List.of());
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/subscriptions/all"))
+        assertThat(mockMvc.get().uri("/api/v1/subscriptions/all"))
                 .hasStatusOk()
                 .hasContentType(MediaType.APPLICATION_JSON_VALUE)
                 .bodyJson()

@@ -91,7 +91,7 @@ class SubscriptionChangeSchedulerIT {
         SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
                 currencyPair, threshold, direction, List.of("email"));
 
-        mockMvc.perform(post("/api/subscriptions")
+        mockMvc.perform(post("/api/v1/subscriptions")
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createRequest)))
@@ -111,7 +111,7 @@ class SubscriptionChangeSchedulerIT {
     private String loginUser(String email, String password) throws Exception {
         AuthRequest authRequest = new AuthRequest(email, password);
 
-        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/login")
+        MockHttpServletResponse response = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())

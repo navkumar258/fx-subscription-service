@@ -40,7 +40,7 @@ class ChatControllerTest {
         setupChatClientMock(mockChatResponse);
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/fx?query=" + userQuery))
+        assertThat(mockMvc.get().uri("/api/v1/ai/fx?query=" + userQuery))
                 .hasStatusOk()
                 .hasContentType(MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8")
                 .bodyText()
@@ -60,7 +60,7 @@ class ChatControllerTest {
         setupChatClientMock(mockChatResponse);
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/fx?query=" + userQuery))
+        assertThat(mockMvc.get().uri("/api/v1/ai/fx?query=" + userQuery))
                 .hasStatusOk()
                 .hasContentType(MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8")
                 .bodyText()
@@ -73,7 +73,7 @@ class ChatControllerTest {
     @WithMockUser
     void fxChat_WithMissingQueryParameter_ShouldReturn400() {
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/fx"))
+        assertThat(mockMvc.get().uri("/api/v1/ai/fx"))
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
 
@@ -81,7 +81,7 @@ class ChatControllerTest {
     @WithMockUser
     void fxChat_WithInvalidEndpoint_ShouldReturn404() {
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/invalid"))
+        assertThat(mockMvc.get().uri("/api/v1/ai/invalid"))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 
@@ -93,7 +93,7 @@ class ChatControllerTest {
         setupChatClientMockWithException(new RuntimeException("Chat client error"));
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/fx?query=" + userQuery))
+        assertThat(mockMvc.get().uri("/api/v1/ai/fx?query=" + userQuery))
                 .hasStatus(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -105,7 +105,7 @@ class ChatControllerTest {
         setupChatClientMockWithNullResponse();
 
         // When & Then
-        assertThat(mockMvc.get().uri("/api/ai/fx?query=" + userQuery))
+        assertThat(mockMvc.get().uri("/api/v1/ai/fx?query=" + userQuery))
                 .hasStatus(HttpStatus.INTERNAL_SERVER_ERROR);
 
         verify(chatClient).prompt(any(Prompt.class));

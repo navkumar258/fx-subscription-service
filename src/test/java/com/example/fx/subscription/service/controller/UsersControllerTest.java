@@ -143,7 +143,6 @@ class UsersControllerTest {
         assertEquals(userId, response.getBody().userId().toString());
         assertEquals("updated@example.com", response.getBody().user().email());
 
-        verify(fxUsersService).findUserById(userId);
         verify(fxUsersService).updateUser(userId, updateRequest);
     }
 
@@ -154,7 +153,8 @@ class UsersControllerTest {
         UserUpdateRequest updateRequest = new UserUpdateRequest(
                 "updated@example.com", "+9876543210", "device-token-123");
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.empty());
+        when(fxUsersService.updateUser(anyString(), any(UserUpdateRequest.class))).thenThrow(
+                new UserNotFoundException("User not found with ID: " + userId, userId));
 
         // When & Then
         UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
@@ -163,8 +163,7 @@ class UsersControllerTest {
         assertEquals("User not found with ID: " + userId, exception.getMessage());
         assertEquals(userId, exception.getUserId());
 
-        verify(fxUsersService).findUserById(userId);
-        verify(fxUsersService, never()).updateUser(anyString(), any());
+        verify(fxUsersService).updateUser(anyString(), any());
     }
 
     @Test
@@ -184,26 +183,7 @@ class UsersControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
 
-        verify(fxUsersService).findUserById(userId);
         verify(fxUsersService).deleteUser(userId);
-    }
-
-    @Test
-    void deleteUser_WithInvalidId_ShouldThrowUserNotFoundException() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.empty());
-
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
-            usersController.deleteUser(userId));
-
-        assertEquals("User not found with ID: " + userId, exception.getMessage());
-        assertEquals(userId, exception.getUserId());
-
-        verify(fxUsersService).findUserById(userId);
-        verify(fxUsersService, never()).deleteUser(anyString());
     }
 
     @Test

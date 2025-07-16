@@ -69,7 +69,7 @@ class SubscriptionsControllerIT {
 
     @BeforeEach
     void setUp() {
-        // Clean up database before each test
+        // Cleanup database before each test
         fxUserRepository.deleteAll();
         
         // Setup JWT key
@@ -115,7 +115,7 @@ class SubscriptionsControllerIT {
                 "GBP/USD", BigDecimal.valueOf(1.20), "ABOVE", List.of("sms", "email"));
 
         assertThat(mockMvc.post()
-                .uri("/api/subscriptions")
+                .uri("/api/v1/subscriptions")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(createRequest))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
@@ -124,7 +124,7 @@ class SubscriptionsControllerIT {
 
         // Test missing JWT token
         assertThat(mockMvc.post()
-                .uri("/api/subscriptions")
+                .uri("/api/v1/subscriptions")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(createRequest))
                 .secure(true))
@@ -145,7 +145,7 @@ class SubscriptionsControllerIT {
 
         // User2 tries to access User1's subscription - should be forbidden
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.FORBIDDEN);
@@ -155,7 +155,7 @@ class SubscriptionsControllerIT {
                 "EUR/USD", BigDecimal.valueOf(1.15), "BELOW", "ACTIVE", List.of("email"));
 
         assertThat(mockMvc.put()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateRequest))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
@@ -164,7 +164,7 @@ class SubscriptionsControllerIT {
 
         // User2 tries to delete User1's subscription - should be forbidden
         assertThat(mockMvc.delete()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.FORBIDDEN);
@@ -184,7 +184,7 @@ class SubscriptionsControllerIT {
 
         // Admin should be able to access all subscriptions
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/all")
+                .uri("/api/v1/subscriptions/all")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
                 .secure(true))
                 .hasStatus(HttpStatus.OK)
@@ -194,14 +194,14 @@ class SubscriptionsControllerIT {
 
         // Admin should be able to access any individual subscription
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
                 .secure(true))
                 .hasStatus(HttpStatus.OK);
 
         // Regular user should NOT be able to access all subscriptions
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/all")
+                .uri("/api/v1/subscriptions/all")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
                 .secure(true))
                 .hasStatus(HttpStatus.FORBIDDEN);
@@ -218,7 +218,7 @@ class SubscriptionsControllerIT {
 
         // Verify subscription exists in user's subscription list
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/my")
+                .uri("/api/v1/subscriptions/my")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
                 .secure(true))
                 .hasStatus(HttpStatus.OK)
@@ -260,7 +260,7 @@ class SubscriptionsControllerIT {
                 currencyPair, threshold, "ABOVE", List.of("email", "sms"));
 
         MockHttpServletResponse response = mockMvc.post()
-                .uri("/api/subscriptions")
+                .uri("/api/v1/subscriptions")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(createRequest))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
@@ -281,7 +281,7 @@ class SubscriptionsControllerIT {
 
     private void verifySubscriptionExists(String jwt, String subscriptionId, String expectedCurrencyPair, BigDecimal expectedThreshold) {
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.OK)
@@ -297,7 +297,7 @@ class SubscriptionsControllerIT {
                 currencyPair, threshold, "BELOW", "ACTIVE", List.of("email"));
 
         assertThat(mockMvc.put()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateRequest))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
@@ -312,7 +312,7 @@ class SubscriptionsControllerIT {
 
     private void verifyUserHasSubscription(String jwt) {
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/my")
+                .uri("/api/v1/subscriptions/my")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.OK)
@@ -325,7 +325,7 @@ class SubscriptionsControllerIT {
 
     private void deleteSubscription(String jwt, String subscriptionId) {
         assertThat(mockMvc.delete()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.NO_CONTENT);
@@ -333,7 +333,7 @@ class SubscriptionsControllerIT {
 
     private void verifySubscriptionDeleted(String jwt, String subscriptionId) {
         assertThat(mockMvc.get()
-                .uri("/api/subscriptions/" + subscriptionId)
+                .uri("/api/v1/subscriptions/" + subscriptionId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
                 .secure(true))
                 .hasStatus(HttpStatus.NOT_FOUND);

@@ -63,7 +63,7 @@ class AuthenticationFlowIT {
         UserSignUpRequest signUpRequest = new UserSignUpRequest(
                 "test@example.com", "password123", "+1234567890", false);
 
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/api/v1/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
                 .andExpect(status().isCreated())
@@ -72,7 +72,7 @@ class AuthenticationFlowIT {
         // 2. Login with registered user
         AuthRequest authRequest = new AuthRequest("test@example.com", "password123");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authRequest)))
                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ class AuthenticationFlowIT {
         UserSignUpRequest adminSignUpRequest = new UserSignUpRequest(
                 "admin@example.com", "admin123", "+1234567890", true);
 
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/api/v1/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminSignUpRequest)))
                 .andExpect(status().isCreated())
@@ -99,7 +99,7 @@ class AuthenticationFlowIT {
         // 2. Login as admin
         AuthRequest adminAuthRequest = new AuthRequest("admin@example.com", "admin123");
 
-        MockHttpServletResponse adminResponse = mockMvc.perform(post("/api/auth/login")
+        MockHttpServletResponse adminResponse = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminAuthRequest)))
                 .andExpect(status().isOk())
@@ -109,7 +109,7 @@ class AuthenticationFlowIT {
         // 3. Use admin token to access privileged endpoints
         String adminToken = extractTokenFromResponse(adminResponse.getContentAsString());
         
-        mockMvc.perform(get("/api/subscriptions/all")
+        mockMvc.perform(get("/api/v1/subscriptions/all")
                 .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
     }
@@ -119,7 +119,7 @@ class AuthenticationFlowIT {
         // 1. Try to login with non-existent user
         AuthRequest invalidRequest = new AuthRequest("nonexistent@example.com", "password123");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isUnauthorized());

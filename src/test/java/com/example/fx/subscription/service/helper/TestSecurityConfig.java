@@ -46,7 +46,7 @@ public class TestSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
+                    .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
