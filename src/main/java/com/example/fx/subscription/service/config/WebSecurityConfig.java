@@ -41,6 +41,7 @@ public class WebSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers("/sse", "/mcp/**").permitAll()
                     .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
                     .anyRequest().authenticated()
             )

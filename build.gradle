@@ -30,7 +30,7 @@ dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.1'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-//	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
+	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
 	implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 	// for micrometer observation and metrics
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
