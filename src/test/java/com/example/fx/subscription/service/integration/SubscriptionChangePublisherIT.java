@@ -31,8 +31,8 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @Testcontainers
-@Import(PostgresTestContainersConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Import(PostgresTestContainersConfig.class)
 class SubscriptionChangePublisherIT {
 
   @Value(value = "${spring.kafka.topic.subscription-changes}")

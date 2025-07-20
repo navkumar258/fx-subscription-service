@@ -31,6 +31,7 @@ public class FxUsersService {
     this.subscriptionRepository = subscriptionRepository;
   }
 
+  @Transactional(readOnly = true)
   public Page<FxUser> findAllUsers(Pageable pageable) {
     return fxUserRepository.findAll(pageable);
   }
@@ -40,6 +41,7 @@ public class FxUsersService {
     return fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id));
   }
 
+  @Transactional(readOnly = true)
   public Page<FxUser> searchUsers(String email, String mobile, boolean enabled, Pageable pageable) {
     return fxUserRepository.searchUsers(email, mobile, enabled, pageable);
   }

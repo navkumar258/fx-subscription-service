@@ -41,8 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
 @AutoConfigureMockMvc
+@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
 class AiChatIntegrationIT {
 
     @Autowired
