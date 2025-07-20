@@ -3,7 +3,8 @@ package com.example.fx.subscription.service.integration;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateResponse;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
-import com.example.fx.subscription.service.helper.TestSecurityConfig;
+import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
+import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.model.UserRole;
@@ -40,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(TestSecurityConfig.class)
+@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
 class SubscriptionsControllerIT {
 
     @Autowired

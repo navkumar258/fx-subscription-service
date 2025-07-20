@@ -35,17 +35,18 @@ public class FxUsersService {
     return fxUserRepository.findAll(pageable);
   }
 
+  @Transactional(readOnly = true)
   public Optional<FxUser> findUserById(String id) {
-    return fxUserRepository.findById(UUID.fromString(id));
+    return fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id));
   }
 
   public Page<FxUser> searchUsers(String email, String mobile, boolean enabled, Pageable pageable) {
-    return fxUserRepository.findAll(pageable);
+    return fxUserRepository.searchUsers(email, mobile, enabled, pageable);
   }
 
   @Transactional
   public FxUser updateUser(String id, UserUpdateRequest userUpdateRequest) {
-    FxUser user = fxUserRepository.findById(UUID.fromString(id))
+    FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
     if (StringUtils.hasText(userUpdateRequest.email())) {
@@ -65,7 +66,7 @@ public class FxUsersService {
 
   @Transactional
   public FxUser updateUserStatus(String id, boolean enabled) {
-    FxUser user = fxUserRepository.findById(UUID.fromString(id))
+    FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
     user.setEnabled(enabled);
@@ -86,6 +87,7 @@ public class FxUsersService {
     fxUserRepository.delete(user);
   }
 
+  @Transactional(readOnly = true)
   public UserSubscriptionsResponse getUserSubscriptions(String userId) {
     FxUser user = fxUserRepository.findById(UUID.fromString(userId))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + userId, userId));

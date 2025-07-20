@@ -3,7 +3,8 @@ package com.example.fx.subscription.service.integration;
 import com.example.fx.subscription.service.dto.auth.AuthLoginResponse;
 import com.example.fx.subscription.service.dto.auth.AuthRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.helper.TestSecurityConfig;
+import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
+import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.model.UserRole;
@@ -40,8 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
 @AutoConfigureMockMvc
-@Import(TestSecurityConfig.class)
 class AiChatIntegrationIT {
 
     @Autowired

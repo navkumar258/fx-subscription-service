@@ -17,6 +17,9 @@ public interface FxUserRepository extends JpaRepository<FxUser, UUID> {
   Optional<FxUser> findByEmail(String email);
   boolean existsByEmail(String email);
 
+  @Query("SELECT DISTINCT u FROM FxUser u LEFT JOIN FETCH u.subscriptions WHERE u.id = :id")
+  Optional<FxUser> findByIdWithSubscriptions(@Param("id") UUID id);
+
   @Query("SELECT u FROM FxUser u WHERE " +
          "(:email IS NULL OR u.email LIKE %:email%) AND " +
          "(:mobile IS NULL OR u.mobile LIKE %:mobile%) AND " +
