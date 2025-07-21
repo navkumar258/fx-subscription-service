@@ -316,35 +316,26 @@ Authorization: Bearer <jwt_token>
 - `GET /actuator/health` - Application health status
 - `GET /actuator/prometheus` - Prometheus metrics
 
-### Metrics (Prometheus)
+### Prometheus Metrics
 - HTTP request metrics
 - Database connection metrics
 - Custom business metrics
-
-### Tracing (Zipkin via micrometer)
-- Distributed tracing with Zipkin
-- Request correlation IDs
-- Performance monitoring
-
-### Logging (Loki)
-- Loki logging appender
-- Available in grafana logs
-
-### Grafana Dashboards
-- **Application Metrics**: HTTP requests, response times, error rates
-- **Database Metrics**: Connection pool, query performance
-- **Business Metrics**: Subscription creation, user activity
-- **Custom Dashboards**: FX-specific metrics and alerts
 
 ### Loki Log Aggregation
 - **Structured Logging**: JSON format with correlation IDs
 - **Log Queries**: Powerful query language for log analysis
 - **Log Retention**: Configurable retention policies
 
-### Zipkin Distributed Tracing
+### Zipkin Distributed Tracing (via micrometer)
 - **Request Tracing**: End-to-end request flow visualization
 - **Performance Analysis**: Latency breakdown by service
 - **Error Tracking**: Trace error propagation across services
+
+### Grafana Dashboards
+- **Application Metrics**: HTTP requests, response times, error rates
+- **Database Metrics**: Connection pool, query performance
+- **Business Metrics**: Subscription creation, user activity
+- **Custom Dashboards**: FX-specific metrics and alerts
 
 ## 🤖 AI Integration
 
