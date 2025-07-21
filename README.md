@@ -13,10 +13,10 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 - **Security**: JWT-based authentication with role-based access control
 
 ### Technical Features
-- **Database**: H2 in-memory database with JPA/Hibernate
-- **API Documentation**: RESTful APIs with comprehensive error handling
+- **Database**: PostgreSQL database with JPA/Hibernate
+- **API Documentation**: RESTful APIs with comprehensive error/exeception handling
 - **Monitoring**: Prometheus metrics and health endpoints
-- **Observability**: Distributed tracing with Zipkin integration
+- **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
 - **Scheduling**: Automated subscription processing and event publishing
 - **Testing**: Comprehensive unit and integration tests
 
@@ -37,16 +37,16 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
                      │  └─────────┬───────────┘  │
                      │            │              │
                      │  ┌─────────▼───────────┐  │
-                     │  │   Business Logic   │  │
+                     │  │   Business Logic    │  │
                      │  └─────────┬───────────┘  │
                      │            │              │
                      │  ┌─────────▼───────────┐  │
-                     │  │   Data Access Layer│  │
+                     │  │   Data Access Layer │  │
                      │  └─────────┬───────────┘  │
                      └────────────┼──────────────┘
                                   │
                      ┌─────────────▼─────────────┐
-                     │        H2 Database       │
+                     │       PostgreSQL DB       │
                      └───────────────────────────┘
                                   │
                      ┌─────────────▼─────────────┐
@@ -59,7 +59,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 
 - Java 21+
 - Gradle 8.0+
-- Docker (for Prometheus monitoring)
+- Docker Compose (for observability stack)
 - Ollama (for AI features)
 
 ## 🛠️ Installation & Setup
@@ -80,16 +80,45 @@ cd fx-subscription-service
 ./gradlew bootRun
 ```
 
-The application will start on `https://localhost:8443`
-
-### 4. Start Prometheus (Optional)
+### 3(a). Run with Docker Compose (Optional)
 ```bash
-docker run -d --name prometheus -it -p 9090:9090 \
-  -v ./prometheus.yml:/etc/prometheus/prometheus.yml \
-  prom/prometheus
+# Build & Start all services including PostgreSQL
+docker compose build
+docker compose up -d
+
+# Check service status
+docker compose ps
 ```
 
-### 5. Start Ollama (for AI features)
+The application will start on `https://localhost:8443`
+
+### 4. Start Observability Stack (Optional)
+```bash
+# Start Grafana OSS
+docker run -d --name grafana -it -p 3000:3000 grafana/grafana:latest
+
+# Start prometheus for monitoring, metrics
+docker run -d --name prometheus -it -p 9090:9090 -v ./prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+# Start Loki for log aggregation
+docker run -d --name loki -it -p 3100:3100 grafana/loki:latest
+
+# Start Zipkin for distributed tracing
+docker run -d --name zipkin -it -p 9411:9411 openzipkin/zipkin:latest
+
+# Or use Docker Compose for the entire observability stack
+docker-compose -f docker-compose.observability.yml up -d
+```
+
+### 5. Access Observability Tools
+```bash
+# Grafana Dashboard: http://localhost:3000 (admin/admin)
+# Loki Logs: http://localhost:3100
+# Zipkin Traces: http://localhost:9411
+# Prometheus Metrics: http://localhost:9090
+```
+
+### 6. Start Ollama (for AI features)
 ```bash
 # Install Ollama first, then run:
 ollama run qwen3
@@ -106,14 +135,20 @@ KEY_PASSWORD=your_key_password
 # JWT Configuration
 JWT_SECRET_KEY=your_jwt_secret_key
 
-# Database (H2 - default)
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.datasource.username=sa
+# Database (PostgreSQL)
+spring.datasource.url=jdbc:postgresql://localhost:5432/fx_subscription_db
+spring.datasource.username=postgres
 spring.datasource.password=password
 
 # Kafka Configuration
 spring.kafka.bootstrap-servers=broker:29092
 spring.kafka.topic.subscription-changes=subscription-change-events
+
+# Observability Configuration
+management.tracing.sampling.probability=1.0
+management.zipkin.tracing.endpoint=http://localhost:9411/api/v2/spans
+logging.logback.loki.enabled=true
+logging.logback.loki.url=http://localhost:3100/loki/api/v1/push
 
 # AI Configuration
 spring.ai.ollama.base-url=http://localhost:11434
@@ -126,7 +161,7 @@ spring.ai.ollama.chat.options.model=qwen3
 
 #### Register User
 ```http
-POST /api/auth/signup
+POST /api/v1/auth/signup
 Content-Type: application/json
 
 {
@@ -139,7 +174,7 @@ Content-Type: application/json
 
 #### Login
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -152,7 +187,7 @@ Content-Type: application/json
 
 #### Create Subscription
 ```http
-POST /api/subscriptions
+POST /api/v1/subscriptions
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
@@ -166,13 +201,13 @@ Content-Type: application/json
 
 #### Get My Subscriptions
 ```http
-GET /api/subscriptions/my
+GET /api/v1/subscriptions/my
 Authorization: Bearer <jwt_token>
 ```
 
 #### Update Subscription
 ```http
-PUT /api/subscriptions/{id}
+PUT /api/v1/subscriptions/{id}
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
@@ -186,7 +221,7 @@ Content-Type: application/json
 
 #### Delete Subscription
 ```http
-DELETE /api/subscriptions/{id}
+DELETE /api/v1/subscriptions/{id}
 Authorization: Bearer <jwt_token>
 ```
 
@@ -194,19 +229,19 @@ Authorization: Bearer <jwt_token>
 
 #### Get All Users (Admin only)
 ```http
-GET /api/users?page=0&size=20
+GET /api/v1/users?page=0&size=20
 Authorization: Bearer <jwt_token>
 ```
 
 #### Get User by ID
 ```http
-GET /api/users/{id}
+GET /api/v1/users/{id}
 Authorization: Bearer <jwt_token>
 ```
 
 #### Update User
 ```http
-PUT /api/users/{id}
+PUT /api/v1/users/{id}
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
@@ -220,7 +255,7 @@ Content-Type: application/json
 
 #### Natural Language Subscription Management
 ```http
-GET /api/ai/fx?query=Create a subscription for GBP/USD above 1.25 with email notifications
+GET /api/v1/ai/fx?query=Create a subscription for GBP/USD above 1.25 with email notifications
 Authorization: Bearer <jwt_token>
 ```
 
@@ -295,6 +330,22 @@ Authorization: Bearer <jwt_token>
 - Loki logging appender
 - Available in grafana logs
 
+### Grafana Dashboards
+- **Application Metrics**: HTTP requests, response times, error rates
+- **Database Metrics**: Connection pool, query performance
+- **Business Metrics**: Subscription creation, user activity
+- **Custom Dashboards**: FX-specific metrics and alerts
+
+### Loki Log Aggregation
+- **Structured Logging**: JSON format with correlation IDs
+- **Log Queries**: Powerful query language for log analysis
+- **Log Retention**: Configurable retention policies
+
+### Zipkin Distributed Tracing
+- **Request Tracing**: End-to-end request flow visualization
+- **Performance Analysis**: Latency breakdown by service
+- **Error Tracking**: Trace error propagation across services
+
 ## 🤖 AI Integration
 
 ### Features
@@ -323,7 +374,7 @@ Authorization: Bearer <jwt_token>
 
 ## 🧪 Testing
 
-### Test Coverage
+### Test Infrastructure
 - Unit tests for all services
 - Integration tests for controllers
 - Repository layer testing
@@ -352,9 +403,11 @@ docker build -t fx-subscription-service .
 docker run -p 8443:8443 fx-subscription-service
 ```
 
-### Docker Compose
+### Docker Compose (Recommended)
 ```bash
-docker-compose up -d
+docker build -t fx-subscription-service .
+
+docker run -p 8443:8443 fx-subscription-service
 ```
 
 ## 📈 Performance
@@ -425,7 +478,8 @@ For support and questions:
 - **v1.0.0** - Initial release with core subscription management
 - **v1.1.0** - Added AI integration and improved security
 - **v1.2.0** - Enhanced monitoring and observability features with Grafana stack
+- **v1.3.0** - Migrated to PostgreSQL with TestContainers for reliable testing
 
 ---
 
-**Note**: This service is designed for development and testing purposes. For production deployment, consider using a production-grade database like PostgreSQL and proper infrastructure setup.
+**Note**: This service uses PostgreSQL with TestContainers for development and testing, providing a production-ready database setup with isolated test environments.
