@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class SubscriptionChangePublisherUnitTest {
+class SubscriptionChangePublisherTest {
   @Mock
   private KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
@@ -39,19 +39,8 @@ class SubscriptionChangePublisherUnitTest {
   @InjectMocks
   private SubscriptionChangePublisher subscriptionChangePublisher;
 
-  private SubscriptionChangeEvent testEvent;
-
   @BeforeEach
   void setUp() {
-    UUID testEventId = UUID.randomUUID();
-
-    testEvent = new SubscriptionChangeEvent(
-            testEventId.toString(),
-            System.currentTimeMillis(),
-            "SubscriptionCreated",
-            SubscriptionResponse.fromSubscription(createTestSubscription())
-    );
-
     // Set the topic value using reflection
     ReflectionTestUtils.setField(subscriptionChangePublisher, "subscriptionChangesTopic", "test-topic");
   }
@@ -59,6 +48,7 @@ class SubscriptionChangePublisherUnitTest {
   @Test
   void sendMessage_WhenSuccessful_ShouldCallKafkaTemplate() {
     // Given
+    SubscriptionChangeEvent testEvent = createTestEvent();
     SendResult<String, SubscriptionChangeEvent> sendResult = mock(SendResult.class);
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future =
             CompletableFuture.completedFuture(sendResult);
@@ -85,6 +75,7 @@ class SubscriptionChangePublisherUnitTest {
   @Test
   void sendMessage_WhenKafkaSendFails_ShouldHandleException() {
     // Given
+    SubscriptionChangeEvent testEvent = createTestEvent();
     RuntimeException kafkaException = new RuntimeException("Kafka connection failed");
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future =
             CompletableFuture.failedFuture(kafkaException);
@@ -101,8 +92,9 @@ class SubscriptionChangePublisherUnitTest {
   }
 
   @Test
-  void sendMessage_WhenKafkaProducerExceptionOccurs_ShouldHandleExceptionCorrectly() {
+  void sendMessage_WhenKafkaProducerExceptionOccurs_ShouldUpdateOutboxStatusToFailed() {
     // Given
+    SubscriptionChangeEvent testEvent = createTestEvent();
     ProducerRecord<String, SubscriptionChangeEvent> failedRecord =
             new ProducerRecord<>("test-topic", "key", testEvent);
     KafkaProducerException kafkaException = new KafkaProducerException(
@@ -126,12 +118,7 @@ class SubscriptionChangePublisherUnitTest {
   @Test
   void sendMessage_WhenEventIdIsInvalid_ShouldHandleGracefully() {
     // Given
-    testEvent = new SubscriptionChangeEvent(
-            UUID.randomUUID().toString(),
-            System.currentTimeMillis(),
-            "SubscriptionCreated",
-            SubscriptionResponse.fromSubscription(createTestSubscription())
-    );
+    SubscriptionChangeEvent testEvent = createTestEvent();
     SendResult<String, SubscriptionChangeEvent> sendResult = mock(SendResult.class);
     CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future =
             CompletableFuture.completedFuture(sendResult);
@@ -146,6 +133,16 @@ class SubscriptionChangePublisherUnitTest {
     verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
     // Should handle invalid UUID gracefully
     verify(eventsOutboxRepository, never()).findById(any(UUID.class));
+  }
+
+  private SubscriptionChangeEvent createTestEvent() {
+    UUID testEventId = UUID.randomUUID();
+    return new SubscriptionChangeEvent(
+            testEventId.toString(),
+            System.currentTimeMillis(),
+            "SubscriptionCreated",
+            SubscriptionResponse.fromSubscription(createTestSubscription())
+    );
   }
 
   private Subscription createTestSubscription() {

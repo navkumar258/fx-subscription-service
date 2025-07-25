@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class UsersController {
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserListResponse> getAllUsers(
-          @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+          @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     Page<FxUser> usersPage = fxUsersService.findAllUsers(pageable);
     List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
             .map(UserSummaryResponse::fromFxUser)
@@ -71,7 +72,7 @@ public class UsersController {
           @RequestParam(required = false) String email,
           @RequestParam(required = false) String mobile,
           @RequestParam(defaultValue = "true") boolean enabled,
-          @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+          @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
     Page<FxUser> usersPage = fxUsersService.searchUsers(email, mobile, enabled, pageable);
     List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
             .map(UserSummaryResponse::fromFxUser)
@@ -116,12 +117,9 @@ public class UsersController {
   @GetMapping(path = "/{id}/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
   public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
-    fxUsersService.findUserById(id)
-            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
-
     UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
 
-    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", id, response.subscriptions().size());
+    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", id, response.totalCount());
 
     return ResponseEntity.ok(response);
   }

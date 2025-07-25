@@ -4,7 +4,7 @@ import com.example.fx.subscription.service.config.JwtTokenProvider;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
-import com.example.fx.subscription.service.helper.TestSecurityConfig;
+import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.helper.WithMockFxUser;
 import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest(SubscriptionsController.class)
-@Import(TestSecurityConfig.class)
+@Import(WebSecurityTestConfig.class)
 class SubscriptionsControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 

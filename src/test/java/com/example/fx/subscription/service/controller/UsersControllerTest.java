@@ -190,14 +190,12 @@ class UsersControllerTest {
     void getUserSubscriptions_WithValidId_ShouldReturnSubscriptions() {
         // Given
         String userId = UUID.randomUUID().toString();
-        FxUser user = createTestUser(userId, "test@example.com");
         UserSubscriptionsResponse subscriptionsResponse = new UserSubscriptionsResponse(
                 UUID.fromString(userId),
                 new ArrayList<>(),
                 0
         );
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(user));
         when(fxUsersService.getUserSubscriptions(userId)).thenReturn(subscriptionsResponse);
 
         // When
@@ -208,7 +206,6 @@ class UsersControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(subscriptionsResponse, response.getBody());
 
-        verify(fxUsersService).findUserById(userId);
         verify(fxUsersService).getUserSubscriptions(userId);
     }
 
@@ -217,7 +214,8 @@ class UsersControllerTest {
         // Given
         String userId = UUID.randomUUID().toString();
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.empty());
+        when(fxUsersService.getUserSubscriptions(userId)).thenThrow(
+                new UserNotFoundException("User not found with ID: " + userId, userId));
 
         // When & Then
         UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
@@ -225,9 +223,6 @@ class UsersControllerTest {
 
         assertEquals("User not found with ID: " + userId, exception.getMessage());
         assertEquals(userId, exception.getUserId());
-
-        verify(fxUsersService).findUserById(userId);
-        verify(fxUsersService, never()).getUserSubscriptions(anyString());
     }
 
     // Helper methods
