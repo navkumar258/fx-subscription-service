@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.repository;
 
+import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.model.EventsOutbox;
 import com.example.fx.subscription.service.model.Subscription;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
     "spring.datasource.url=jdbc:h2:mem:testdb"
 })
 class EventsOutboxRepositoryTest {
+
+    @MockitoBean
+    private FxSubscriptionTool fxSubscriptionTool;
 
     @Autowired
     private EventsOutboxRepository eventsOutboxRepository;

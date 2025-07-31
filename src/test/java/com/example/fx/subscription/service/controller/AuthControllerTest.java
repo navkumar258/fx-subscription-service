@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.controller;
 
+import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.config.JwtTokenProvider;
 import com.example.fx.subscription.service.dto.auth.AuthLoginResponse;
 import com.example.fx.subscription.service.dto.auth.AuthRequest;
@@ -35,6 +36,9 @@ import static org.mockito.Mockito.*;
 
 @WebMvcTest(AuthController.class)
 class AuthControllerTest {
+
+    @MockitoBean
+    private FxSubscriptionTool fxSubscriptionTool;
 
     @MockitoBean
     private AuthenticationManager authenticationManager;

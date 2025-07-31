@@ -91,7 +91,7 @@ class FxUsersServiceTest {
     @Test
     void findUserById_WhenUserExists_ShouldReturnUser() {
         // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
 
         // When
         Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
@@ -104,7 +104,7 @@ class FxUsersServiceTest {
     @Test
     void findUserById_WhenUserDoesNotExist_ShouldReturnEmpty() {
         // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
         // When
         Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
@@ -118,7 +118,7 @@ class FxUsersServiceTest {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<FxUser> userPage = new PageImpl<>(List.of(testUser), pageable, 1);
-        when(fxUserRepository.findAll(pageable)).thenReturn(userPage);
+        when(fxUserRepository.searchUsers(any(), any(), any(), any())).thenReturn(userPage);
 
         // When
         Page<FxUser> result = fxUsersService.searchUsers("test@example.com", "+1234567890", true, pageable);
@@ -138,7 +138,7 @@ class FxUsersServiceTest {
                 "new-device-token"
         );
 
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
         when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
         // When
@@ -158,7 +158,7 @@ class FxUsersServiceTest {
                 "new-device-token"
         );
 
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
         // When & Then
         UserNotFoundException exception = assertThrows(UserNotFoundException.class,
@@ -175,7 +175,7 @@ class FxUsersServiceTest {
                 "new-device-token"
         );
 
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
         when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
         // When
@@ -189,7 +189,7 @@ class FxUsersServiceTest {
     @Test
     void updateUserStatus_WhenUserExists_ShouldUpdateStatusAndReturnUser() {
         // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
         when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
         // When
@@ -204,7 +204,7 @@ class FxUsersServiceTest {
     @Test
     void updateUserStatus_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
         // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
+        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
         // When & Then
         UserNotFoundException exception = assertThrows(UserNotFoundException.class,

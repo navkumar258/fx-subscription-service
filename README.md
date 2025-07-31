@@ -1,6 +1,6 @@
 # FX Subscription Service
 
-A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate subscriptions with real-time notifications, AI-powered interactions, and event-driven architecture.
+A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate subscriptions with real-time notifications, MCP (Model Context Protocol) server capabilities, and event-driven architecture.
 
 ## 🚀 Features
 
@@ -8,7 +8,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 - **User Management**: Complete user registration, authentication, and profile management
 - **FX Subscription Management**: Create, update, delete, and monitor currency pair subscriptions
 - **Real-time Notifications**: Multi-channel notification support (email, SMS, push)
-- **Spring AI Integration**: Natural language processing for subscription management via (locally via docker) Ollama
+- **MCP Server Integration**: Model Context Protocol server for AI tool interactions
 - **Event-Driven Architecture**: Kafka-based event publishing for subscription changes
 - **Security**: JWT-based authentication with role-based access control
 
@@ -31,22 +31,23 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
                                   │
                      ┌─────────────▼─────────────┐
                      │   FX Subscription Service │
+                     │       (MCP Server)        │
                      │                           │
                      │  ┌─────────────────────┐  │
                      │  │   REST Controllers  │  │
                      │  └─────────┬───────────┘  │
                      │            │              │
                      │  ┌─────────▼───────────┐  │
-                     │  │   Business Logic   │  │
+                     │  │   Business Logic    │  │
                      │  └─────────┬───────────┘  │
                      │            │              │
                      │  ┌─────────▼───────────┐  │
-                     │  │   Data Access Layer│  │
+                     │  │   Data Access Layer │  │
                      │  └─────────┬───────────┘  │
                      └────────────┼──────────────┘
                                   │
                      ┌─────────────▼─────────────┐
-                     │        H2 Database       │
+                     │        H2 Database        │
                      └───────────────────────────┘
                                   │
                      ┌─────────────▼─────────────┐
@@ -60,7 +61,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 - Java 21+
 - Gradle 8.0+
 - Docker (for Prometheus monitoring)
-- Ollama (for AI features)
+- FX MCP Client (for AI interactions)
 
 ## 🛠️ Installation & Setup
 
@@ -89,10 +90,10 @@ docker run -d --name prometheus -it -p 9090:9090 \
   prom/prometheus
 ```
 
-### 5. Start Ollama (for AI features)
+### 5. Start FX MCP Client (for AI features)
 ```bash
-# Install Ollama first, then run:
-ollama run qwen3
+# Ensure the FX MCP Client is running and configured to connect to this service
+# The MCP client will connect via SSE endpoint at /sse
 ```
 
 ## ⚙️ Configuration
@@ -115,9 +116,8 @@ spring.datasource.password=password
 spring.kafka.bootstrap-servers=broker:29092
 spring.kafka.topic.subscription-changes=subscription-change-events
 
-# AI Configuration
-spring.ai.ollama.base-url=http://localhost:11434
-spring.ai.ollama.chat.options.model=qwen3
+# MCP Server Configuration
+#spring.ai.mcp.server.name=fx-mcp-server
 ```
 
 ## 📄 API Documentation
@@ -216,13 +216,19 @@ Content-Type: application/json
 }
 ```
 
-### AI Chat Endpoint
+### MCP Server Endpoints
 
-#### Natural Language Subscription Management
+#### SSE Endpoint (for MCP Client)
 ```http
-GET /api/ai/fx?query=Create a subscription for GBP/USD above 1.25 with email notifications
-Authorization: Bearer <jwt_token>
+GET /sse
 ```
+
+#### MCP Endpoints
+```http
+GET /mcp/**
+```
+
+**Note**: These endpoints are used by the FX MCP Client for AI tool interactions and are not meant for direct human consumption.
 
 ## 📊 Database Schema
 
@@ -275,6 +281,11 @@ Authorization: Bearer <jwt_token>
 - HTTPS enabled by default
 - Custom keystore(PKCS12) configuration
 
+### MCP Security
+- MCP endpoints (`/sse`, `/mcp/**`) are publicly accessible
+- No authentication required for MCP client connections
+- Tool execution is handled securely within the service
+
 ## 📊 Monitoring & Observability
 
 ### Health Endpoints
@@ -295,19 +306,25 @@ Authorization: Bearer <jwt_token>
 - Loki logging appender
 - Available in grafana logs
 
-## 🤖 AI Integration
+## 🤖 MCP Server & AI Integration
 
-### Features
-- Natural language subscription management
-- Conversational interface for FX operations
-- Automated parameter extraction
-- Error handling and validation
+### MCP Server Features
+- **SSE Communication**: Server-Sent Events for real-time MCP client communication
+- **Tool Integration**: AI tools for subscription management via MCP protocol
+- **Security**: MCP endpoints are publicly accessible for client connections
 
-### Available AI Tools
-- `createFxSubscription` - Create new subscriptions
-- `updateFxSubscription` - Update existing subscriptions
-- `deleteFxSubscription` - Delete subscriptions
-- `getFxSubscriptionsForUser` - Retrieve user subscriptions
+### Available MCP Tools
+The service exposes the following tools for AI clients:
+- `createFxSubscription(userId, currencyPair, thresholdValue, direction, notificationMethod)` - Creates a new FX rate subscription
+- `updateFxSubscription(subscriptionId, newThresholdValue, direction, newNotificationMethod)` - Updates an existing subscription
+- `deleteFxSubscription(subscriptionId)` - Deletes a subscription
+- `getFxSubscriptionsForUser(userId)` - Retrieves all subscriptions for a user
+
+### AI Integration Architecture
+- **MCP Server**: This service acts as an MCP server
+- **FX MCP Client**: Separate service that connects to this MCP server
+- **Tool Execution**: AI tools are executed through the MCP protocol
+- **Natural Language**: AI interactions are handled by the MCP client
 
 ## 🔄 Event-Driven Architecture
 
@@ -385,7 +402,8 @@ src/
 │   │       ├── dto/            # Data transfer objects
 │   │       ├── config/         # Configuration classes
 │   │       ├── exception/      # Custom exceptions
-│   │       └── ai/             # AI integration
+│   │       └── ai/             # MCP tool integration
+│   │           └── tool/       # AI tools for MCP
 │   └── resources/
 │       ├── application.properties
 │       └── logback-spring.xml
@@ -424,8 +442,8 @@ For support and questions:
 
 - **v1.0.0** - Initial release with core subscription management
 - **v1.1.0** - Added AI integration and improved security
-- **v1.2.0** - Enhanced monitoring and observability features with Grafana stack
+- **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
 
 ---
 
-**Note**: This service is designed for development and testing purposes. For production deployment, consider using a production-grade database like PostgreSQL and proper infrastructure setup.
+**Note**: This service is designed for development and testing purposes. For production deployment, consider using a production-grade database like PostgreSQL and proper infrastructure setup. The AI chat functionality is now handled by the separate FX MCP Client service.

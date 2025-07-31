@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.controller;
 
+import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.config.JwtTokenProvider;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
@@ -35,6 +36,9 @@ import static org.mockito.Mockito.*;
 @Import(TestSecurityConfig.class)
 class SubscriptionsControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @MockitoBean
+    private FxSubscriptionTool fxSubscriptionTool;
 
     @Autowired
     private MockMvcTester mockMvc;
