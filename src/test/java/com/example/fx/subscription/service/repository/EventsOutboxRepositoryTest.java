@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.repository;
 
+import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
 import com.example.fx.subscription.service.model.EventsOutbox;
@@ -23,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @Import(PostgresTestContainersConfig.class)
 class EventsOutboxRepositoryTest {
+
+    @MockitoBean
+    private FxSubscriptionTool fxSubscriptionTool;
 
     @Autowired
     private EventsOutboxRepository eventsOutboxRepository;

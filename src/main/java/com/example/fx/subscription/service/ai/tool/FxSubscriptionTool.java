@@ -7,13 +7,13 @@ import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 public class FxSubscriptionTool {
 
   private final SubscriptionsService subscriptionService;

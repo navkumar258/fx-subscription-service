@@ -1,6 +1,10 @@
 package com.example.fx.subscription.service.controller;
 
-import com.example.fx.subscription.service.dto.user.*;
+import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
+import com.example.fx.subscription.service.dto.user.UserDetailResponse;
+import com.example.fx.subscription.service.dto.user.UserListResponse;
+import com.example.fx.subscription.service.dto.user.UserUpdateRequest;
+import com.example.fx.subscription.service.dto.user.UserUpdateResponse;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.UserRole;
@@ -17,7 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +32,9 @@ import static org.mockito.Mockito.*;
 
 @WebMvcTest(UsersController.class)
 class UsersControllerTest {
+
+    @MockitoBean
+    private FxSubscriptionTool fxSubscriptionTool;
 
     @MockitoBean
     private FxUsersService fxUsersService;
