@@ -4,6 +4,7 @@ import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,7 +53,7 @@ class SubscriptionChangeEventTest {
     private SubscriptionChangeEvent createTestEvent(UUID subscriptionId, String eventType) {
         return new SubscriptionChangeEvent(
                 "test-event-id",
-                System.currentTimeMillis(),
+                Instant.parse("2025-01-01T10:15:30.00Z").toEpochMilli(),
                 eventType,
                 new SubscriptionResponse(
                         subscriptionId == null ? UUID.randomUUID() : subscriptionId,
