@@ -31,7 +31,6 @@ dependencies {
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.3'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
-	implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 	// for micrometer observation, metrics & logging
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation "org.springframework.boot:spring-boot-starter-aop"
