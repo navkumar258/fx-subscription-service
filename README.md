@@ -14,7 +14,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 
 ### Technical Features
 - **Database**: PostgreSQL database with JPA/Hibernate
-- **API Documentation**: RESTful APIs with comprehensive error/exeception handling
+- **API Documentation**: RESTful APIs with comprehensive error handling
 - **Monitoring**: Prometheus metrics and health endpoints
 - **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
 - **Scheduling**: Automated subscription processing and event publishing
