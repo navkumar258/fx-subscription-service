@@ -1,10 +1,7 @@
 package com.example.fx.subscription.service.controller;
 
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
-import com.example.fx.subscription.service.dto.user.UserDetailResponse;
-import com.example.fx.subscription.service.dto.user.UserListResponse;
-import com.example.fx.subscription.service.dto.user.UserUpdateRequest;
-import com.example.fx.subscription.service.dto.user.UserUpdateResponse;
+import com.example.fx.subscription.service.dto.user.*;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.UserRole;
@@ -21,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -190,6 +188,45 @@ class UsersControllerTest {
         assertNull(response.getBody());
 
         verify(fxUsersService).deleteUser(userId);
+    }
+
+    @Test
+    void getUserSubscriptions_WithValidId_ShouldReturnSubscriptions() {
+        // Given
+        String userId = UUID.randomUUID().toString();
+        UserSubscriptionsResponse subscriptionsResponse = new UserSubscriptionsResponse(
+                UUID.fromString(userId),
+                new ArrayList<>(),
+                0
+        );
+
+        when(fxUsersService.getUserSubscriptions(userId)).thenReturn(subscriptionsResponse);
+
+        // When
+        ResponseEntity<UserSubscriptionsResponse> response = usersController.getUserSubscriptions(userId);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(subscriptionsResponse, response.getBody());
+
+        verify(fxUsersService).getUserSubscriptions(userId);
+    }
+
+    @Test
+    void getUserSubscriptions_WithInvalidId_ShouldThrowUserNotFoundException() {
+        // Given
+        String userId = UUID.randomUUID().toString();
+
+        when(fxUsersService.getUserSubscriptions(userId)).thenThrow(
+                new UserNotFoundException("User not found with ID: " + userId, userId));
+
+        // When & Then
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
+                usersController.getUserSubscriptions(userId));
+
+        assertEquals("User not found with ID: " + userId, exception.getMessage());
+        assertEquals(userId, exception.getUserId());
     }
 
     // Helper methods

@@ -1,8 +1,18 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI definition",
-    "version": "v0"
+    "title": "FX Subscription Service",
+    "description": "This api manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities",
+    "contact": {
+      "name": "API Support",
+      "url": "https://navkumar258.github.io",
+      "email": "support@navkumar258.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://mit-license.org/"
+    },
+    "version": "1.0.0"
   },
   "servers": [
     {

@@ -76,6 +76,7 @@ jacocoTestReport {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			fileTree(dir: it, exclude: [
 					'**/FxSubscriptionServiceApplication.class',
+					'**/OpenApiConfig.class',
 					'**/dto/**',
 					'**/exception/**',
 					'**/model/**',
