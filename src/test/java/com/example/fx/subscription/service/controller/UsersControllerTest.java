@@ -222,8 +222,8 @@ class UsersControllerTest {
                 new UserNotFoundException("User not found with ID: " + userId, userId));
 
         // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
-            usersController.getUserSubscriptions(userId));
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
+                usersController.getUserSubscriptions(userId));
 
         assertEquals("User not found with ID: " + userId, exception.getMessage());
         assertEquals(userId, exception.getUserId());

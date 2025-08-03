@@ -14,7 +14,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 
 ### Technical Features
 - **Database**: PostgreSQL database with JPA/Hibernate
-- **API Documentation**: RESTful APIs with comprehensive error handling
+- **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
 - **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
 - **Scheduling**: Automated subscription processing and event publishing
@@ -75,6 +75,8 @@ cd fx-subscription-service
 ```bash
 ./gradlew build
 ```
+
+This will also generate OpenAPI documentation in the `api-docs/` directory.
 
 ### 3. Run the Application
 ```bash
@@ -151,6 +153,12 @@ spring.kafka.topic.subscription-changes=subscription-change-events
 
 ## 📄 API Documentation
 
+### OpenAPI Documentation
+The service automatically generates OpenAPI 3.1.0 documentation using SpringDoc. The documentation is available at:
+- **Swagger UI**: `https://localhost:8443/swagger-ui.html`
+- **OpenAPI JSON**: `https://localhost:8443/v3/api-docs`
+- **Generated Documentation**: `api-docs/fx-subscription-service.json`
+
 ### Authentication Endpoints
 
 #### Register User
@@ -193,9 +201,15 @@ Content-Type: application/json
 }
 ```
 
-#### Get My Subscriptions
+#### Get All Subscriptions (Admin only)
 ```http
-GET /api/v1/subscriptions/my
+GET /api/v1/subscriptions/all
+Authorization: Bearer <jwt_token>
+```
+
+#### Get Subscriptions by User ID
+```http
+GET /api/v1/subscriptions?userId={userId}
 Authorization: Bearer <jwt_token>
 ```
 
@@ -233,6 +247,18 @@ GET /api/v1/users/{id}
 Authorization: Bearer <jwt_token>
 ```
 
+#### Search users with filters
+```http
+GET /api/v1/users/search
+Authorization: Bearer <jwt_token>
+```
+
+#### Get User Subscriptions
+```http
+GET /api/v1/users/{id}/subscriptions
+Authorization: Bearer <jwt_token>
+```
+
 #### Update User
 ```http
 PUT /api/v1/users/{id}
@@ -250,11 +276,6 @@ Content-Type: application/json
 #### SSE Endpoint (for MCP Client)
 ```http
 GET /sse
-```
-
-#### MCP Endpoints
-```http
-GET /mcp/**
 ```
 
 **Note**: These endpoints are used by the FX MCP Client for AI tool interactions and are not meant for direct human consumption.
@@ -431,15 +452,16 @@ src/
 ├── main/
 │   ├── java/
 │   │   └── com/example/fx/subscription/service/
-│   │       ├── controller/     # REST controllers
-│   │       ├── service/        # Business logic
-│   │       ├── repository/     # Data access
-│   │       ├── model/          # Entities
-│   │       ├── dto/            # Data transfer objects
-│   │       ├── config/         # Configuration classes
-│   │       ├── exception/      # Custom exceptions
-│   │       └── ai/             # MCP tool integration
-│   │           └── tool/       # AI tools for MCP
+│   │       ├── controller/             # REST controllers
+│   │       ├── service/                # Business logic
+│   │       ├── repository/             # Data access
+│   │       ├── model/                  # Entities
+│   │       ├── dto/                    # Data transfer objects
+│   │       ├── config/                 # Configuration classes
+|   |       |   └── OpenApiConfig.java  # OpenAPI documentation configuration
+│   │       ├── exception/              # Custom exceptions
+│   │       └── ai/                     # MCP tool integration
+│   │           └── tool/               # AI tools for MCP
 │   └── resources/
 │       ├── application.properties
 │       └── logback-spring.xml
