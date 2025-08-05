@@ -1,0 +1,185 @@
+name: Build and Create a Tag Workflow
+
+on:
+#  push:
+#    branches:
+#      - main
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Type of version bump (major, minor, patch, or specific)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - specific
+      specific_version:
+        description: 'Specify a version (e.g., 1.2.3)'
+        required: false
+        type: string
+
+# Permissions required for the workflow.
+# 'contents: write' is necessary to create commits and push tags.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch all history for latest tag detection and proper git operations.
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Unit Tests
+        run: |
+          echo "--- Running Unit Tests ---"
+          ./gradlew test
+
+      - name: Run Code Quality Checks
+        run: |
+          echo "--- Running Code Quality Checks ---"
+          ./gradlew check
+
+      - name: Run JaCoCo Test Coverage Verification
+        run: |
+          echo "--- Running JaCoCo Coverage/Line Verification ---"
+          # Executes your specific JaCoCo task for coverage and line verification.
+          ./gradlew jacocoTestCoverageVerification
+
+      - name: Determine current version and new version
+        id: versioning # Assign an ID to this step to reference its outputs later.
+        run: |
+          echo "--- Determining Version ---"
+          # Read the current version from build.gradle.
+          # This regex looks for 'version = "X.Y.Z"' or 'version = 'X.Y.Z''.
+          CURRENT_VERSION=$(grep -oP "version\s*=\s*['|\"]\K[0-9]+\.[0-9]+\.[0-9]+" build.gradle | head -1)
+
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "::error::Could not find version in build.gradle. Please ensure it's in the format 'version = \"X.Y.Z\"' or 'version = 'X.Y.Z''. Exiting."
+            exit 1
+          fi
+          echo "Current version found: $CURRENT_VERSION"
+
+          NEW_VERSION=""
+          # Logic for workflow_dispatch (manual trigger)
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION_TYPE="${{ github.event.inputs.version_type }}"
+            echo "Manual trigger detected. Version type: $VERSION_TYPE"
+
+            if [[ "$VERSION_TYPE" == "specific" ]]; then
+              NEW_VERSION="${{ github.event.inputs.specific_version }}"
+              if [ -z "$NEW_VERSION" ]; then
+                echo "::error::Specific version not provided when 'version_type' is 'specific'. Exiting."
+                exit 1
+              fi
+              # Basic validation for specific version format (X.Y.Z)
+              if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "::error::Invalid specific version format. Must be X.Y.Z (e.g., 1.2.3). Exiting."
+                exit 1
+              fi
+            else
+              # Parse major, minor, patch components
+              MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+              MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+              PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+              # Increment based on the chosen type
+              if [[ "$VERSION_TYPE" == "major" ]]; then
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+              elif [[ "$VERSION_TYPE" == "minor" ]]; then
+                MINOR=$((MINOR + 1))
+                PATCH=0
+              elif [[ "$VERSION_TYPE" == "patch" ]]; then
+                PATCH=$((PATCH + 1))
+              fi
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+            fi
+          # Logic for push to main branch (e.g., PR merge)
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Push to main branch detected. Auto-incrementing patch version."
+            # Auto-increment patch version for pushes to main
+            MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+            MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+            PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          fi
+
+          if [ -z "$NEW_VERSION" ]; then
+            echo "::error::Failed to determine new version. This should not happen. Exiting."
+            exit 1
+          fi
+
+          echo "New version determined: $NEW_VERSION"
+          # Set outputs that can be used by subsequent steps
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if version needs update
+        id: version_check # Assign an ID to this step.
+        run: |
+          echo "--- Checking if Version Needs Update ---"
+          if [ "${{ steps.versioning.outputs.CURRENT_VERSION }}" == "${{ steps.versioning.outputs.NEW_VERSION }}" ]; then
+            echo "Version is already ${{ steps.versioning.outputs.NEW_VERSION }}. No update needed in build.gradle or new tag."
+            echo "skip_update=true" >> "$GITHUB_OUTPUT" # Set output to skip subsequent steps
+          else
+            echo "Version needs update from ${{ steps.versioning.outputs.CURRENT_VERSION }} to ${{ steps.versioning.outputs.NEW_VERSION }}."
+            echo "skip_update=false" >> "$GITHUB_OUTPUT" # Set output to proceed
+          fi
+
+      - name: Update version in build.gradle
+        # This step runs only if 'skip_update' is 'false'.
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Updating build.gradle ---"
+          # Use sed to replace the old version string with the new one in build.gradle.
+          # The regex handles both single and double quotes around the version number.
+          sed -i "s/version\s*=\s*['|\"]${{ steps.versioning.outputs.CURRENT_VERSION }}['|\"]/version = '${{ steps.versioning.outputs.NEW_VERSION }}'/g" build.gradle
+          echo "Updated build.gradle to version ${{ steps.versioning.outputs.NEW_VERSION }}"
+
+      - name: Commit and push version update
+        # This step runs only if 'skip_update' is 'false'.
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Committing and Pushing Version Update ---"
+          # Configure Git user for the commit.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add the modified build.gradle file.
+          git add build.gradle
+          # Commit the changes. '|| true' prevents the workflow from failing if no changes were made (e.g., sed didn't find anything).
+          git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit for version bump."
+          # Push the commit to the main branch.
+          git push
+
+      - name: Create and push Git tag
+        # This step runs only if 'skip_update' is 'false'.
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Creating and Pushing Git Tag ---"
+          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          echo "Creating tag: $TAG_NAME"
+          # Create the Git tag.
+          git tag $TAG_NAME
+          # Push the new tag to the remote repository.
+          git push origin $TAG_NAME
+          echo "Successfully pushed tag $TAG_NAME"
