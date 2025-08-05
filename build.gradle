@@ -78,18 +78,18 @@ jacocoTestReport {
 	// Exclude specific classes/packages from coverage
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: [
-					'**/FxSubscriptionServiceApplication.class',
-					'**/OpenApiConfig.class',
-					'**/TracingConfig.class',
-					'**/dto/**',
-					'**/exception/**',
-					'**/model/**',
-					'**/repository/**',
-					'**/helper/**'
-			])
-		}))
-	}
+            fileTree(dir: it, exclude: [
+                    '**/FxSubscriptionServiceApplication.class',
+                    '**/OpenApiConfig.class',
+                    '**/TracingConfig.class',
+                    '**/dto/**',
+                    '**/exception/**',
+                    '**/model/**',
+                    '**/repository/**',
+                    '**/helper/**'
+            ])
+        }))
+    }
 }
 
 jacocoTestCoverageVerification {
