@@ -6,7 +6,8 @@ LABEL version=${JAR_FILE_NAME}
 
 WORKDIR /app
 
-RUN --mount=type=secret,id=keystore_p12,dst=keystore.p12 sh -c 'base64 -d /run/secrets/keystore_p12 > keystore.p12'
+RUN --mount=type=secret,id=keystore_p12,dst=/tmp/keystore.p12 sh -c 'base64 -d /run/secrets/keystore_p12 > /tmp/keystore.p12' && \
+    mv /tmp/keystore.p12 /app/keystore.p12
 
 RUN addgroup -S user &&  \
     adduser -S user -G user && \
