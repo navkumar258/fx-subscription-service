@@ -89,17 +89,48 @@ This will also generate OpenAPI documentation in the `api-docs/` directory.
 ./gradlew bootRun
 ```
 
-The application will start on `https://localhost:8443`
-
-### 4. Start Prometheus (Optional)
+### 3(a). Run with Docker Compose (Optional)
 
 ```bash
-docker run -d --name prometheus -it -p 9090:9090 \
-  -v ./prometheus.yml:/etc/prometheus/prometheus.yml \
-  prom/prometheus
+# Build & Start all services including PostgreSQL
+docker compose build
+docker compose up -d
+
+# Check service status
+docker compose ps
 ```
 
-### 5. Start FX MCP Client (for AI features)
+The application will start on `https://localhost:8443`
+
+### 4. Start Observability Stack (Optional)
+
+```bash
+# Start Grafana OSS
+docker run -d --name grafana -it -p 3000:3000 grafana/grafana:latest
+
+# Start prometheus for monitoring, metrics
+docker run -d --name prometheus -it -p 9090:9090 -v ./prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+# Start Loki for log aggregation
+docker run -d --name loki -it -p 3100:3100 grafana/loki:latest
+
+# Start Zipkin for distributed tracing
+docker run -d --name zipkin -it -p 9411:9411 openzipkin/zipkin:latest
+
+# Or use Docker Compose for the entire observability stack
+docker compose -f docker-compose.observability.yml up -d
+```
+
+### 5. Access Observability Tools
+
+```bash
+# Grafana Dashboard: http://localhost:3000 (admin/admin)
+# Loki Logs: http://localhost:3100
+# Zipkin Traces: http://localhost:9411
+# Prometheus Metrics: http://localhost:9090
+```
+
+### 6. Start FX MCP Client (Optional, for AI features)
 
 ```bash
 # Ensure the FX MCP Client is running and configured to connect to this service
