@@ -162,8 +162,6 @@ jobs:
           build-args: |
             JAR_FILE_NAME=${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.jar
             KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
-            # Here we pass the filename as a build argument to be used as an env var in the Dockerfile
-            KEYSTORE_FILENAME=my-keystore.p12
 
       - name: Save Docker Image to tar file
         run: |
