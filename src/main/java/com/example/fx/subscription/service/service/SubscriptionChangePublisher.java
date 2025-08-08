@@ -50,7 +50,6 @@ public class SubscriptionChangePublisher {
         LOGGER.info("[SubscriptionChangePublisher] Sent message: [{}] with offset: [{}]",
                 subscriptionChangeEvent,
                 result.getRecordMetadata().offset());
-
         eventsOutboxService.updateOutboxStatus(subscriptionChangeEvent.eventId(), "SENT");
       }
     });

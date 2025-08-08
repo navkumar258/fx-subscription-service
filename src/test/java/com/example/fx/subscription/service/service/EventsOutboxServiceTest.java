@@ -242,14 +242,9 @@ class EventsOutboxServiceTest {
 
   @Test
   void findOutboxById_ShouldReturnCorrectOutbox() {
-    // Given
-    EventsOutbox anotherOutbox = new EventsOutbox();
-    anotherOutbox.setId(UUID.randomUUID());
-    anotherOutbox.setStatus("SENT");
-
+    // When
     when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
 
-    // When
     EventsOutbox result = eventsOutboxService.findOutboxById(testIdString);
 
     // Then
@@ -273,4 +268,4 @@ class EventsOutboxServiceTest {
 
     return SubscriptionResponse.fromSubscription(subscription);
   }
-} 
+}

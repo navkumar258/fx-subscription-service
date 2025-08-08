@@ -3,7 +3,6 @@ package com.example.fx.subscription.service.integration;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateResponse;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
-import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
@@ -41,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
+@Import(WebSecurityTestConfig.class)
 class SubscriptionsControllerIT {
 
   @Autowired
@@ -80,21 +79,21 @@ class SubscriptionsControllerIT {
   @Test
   void completeSubscriptionLifecycle_ShouldWorkEndToEnd() throws Exception {
     // Create admin user FIRST, then generate JWT
-    FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
+    createTestUser("admin@example.com", UserRole.ADMIN);
     String adminJwt = generateTestJwtToken("admin@example.com");
 
     // 1. Create user FIRST, then generate JWT
-    FxUser user = createTestUser("lifecycle_test@mail.com", UserRole.USER);
+    createTestUser("lifecycle_test@mail.com", UserRole.USER);
     String userJwt = generateTestJwtToken("lifecycle_test@mail.com");
 
     // 2. Create subscription
-    String subscriptionId = createSubscription(userJwt, "GBP/USD", BigDecimal.valueOf(1.25));
+    String subscriptionId = createSubscription(userJwt, BigDecimal.valueOf(1.25));
 
     // 3. Verify subscription was created and persisted
     verifySubscriptionExists(userJwt, subscriptionId, "GBP/USD", BigDecimal.valueOf(1.25));
 
     // 4. Update subscription
-    updateSubscription(userJwt, subscriptionId, "EUR/USD", BigDecimal.valueOf(1.15));
+    updateSubscription(userJwt, subscriptionId, BigDecimal.valueOf(1.15));
 
     // 5. Verify subscription was updated
     verifySubscriptionExists(userJwt, subscriptionId, "EUR/USD", BigDecimal.valueOf(1.15));
@@ -135,14 +134,14 @@ class SubscriptionsControllerIT {
   @Test
   void authorizationFlow_ShouldEnforceAccessControl() throws Exception {
     // Create two users FIRST, then generate JWTs
-    FxUser user1 = createTestUser("user1@example.com", UserRole.USER);
-    FxUser user2 = createTestUser("user2@example.com", UserRole.USER);
+    createTestUser("user1@example.com", UserRole.USER);
+    createTestUser("user2@example.com", UserRole.USER);
 
     String user1Jwt = generateTestJwtToken("user1@example.com");
     String user2Jwt = generateTestJwtToken("user2@example.com");
 
     // User1 creates a subscription
-    String subscriptionId = createSubscription(user1Jwt, "GBP/USD", BigDecimal.valueOf(1.25));
+    String subscriptionId = createSubscription(user1Jwt, BigDecimal.valueOf(1.25));
 
     // User2 tries to access User1's subscription - should be forbidden
     assertThat(mockMvc.get()
@@ -174,14 +173,14 @@ class SubscriptionsControllerIT {
   @Test
   void adminAuthorizationFlow_ShouldAllowAdminAccess() throws Exception {
     // Create admin user FIRST, then generate JWT
-    FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
+    createTestUser("admin@example.com", UserRole.ADMIN);
     String adminJwt = generateTestJwtToken("admin@example.com");
 
     // Create regular user and subscription
-    FxUser user = createTestUser("user@example.com", UserRole.USER);
+    createTestUser("user@example.com", UserRole.USER);
     String userJwt = generateTestJwtToken("user@example.com");
 
-    String subscriptionId = createSubscription(userJwt, "GBP/USD", BigDecimal.valueOf(1.25));
+    String subscriptionId = createSubscription(userJwt, BigDecimal.valueOf(1.25));
 
     // Admin should be able to access all subscriptions
     assertThat(mockMvc.get()
@@ -211,11 +210,11 @@ class SubscriptionsControllerIT {
   @Test
   void dataPersistenceFlow_ShouldPersistToDatabase() throws Exception {
     // Create user FIRST, then generate JWT
-    FxUser user = createTestUser("persistence_test@mail.com", UserRole.USER);
+    createTestUser("persistence_test@mail.com", UserRole.USER);
     String userJwt = generateTestJwtToken("persistence_test@mail.com");
 
     // Create subscription
-    String subscriptionId = createSubscription(userJwt, "GBP/USD", BigDecimal.valueOf(1.25));
+    String subscriptionId = createSubscription(userJwt, BigDecimal.valueOf(1.25));
 
     // Verify subscription exists in user's subscription list
     assertThat(mockMvc.get()
@@ -235,14 +234,14 @@ class SubscriptionsControllerIT {
   }
 
   // Helper methods for creating test data
-  private FxUser createTestUser(String email, UserRole role) {
+  private void createTestUser(String email, UserRole role) {
     FxUser user = new FxUser();
     user.setEmail(email);
     user.setPassword(passwordEncoder.encode("Test_Password"));
     user.setMobile("+447911123456");
     user.setRole(role);
     user.setEnabled(true);
-    return fxUserRepository.save(user);
+    fxUserRepository.save(user);
   }
 
   private String generateTestJwtToken(String username) {
@@ -256,9 +255,9 @@ class SubscriptionsControllerIT {
   }
 
   // Helper methods for subscription operations
-  private String createSubscription(String jwt, String currencyPair, BigDecimal threshold) throws Exception {
+  private String createSubscription(String jwt, BigDecimal threshold) throws Exception {
     SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
-            currencyPair, threshold, "ABOVE", List.of("email", "sms"));
+            "GBP/USD", threshold, "ABOVE", List.of("email", "sms"));
 
     MockHttpServletResponse response = mockMvc.post()
             .uri("/api/v1/subscriptions")
@@ -274,7 +273,7 @@ class SubscriptionsControllerIT {
     SubscriptionCreateResponse createResponse = objectMapper.readValue(
             response.getContentAsString(), SubscriptionCreateResponse.class);
 
-    assertThat(createResponse.subscription().currencyPair()).isEqualTo(currencyPair);
+    assertThat(createResponse.subscription().currencyPair()).isEqualTo("GBP/USD");
     assertThat(createResponse.subscription().threshold()).isEqualTo(threshold);
 
     return createResponse.subscriptionId().toString();
@@ -293,9 +292,9 @@ class SubscriptionsControllerIT {
                     thresholdAssert.assertThat().asNumber().isEqualTo(expectedThreshold.doubleValue()));
   }
 
-  private void updateSubscription(String jwt, String subscriptionId, String currencyPair, BigDecimal threshold) throws Exception {
+  private void updateSubscription(String jwt, String subscriptionId, BigDecimal threshold) throws Exception {
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
-            currencyPair, threshold, "BELOW", "ACTIVE", List.of("email"));
+            "EUR/USD", threshold, "BELOW", "ACTIVE", List.of("email"));
 
     assertThat(mockMvc.put()
             .uri("/api/v1/subscriptions/" + subscriptionId)
@@ -306,7 +305,7 @@ class SubscriptionsControllerIT {
             .hasStatus(HttpStatus.OK)
             .bodyJson()
             .hasPathSatisfying("$.subscription.currencyPair", currencyPairAssert ->
-                    currencyPairAssert.assertThat().isEqualTo(currencyPair))
+                    currencyPairAssert.assertThat().isEqualTo("EUR/USD"))
             .hasPathSatisfying("$.subscription.threshold", thresholdAssert ->
                     thresholdAssert.assertThat().asNumber().isEqualTo(threshold.doubleValue()));
   }

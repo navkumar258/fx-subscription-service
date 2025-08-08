@@ -34,6 +34,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FxUsersServiceTest {
 
+  private static final String USER_NOT_FOUND = "User not found with ID: ";
+
   @Mock
   private FxUserRepository fxUserRepository;
 
@@ -163,7 +165,7 @@ class FxUsersServiceTest {
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
             () -> fxUsersService.updateUser(testUserId.toString(), updateRequest));
-    assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
   @Test
@@ -209,7 +211,7 @@ class FxUsersServiceTest {
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
             () -> fxUsersService.updateUserStatus(testUserId.toString(), false));
-    assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
   @Test
@@ -245,7 +247,7 @@ class FxUsersServiceTest {
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
             () -> fxUsersService.deleteUser(testUserId.toString()));
-    assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
   @Test
@@ -273,7 +275,7 @@ class FxUsersServiceTest {
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
             () -> fxUsersService.getUserSubscriptions(testUserId.toString()));
-    assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
   @Test

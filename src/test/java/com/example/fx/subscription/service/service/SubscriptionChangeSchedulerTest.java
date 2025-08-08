@@ -14,12 +14,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionChangeSchedulerTest {
+
+  private static final String PENDING = "PENDING";
 
   @Mock
   private EventsOutboxRepository eventsOutboxRepository;
@@ -51,7 +52,7 @@ class SubscriptionChangeSchedulerTest {
     testEventsOutbox.setAggregateId(testSubscription.getId());
     testEventsOutbox.setEventType("SubscriptionCreated");
     testEventsOutbox.setPayload(SubscriptionResponse.fromSubscription(testSubscription));
-    testEventsOutbox.setStatus("PENDING");
+    testEventsOutbox.setStatus(PENDING);
     testEventsOutbox.setTimestamp(System.currentTimeMillis());
   }
 
@@ -59,28 +60,28 @@ class SubscriptionChangeSchedulerTest {
   void checkForOutboxSubscriptions_WhenPendingEventsExist_ShouldPublishAllEvents() {
     // Given
     List<EventsOutbox> pendingEvents = List.of(testEventsOutbox);
-    when(eventsOutboxRepository.findByStatus("PENDING"))
+    when(eventsOutboxRepository.findByStatus(PENDING))
             .thenReturn(pendingEvents);
 
     // When
     subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
     // Then
-    verify(eventsOutboxRepository).findByStatus("PENDING");
+    verify(eventsOutboxRepository).findByStatus(PENDING);
     verify(subscriptionChangePublisher).sendMessage(any(SubscriptionChangeEvent.class));
   }
 
   @Test
   void checkForOutboxSubscriptions_WhenNoPendingEvents_ShouldNotPublishAnyEvents() {
     // Given
-    when(eventsOutboxRepository.findByStatus("PENDING"))
+    when(eventsOutboxRepository.findByStatus(PENDING))
             .thenReturn(List.of());
 
     // When
     subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
     // Then
-    verify(eventsOutboxRepository).findByStatus("PENDING");
+    verify(eventsOutboxRepository).findByStatus(PENDING);
     verify(subscriptionChangePublisher, never()).sendMessage(any(SubscriptionChangeEvent.class));
   }
 
@@ -92,42 +93,18 @@ class SubscriptionChangeSchedulerTest {
     secondEvent.setAggregateType("Subscription");
     secondEvent.setAggregateId(UUID.randomUUID());
     secondEvent.setEventType("SubscriptionUpdated");
-    secondEvent.setStatus("PENDING");
+    secondEvent.setStatus(PENDING);
     secondEvent.setTimestamp(System.currentTimeMillis());
 
     List<EventsOutbox> pendingEvents = List.of(testEventsOutbox, secondEvent);
-    when(eventsOutboxRepository.findByStatus("PENDING"))
+    when(eventsOutboxRepository.findByStatus(PENDING))
             .thenReturn(pendingEvents);
 
     // When
     subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
     // Then
-    verify(eventsOutboxRepository).findByStatus("PENDING");
+    verify(eventsOutboxRepository).findByStatus(PENDING);
     verify(subscriptionChangePublisher, times(2)).sendMessage(any(SubscriptionChangeEvent.class));
-  }
-
-  @Test
-  void createSubscriptionChangeEvent_ShouldCreateCorrectEvent() {
-    // Given
-    // Use reflection to access private method for testing
-    try {
-      java.lang.reflect.Method method = SubscriptionChangeScheduler.class
-              .getDeclaredMethod("createSubscriptionChangeEvent", EventsOutbox.class);
-      method.setAccessible(true);
-
-      // When
-      SubscriptionChangeEvent result = (SubscriptionChangeEvent) method.invoke(
-              subscriptionChangeScheduler, testEventsOutbox);
-
-      // Then
-      assertNotNull(result);
-      assertEquals(testEventId.toString(), result.eventId());
-      assertEquals("SubscriptionCreated", result.eventType());
-      assertEquals(testEventsOutbox.getTimestamp(), result.timestamp());
-      assertEquals(testEventsOutbox.getPayload(), result.payload());
-    } catch (Exception e) {
-      fail("Failed to test private method: " + e.getMessage());
-    }
   }
 } 

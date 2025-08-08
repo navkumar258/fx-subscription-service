@@ -64,6 +64,7 @@ class KafkaTopicConfigTest {
 
     // Then
     Map<String, Object> configs = (Map<String, Object>) ReflectionTestUtils.getField(kafkaAdmin, "configs");
+    assertNotNull(configs);
     assertEquals(customBootstrapAddress, configs.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG));
   }
 

@@ -24,6 +24,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
+  private static final String TEST_USER = "testuser";
+  private static final String USER = "USER";
+  private static final String AUTHORIZATION = "Authorization";
+
   @Mock
   private FxUserDetailsService fxUserDetailsService;
 
@@ -46,11 +50,10 @@ class JwtTokenProviderTest {
   @Test
   void createToken_WithValidUsernameAndRoles_ShouldCreateValidToken() {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER", "ADMIN");
+    Set<String> roles = Set.of(USER, "ADMIN");
 
     // When
-    String token = jwtTokenProvider.createToken(username, roles);
+    String token = jwtTokenProvider.createToken(TEST_USER, roles);
 
     // Then
     assertNotNull(token);
@@ -58,7 +61,7 @@ class JwtTokenProviderTest {
 
     // Verify token can be parsed and contains correct claims
     String extractedUsername = jwtTokenProvider.getUsername(token);
-    assertEquals(username, extractedUsername);
+    assertEquals(TEST_USER, extractedUsername);
 
     // Verify token is valid
     assertTrue(jwtTokenProvider.validateToken(token));
@@ -67,50 +70,45 @@ class JwtTokenProviderTest {
   @Test
   void createToken_WithEmptyRoles_ShouldCreateValidToken() {
     // Given
-    String username = "testuser";
     Set<String> roles = new HashSet<>();
 
     // When
-    String token = jwtTokenProvider.createToken(username, roles);
+    String token = jwtTokenProvider.createToken(TEST_USER, roles);
 
     // Then
     assertNotNull(token);
     assertFalse(token.isEmpty());
-    assertEquals(username, jwtTokenProvider.getUsername(token));
+    assertEquals(TEST_USER, jwtTokenProvider.getUsername(token));
     assertTrue(jwtTokenProvider.validateToken(token));
   }
 
   @Test
   void createToken_WithNullRoles_ShouldCreateValidToken() {
-    // Given
-    String username = "testuser";
-
     // When
-    String token = jwtTokenProvider.createToken(username, null);
+    String token = jwtTokenProvider.createToken(TEST_USER, null);
 
     // Then
     assertNotNull(token);
     assertFalse(token.isEmpty());
-    assertEquals(username, jwtTokenProvider.getUsername(token));
+    assertEquals(TEST_USER, jwtTokenProvider.getUsername(token));
     assertTrue(jwtTokenProvider.validateToken(token));
   }
 
   @Test
   void getAuthentication_WithValidToken_ShouldReturnAuthentication() {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String token = jwtTokenProvider.createToken(username, roles);
+    Set<String> roles = Set.of(USER);
+    String token = jwtTokenProvider.createToken(TEST_USER, roles);
 
     UserDetails userDetails = User.builder()
-            .username(username)
+            .username(TEST_USER)
             .password("password")
             .authorities(roles.stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .toList())
             .build();
 
-    when(fxUserDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
+    when(fxUserDetailsService.loadUserByUsername(TEST_USER)).thenReturn(userDetails);
 
     // When
     Authentication authentication = jwtTokenProvider.getAuthentication(token);
@@ -118,7 +116,7 @@ class JwtTokenProviderTest {
     // Then
     assertNotNull(authentication);
     assertInstanceOf(UsernamePasswordAuthenticationToken.class, authentication);
-    assertEquals(username, authentication.getName());
+    assertEquals(TEST_USER, authentication.getName());
     assertEquals(userDetails, authentication.getPrincipal());
     assertTrue(authentication.isAuthenticated());
   }
@@ -127,7 +125,7 @@ class JwtTokenProviderTest {
   void resolveToken_WithValidBearerToken_ShouldReturnToken() {
     // Given
     String bearerToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
 
     // When
     String token = jwtTokenProvider.resolveToken(request);
@@ -140,7 +138,7 @@ class JwtTokenProviderTest {
   void resolveToken_WithInvalidBearerToken_ShouldReturnNull() {
     // Given
     String invalidToken = "InvalidToken";
-    when(request.getHeader("Authorization")).thenReturn(invalidToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(invalidToken);
 
     // When
     String token = jwtTokenProvider.resolveToken(request);
@@ -152,7 +150,7 @@ class JwtTokenProviderTest {
   @Test
   void resolveToken_WithNullHeader_ShouldReturnNull() {
     // Given
-    when(request.getHeader("Authorization")).thenReturn(null);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(null);
 
     // When
     String token = jwtTokenProvider.resolveToken(request);
@@ -164,7 +162,7 @@ class JwtTokenProviderTest {
   @Test
   void resolveToken_WithEmptyHeader_ShouldReturnNull() {
     // Given
-    when(request.getHeader("Authorization")).thenReturn("");
+    when(request.getHeader(AUTHORIZATION)).thenReturn("");
 
     // When
     String token = jwtTokenProvider.resolveToken(request);
@@ -176,9 +174,8 @@ class JwtTokenProviderTest {
   @Test
   void validateToken_WithValidToken_ShouldReturnTrue() {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String token = jwtTokenProvider.createToken(username, roles);
+    Set<String> roles = Set.of(USER);
+    String token = jwtTokenProvider.createToken(TEST_USER, roles);
 
     // When
     boolean isValid = jwtTokenProvider.validateToken(token);
@@ -204,9 +201,8 @@ class JwtTokenProviderTest {
     ReflectionTestUtils.setField(shortLivedProvider, "validityInMilliseconds", 1L); // 1 millisecond
     shortLivedProvider.init();
 
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String token = shortLivedProvider.createToken(username, roles);
+    Set<String> roles = Set.of(USER);
+    String token = shortLivedProvider.createToken(TEST_USER, roles);
 
     // Wait for token to expire
     try {
@@ -222,15 +218,14 @@ class JwtTokenProviderTest {
   @Test
   void getUsername_WithValidToken_ShouldReturnUsername() {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String token = jwtTokenProvider.createToken(username, roles);
+    Set<String> roles = Set.of(USER);
+    String token = jwtTokenProvider.createToken(TEST_USER, roles);
 
     // When
     String extractedUsername = jwtTokenProvider.getUsername(token);
 
     // Then
-    assertEquals(username, extractedUsername);
+    assertEquals(TEST_USER, extractedUsername);
   }
 
   @Test
@@ -247,7 +242,7 @@ class JwtTokenProviderTest {
     // Given
     String username1 = "user1";
     String username2 = "user2";
-    Set<String> roles = Set.of("USER");
+    Set<String> roles = Set.of(USER);
 
     // When
     String token1 = jwtTokenProvider.createToken(username1, roles);
@@ -262,18 +257,17 @@ class JwtTokenProviderTest {
   @Test
   void createToken_WithSameUsernameAndRoles_ShouldCreateValidTokens() {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
+    Set<String> roles = Set.of(USER);
 
     // When
-    String token1 = jwtTokenProvider.createToken(username, roles);
-    String token2 = jwtTokenProvider.createToken(username, roles);
+    String token1 = jwtTokenProvider.createToken(TEST_USER, roles);
+    String token2 = jwtTokenProvider.createToken(TEST_USER, roles);
 
     // Then - both tokens should be valid and secure
     assertTrue(jwtTokenProvider.validateToken(token1));
     assertTrue(jwtTokenProvider.validateToken(token2));
-    assertEquals(username, jwtTokenProvider.getUsername(token1));
-    assertEquals(username, jwtTokenProvider.getUsername(token2));
+    assertEquals(TEST_USER, jwtTokenProvider.getUsername(token1));
+    assertEquals(TEST_USER, jwtTokenProvider.getUsername(token2));
 
     // Security test: Verify tokens cannot be tampered with
     String tamperedToken = token1.substring(0, token1.length() - 10) + "tampered";

@@ -101,10 +101,10 @@ class EventsOutboxRepositoryTest {
   @Test
   void findByStatus_ShouldReturnMatchingEvents() {
     // Given
-    EventsOutbox pendingOutbox1 = createTestOutbox("PENDING");
-    EventsOutbox pendingOutbox2 = createTestOutbox("PENDING");
-    EventsOutbox sentOutbox = createTestOutbox("SENT");
-    EventsOutbox failedOutbox = createTestOutbox("FAILED");
+    createTestOutbox("PENDING");
+    createTestOutbox("PENDING");
+    createTestOutbox("SENT");
+    createTestOutbox("FAILED");
 
     // When
     List<EventsOutbox> pendingEvents = eventsOutboxRepository.findByStatus("PENDING");

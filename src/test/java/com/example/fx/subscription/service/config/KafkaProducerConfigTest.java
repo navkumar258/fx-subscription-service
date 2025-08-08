@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(MockitoExtension.class)
 class KafkaProducerConfigTest {
 
+  private static final String CONFIGS = "configs";
+
   private KafkaProducerConfig kafkaProducerConfig;
 
   @BeforeEach
@@ -38,7 +40,7 @@ class KafkaProducerConfigTest {
     assertInstanceOf(DefaultKafkaProducerFactory.class, producerFactory);
 
     // Verify the configuration properties
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
     assertNotNull(configProps);
     assertEquals("localhost:9092", configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
     assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
@@ -71,7 +73,8 @@ class KafkaProducerConfigTest {
     ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
     // Then
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
     assertEquals(customBootstrapAddress, configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
   }
 
@@ -81,7 +84,8 @@ class KafkaProducerConfigTest {
     ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
     // Then
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
     assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
     assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
   }
@@ -92,7 +96,8 @@ class KafkaProducerConfigTest {
     ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
     // Then
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
     assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
   }
 
@@ -102,7 +107,8 @@ class KafkaProducerConfigTest {
     ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
     // Then
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
     assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
   }
 } 

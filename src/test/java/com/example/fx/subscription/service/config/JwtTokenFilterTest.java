@@ -28,6 +28,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtTokenFilterTest {
 
+  private static final String TEST_USER = "testuser";
+  private static final String USER = "USER";
+  private static final String BEARER = "Bearer ";
+  private static final String PASSWORD = "password";
+  private static final String ROLE = "ROLE_ ";
+  private static final String AUTHORIZATION = "Authorization";
+
   @Mock
   private FxUserDetailsService fxUserDetailsService;
 
@@ -64,27 +71,26 @@ class JwtTokenFilterTest {
   @Test
   void doFilterInternal_WithValidToken_ShouldSetAuthentication() throws ServletException, IOException {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String validToken = jwtTokenProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + validToken;
+    Set<String> roles = Set.of(USER);
+    String validToken = jwtTokenProvider.createToken(TEST_USER, roles);
+    String bearerToken = BEARER + validToken;
 
     UserDetails userDetails = User.builder()
-            .username(username)
-            .password("password")
+            .username(TEST_USER)
+            .password(PASSWORD)
             .authorities(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(role -> new SimpleGrantedAuthority(ROLE + role))
                     .toList())
             .build();
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
-    when(fxUserDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
+    when(fxUserDetailsService.loadUserByUsername(TEST_USER)).thenReturn(userDetails);
 
     // When
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
 
     // Then
-    verify(fxUserDetailsService).loadUserByUsername(username);
+    verify(fxUserDetailsService).loadUserByUsername(TEST_USER);
     verify(securityContext).setAuthentication(any(Authentication.class));
     verify(filterChain).doFilter(request, response);
   }
@@ -92,7 +98,7 @@ class JwtTokenFilterTest {
   @Test
   void doFilterInternal_WithNullToken_ShouldNotSetAuthentication() throws ServletException, IOException {
     // Given
-    when(request.getHeader("Authorization")).thenReturn(null);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(null);
 
     // When
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
@@ -106,7 +112,7 @@ class JwtTokenFilterTest {
   @Test
   void doFilterInternal_WithEmptyHeader_ShouldNotSetAuthentication() throws ServletException, IOException {
     // Given
-    when(request.getHeader("Authorization")).thenReturn("");
+    when(request.getHeader(AUTHORIZATION)).thenReturn("");
 
     // When
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
@@ -121,7 +127,7 @@ class JwtTokenFilterTest {
   void doFilterInternal_WithInvalidBearerToken_ShouldNotSetAuthentication() throws ServletException, IOException {
     // Given
     String invalidBearerToken = "InvalidToken";
-    when(request.getHeader("Authorization")).thenReturn(invalidBearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(invalidBearerToken);
 
     // When
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
@@ -137,9 +143,9 @@ class JwtTokenFilterTest {
           throws ServletException, IOException {
     // Given
     String invalidToken = "invalid.jwt.token";
-    String bearerToken = "Bearer " + invalidToken;
+    String bearerToken = BEARER + invalidToken;
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
 
     // When & Then
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
@@ -158,10 +164,9 @@ class JwtTokenFilterTest {
     ReflectionTestUtils.setField(shortLivedProvider, "validityInMilliseconds", 1L); // 1 millisecond
     shortLivedProvider.init();
 
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String expiredToken = shortLivedProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + expiredToken;
+    Set<String> roles = Set.of(USER);
+    String expiredToken = shortLivedProvider.createToken(TEST_USER, roles);
+    String bearerToken = BEARER + expiredToken;
 
     // Wait for token to expire
     try {
@@ -170,7 +175,7 @@ class JwtTokenFilterTest {
       Thread.currentThread().interrupt();
     }
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
 
     // When & Then
     jwtTokenFilter.doFilterInternal(request, response, filterChain);
@@ -185,11 +190,11 @@ class JwtTokenFilterTest {
           throws ServletException, IOException {
     // Given
     String username = "nonexistentuser";
-    Set<String> roles = Set.of("USER");
+    Set<String> roles = Set.of(USER);
     String validToken = jwtTokenProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + validToken;
+    String bearerToken = BEARER + validToken;
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
     when(fxUserDetailsService.loadUserByUsername(username)).thenThrow(new RuntimeException("User not found"));
 
     // When & Then
@@ -209,28 +214,27 @@ class JwtTokenFilterTest {
   @Test
   void doFilterInternal_WithFilterChainException_ShouldPropagateException() throws ServletException, IOException {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String validToken = jwtTokenProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + validToken;
+    Set<String> roles = Set.of(USER);
+    String validToken = jwtTokenProvider.createToken(TEST_USER, roles);
+    String bearerToken = BEARER + validToken;
 
     UserDetails userDetails = User.builder()
-            .username(username)
+            .username(TEST_USER)
             .password("password")
             .authorities(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(role -> new SimpleGrantedAuthority(ROLE + role))
                     .toList())
             .build();
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
-    when(fxUserDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
+    when(fxUserDetailsService.loadUserByUsername(TEST_USER)).thenReturn(userDetails);
     doThrow(new ServletException("Filter chain error")).when(filterChain).doFilter(request, response);
 
     // When & Then
     assertThrows(ServletException.class, () ->
             jwtTokenFilter.doFilterInternal(request, response, filterChain));
 
-    verify(fxUserDetailsService).loadUserByUsername(username);
+    verify(fxUserDetailsService).loadUserByUsername(TEST_USER);
     verify(securityContext).setAuthentication(any(Authentication.class));
     verify(filterChain).doFilter(request, response);
   }
@@ -238,28 +242,27 @@ class JwtTokenFilterTest {
   @Test
   void doFilterInternal_WithIOException_ShouldPropagateException() throws ServletException, IOException {
     // Given
-    String username = "testuser";
-    Set<String> roles = Set.of("USER");
-    String validToken = jwtTokenProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + validToken;
+    Set<String> roles = Set.of(USER);
+    String validToken = jwtTokenProvider.createToken(TEST_USER, roles);
+    String bearerToken = BEARER + validToken;
 
     UserDetails userDetails = User.builder()
-            .username(username)
+            .username(TEST_USER)
             .password("password")
             .authorities(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(role -> new SimpleGrantedAuthority(ROLE + role))
                     .toList())
             .build();
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
-    when(fxUserDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
+    when(fxUserDetailsService.loadUserByUsername(TEST_USER)).thenReturn(userDetails);
     doThrow(new IOException("IO error")).when(filterChain).doFilter(request, response);
 
     // When & Then
     assertThrows(IOException.class, () ->
             jwtTokenFilter.doFilterInternal(request, response, filterChain));
 
-    verify(fxUserDetailsService).loadUserByUsername(username);
+    verify(fxUserDetailsService).loadUserByUsername(TEST_USER);
     verify(securityContext).setAuthentication(any(Authentication.class));
     verify(filterChain).doFilter(request, response);
   }
@@ -268,19 +271,19 @@ class JwtTokenFilterTest {
   void doFilterInternal_WithDifferentUserRoles_ShouldSetCorrectAuthentication() throws ServletException, IOException {
     // Given
     String username = "admin";
-    Set<String> roles = Set.of("ADMIN", "USER");
+    Set<String> roles = Set.of("ADMIN", USER);
     String validToken = jwtTokenProvider.createToken(username, roles);
-    String bearerToken = "Bearer " + validToken;
+    String bearerToken = BEARER + validToken;
 
     UserDetails adminUserDetails = User.builder()
             .username(username)
             .password("password")
             .authorities(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .map(role -> new SimpleGrantedAuthority(ROLE + role))
                     .toList())
             .build();
 
-    when(request.getHeader("Authorization")).thenReturn(bearerToken);
+    when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
     when(fxUserDetailsService.loadUserByUsername(username)).thenReturn(adminUserDetails);
 
     // When
