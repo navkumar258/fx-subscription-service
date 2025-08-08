@@ -82,7 +82,7 @@ public class SubscriptionsController {
 
     LOGGER.info("Created subscription: subscriptionId={}, userId={}, currencyPair={}",
             createdSubscription.getId(), currentUser.getId(), subscriptionCreateRequest.currencyPair());
-    
+
     return ResponseEntity.status(HttpStatus.CREATED)
             .body(SubscriptionCreateResponse.fromSubscription(createdSubscription));
   }
@@ -99,7 +99,7 @@ public class SubscriptionsController {
 
               LOGGER.info("Updated subscription: subscriptionId={}, currencyPair={}",
                       id, subscriptionUpdateRequest.currencyPair());
-              
+
               return ResponseEntity.ok(SubscriptionUpdateResponse.fromSubscription(updatedSubscription));
             })
             .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id));
@@ -121,7 +121,7 @@ public class SubscriptionsController {
     List<SubscriptionResponse> allSubscriptions = subscriptionsService.findAllSubscriptionResponses();
 
     LOGGER.info("Admin retrieved all subscriptions: count={}", allSubscriptions.size());
-    
+
     return ResponseEntity.ok(new SubscriptionListResponse(allSubscriptions, allSubscriptions.size()));
   }
 }

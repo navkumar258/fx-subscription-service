@@ -1,10 +1,12 @@
 # FX Subscription Service
 
-A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate subscriptions with real-time notifications, MCP (Model Context Protocol) server capabilities, and event-driven architecture.
+A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate subscriptions with real-time
+notifications, MCP (Model Context Protocol) server capabilities, and event-driven architecture.
 
 ## 🚀 Features
 
 ### Core Functionality
+
 - **User Management**: Complete user registration, authentication, and profile management
 - **FX Subscription Management**: Create, update, delete, and monitor currency pair subscriptions
 - **Real-time Notifications**: Multi-channel notification support (email, SMS, push)
@@ -13,6 +15,7 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 - **Security**: JWT-based authentication with role-based access control
 
 ### Technical Features
+
 - **Database**: H2 in-memory database with JPA/Hibernate
 - **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
@@ -66,12 +69,14 @@ A comprehensive Spring Boot microservice for managing foreign exchange (FX) rate
 ## 🛠️ Installation & Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd fx-subscription-service
 ```
 
 ### 2. Build the Application
+
 ```bash
 ./gradlew build
 ```
@@ -79,6 +84,7 @@ cd fx-subscription-service
 This will also generate OpenAPI documentation in the `api-docs/` directory.
 
 ### 3. Run the Application
+
 ```bash
 ./gradlew bootRun
 ```
@@ -86,6 +92,7 @@ This will also generate OpenAPI documentation in the `api-docs/` directory.
 The application will start on `https://localhost:8443`
 
 ### 4. Start Prometheus (Optional)
+
 ```bash
 docker run -d --name prometheus -it -p 9090:9090 \
   -v ./prometheus.yml:/etc/prometheus/prometheus.yml \
@@ -93,6 +100,7 @@ docker run -d --name prometheus -it -p 9090:9090 \
 ```
 
 ### 5. Start FX MCP Client (for AI features)
+
 ```bash
 # Ensure the FX MCP Client is running and configured to connect to this service
 # The MCP client will connect via SSE endpoint at /sse
@@ -101,6 +109,7 @@ docker run -d --name prometheus -it -p 9090:9090 \
 ## ⚙️ Configuration
 
 ### Environment Variables
+
 ```bash
 # SSL Configuration
 KEYSTORE_PASSWORD=your_keystore_password
@@ -125,7 +134,9 @@ spring.kafka.topic.subscription-changes=subscription-change-events
 ## 📄 API Documentation
 
 ### OpenAPI Documentation
+
 The service automatically generates OpenAPI 3.1.0 documentation using SpringDoc. The documentation is available at:
+
 - **Swagger UI**: `https://localhost:8443/swagger-ui.html`
 - **OpenAPI JSON**: `https://localhost:8443/v3/api-docs`
 - **Generated Documentation**: `api-docs/fx-subscription-service.json`
@@ -133,6 +144,7 @@ The service automatically generates OpenAPI 3.1.0 documentation using SpringDoc.
 ### Authentication Endpoints
 
 #### Register User
+
 ```http
 POST /api/v1/auth/signup
 Content-Type: application/json
@@ -146,6 +158,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -159,6 +172,7 @@ Content-Type: application/json
 ### Subscription Endpoints
 
 #### Create Subscription
+
 ```http
 POST /api/v1/subscriptions
 Authorization: Bearer <jwt_token>
@@ -173,18 +187,21 @@ Content-Type: application/json
 ```
 
 #### Get All Subscriptions (Admin only)
+
 ```http
 GET /api/v1/subscriptions/all
 Authorization: Bearer <jwt_token>
 ```
 
 #### Get Subscriptions by User ID
+
 ```http
 GET /api/v1/subscriptions?userId={userId}
 Authorization: Bearer <jwt_token>
 ```
 
 #### Update Subscription
+
 ```http
 PUT /api/v1/subscriptions/{id}
 Authorization: Bearer <jwt_token>
@@ -199,6 +216,7 @@ Content-Type: application/json
 ```
 
 #### Delete Subscription
+
 ```http
 DELETE /api/v1/subscriptions/{id}
 Authorization: Bearer <jwt_token>
@@ -207,30 +225,35 @@ Authorization: Bearer <jwt_token>
 ### User Management Endpoints
 
 #### Get All Users (Admin only)
+
 ```http
 GET /api/v1/users?page=0&size=20
 Authorization: Bearer <jwt_token>
 ```
 
 #### Get User by ID
+
 ```http
 GET /api/v1/users/{id}
 Authorization: Bearer <jwt_token>
 ```
 
 #### Search users with filters
+
 ```http
 GET /api/v1/users/search
 Authorization: Bearer <jwt_token>
 ```
 
 #### Get User Subscriptions
+
 ```http
 GET /api/v1/users/{id}/subscriptions
 Authorization: Bearer <jwt_token>
 ```
 
 #### Update User
+
 ```http
 PUT /api/v1/users/{id}
 Authorization: Bearer <jwt_token>
@@ -245,17 +268,20 @@ Content-Type: application/json
 ### MCP Server Endpoints
 
 #### SSE Endpoint (for MCP Client)
+
 ```http
 GET /sse
 ```
 
-**Note**: These endpoints are used by the FX MCP Client for AI tool interactions and are not meant for direct human consumption.
+**Note**: These endpoints are used by the FX MCP Client for AI tool interactions and are not meant for direct human
+consumption.
 
 ## 📊 Database Schema
 
 ### Tables
 
 #### fx_users
+
 - `id` (UUID, Primary Key)
 - `email` (String, Unique)
 - `mobile` (String)
@@ -267,6 +293,7 @@ GET /sse
 - `updated_at` (Timestamp)
 
 #### subscriptions
+
 - `id` (UUID, Primary Key)
 - `user_id` (UUID, Foreign Key)
 - `currency_pair` (String)
@@ -278,6 +305,7 @@ GET /sse
 - `updated_at` (Timestamp)
 
 #### events_outbox
+
 - `id` (UUID, Primary Key)
 - `aggregate_type` (String)
 - `aggregate_id` (UUID)
@@ -289,20 +317,24 @@ GET /sse
 ## 🔐 Security
 
 ### Authentication
+
 - JWT-based token authentication
 - BCrypt password hashing
 - Role-based access control (USER, ADMIN)
 
 ### Authorization
+
 - Method-level security with `@PreAuthorize` and jwt claims
 - Users can only access their own resources
 - Admin access for system-wide operations
 
 ### SSL/TLS
+
 - HTTPS enabled by default
 - Custom keystore(PKCS12) configuration
 
 ### MCP Security
+
 - MCP endpoints (`/sse`, `/mcp/**`) are publicly accessible
 - No authentication required for MCP client connections
 - Tool execution is handled securely within the service
@@ -310,38 +342,48 @@ GET /sse
 ## 📊 Monitoring & Observability
 
 ### Health Endpoints
+
 - `GET /actuator/health` - Application health status
 - `GET /actuator/prometheus` - Prometheus metrics
 
 ### Metrics (Prometheus)
+
 - HTTP request metrics
 - Database connection metrics
 - Custom business metrics
 
 ### Tracing (Zipkin via micrometer)
+
 - Distributed tracing with Zipkin
 - Request correlation IDs
 - Performance monitoring
 
 ### Logging (Loki)
+
 - Loki logging appender
 - Available in grafana logs
 
 ## 🤖 MCP Server & AI Integration
 
 ### MCP Server Features
+
 - **SSE Communication**: Server-Sent Events for real-time MCP client communication
 - **Tool Integration**: AI tools for subscription management via MCP protocol
 - **Security**: MCP endpoints are publicly accessible for client connections
 
 ### Available MCP Tools
+
 The service exposes the following tools for AI clients:
-- `createFxSubscription(userId, currencyPair, thresholdValue, direction, notificationMethod)` - Creates a new FX rate subscription
-- `updateFxSubscription(subscriptionId, newThresholdValue, direction, newNotificationMethod)` - Updates an existing subscription
+
+- `createFxSubscription(userId, currencyPair, thresholdValue, direction, notificationMethod)` - Creates a new FX rate
+  subscription
+- `updateFxSubscription(subscriptionId, newThresholdValue, direction, newNotificationMethod)` - Updates an existing
+  subscription
 - `deleteFxSubscription(subscriptionId)` - Deletes a subscription
 - `getFxSubscriptionsForUser(userId)` - Retrieves all subscriptions for a user
 
 ### AI Integration Architecture
+
 - **MCP Server**: This service acts as an MCP server
 - **FX MCP Client**: Separate service that connects to this MCP server
 - **Tool Execution**: AI tools are executed through the MCP protocol
@@ -350,11 +392,13 @@ The service exposes the following tools for AI clients:
 ## 🔄 Event-Driven Architecture
 
 ### Kafka Integration
+
 - **Topic**: `subscription-change-events`
 - **Events**: SubscriptionCreated, SubscriptionUpdated, SubscriptionDeleted
 - **Outbox Pattern**: Reliable event publishing
 
 ### Scheduled Tasks
+
 - **Subscription Processing**: Every 5 minutes (configurable)
 - **Event Publishing**: Automatic outbox processing
 - **Status Updates**: Subscription lifecycle management
@@ -362,12 +406,14 @@ The service exposes the following tools for AI clients:
 ## 🧪 Testing
 
 ### Test Coverage
+
 - Unit tests for all services
 - Integration tests for controllers
 - Repository layer testing
 - Security configuration testing
 
 ### Running Tests
+
 ```bash
 # Run all tests
 ./gradlew test
@@ -382,6 +428,7 @@ The service exposes the following tools for AI clients:
 ## 🚀 Deployment
 
 ### Docker
+
 ```bash
 # Build Docker image
 docker build -t fx-subscription-service .
@@ -391,6 +438,7 @@ docker run -p 8443:8443 fx-subscription-service
 ```
 
 ### Docker Compose
+
 ```bash
 docker-compose up -d
 ```
@@ -398,12 +446,14 @@ docker-compose up -d
 ## 📈 Performance
 
 ### Optimizations
+
 - Virtual threads enabled
 - Connection pooling
 - Lazy loading for associations
 - Transaction management
 
 ### Benchmarks
+
 - Response time: < 100ms (95th percentile)
 - Throughput: 1000+ requests/second
 - Database queries: Optimized with indexes
@@ -411,6 +461,7 @@ docker-compose up -d
 ## 🔧 Development
 
 ### Project Structure
+
 ```
 src/
 ├── main/
@@ -436,6 +487,7 @@ src/
 ```
 
 ### Code Quality
+
 - SonarQube integration
 - Code formatting with Checkstyle
 - 95% plus code and line coverage with jacoco
@@ -456,6 +508,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue in the repository
 - Check the documentation
 - Review existing issues and discussions
@@ -468,4 +521,6 @@ For support and questions:
 
 ---
 
-**Note**: This service is designed for development and testing purposes. For production deployment, consider using a production-grade database like PostgreSQL and proper infrastructure setup. The AI chat functionality is now handled by the separate FX MCP Client service.
+**Note**: This service is designed for development and testing purposes. For production deployment, consider using a
+production-grade database like PostgreSQL and proper infrastructure setup. The AI chat functionality is now handled by
+the separate FX MCP Client service.

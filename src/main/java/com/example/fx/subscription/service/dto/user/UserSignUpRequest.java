@@ -18,7 +18,7 @@ public record UserSignUpRequest(
         String mobile,
 
         boolean admin) {
-        public UserSignUpRequest(String email, String password, String mobile) {
-                this(email, password, mobile, false);
-        }
+  public UserSignUpRequest(String email, String password, String mobile) {
+    this(email, password, mobile, false);
+  }
 }

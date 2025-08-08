@@ -20,89 +20,95 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(MockitoExtension.class)
 class KafkaProducerConfigTest {
 
-    private KafkaProducerConfig kafkaProducerConfig;
+  private static final String CONFIGS = "configs";
 
-    @BeforeEach
-    void setUp() {
-        kafkaProducerConfig = new KafkaProducerConfig();
-        ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", "localhost:9092");
-    }
+  private KafkaProducerConfig kafkaProducerConfig;
 
-    @Test
-    void producerFactory_ShouldCreateProducerFactoryWithCorrectConfig() {
-        // When
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+  @BeforeEach
+  void setUp() {
+    kafkaProducerConfig = new KafkaProducerConfig();
+    ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", "localhost:9092");
+  }
 
-        // Then
-        assertNotNull(producerFactory);
-        assertInstanceOf(DefaultKafkaProducerFactory.class, producerFactory);
-        
-        // Verify the configuration properties
-        Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
-        assertNotNull(configProps);
-        assertEquals("localhost:9092", configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
-        assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
-        assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
-        assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
-        assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
-    }
+  @Test
+  void producerFactory_ShouldCreateProducerFactoryWithCorrectConfig() {
+    // When
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
-    @Test
-    void kafkaTemplate_ShouldCreateKafkaTemplateWithProducerFactory() {
-        // When
-        KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate = kafkaProducerConfig.kafkaTemplate();
+    // Then
+    assertNotNull(producerFactory);
+    assertInstanceOf(DefaultKafkaProducerFactory.class, producerFactory);
 
-        // Then
-        assertNotNull(kafkaTemplate);
-        assertInstanceOf(KafkaTemplate.class, kafkaTemplate);
-        
-        // Verify it uses the producer factory
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
-        assertNotNull(producerFactory);
-    }
+    // Verify the configuration properties
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
+    assertEquals("localhost:9092", configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
+    assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
+    assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
+    assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
+    assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
+  }
 
-    @Test
-    void producerFactory_WithDifferentBootstrapAddress_ShouldUseCorrectAddress() {
-        // Given
-        String customBootstrapAddress = "kafka-server:9093";
-        ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", customBootstrapAddress);
+  @Test
+  void kafkaTemplate_ShouldCreateKafkaTemplateWithProducerFactory() {
+    // When
+    KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate = kafkaProducerConfig.kafkaTemplate();
 
-        // When
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+    // Then
+    assertNotNull(kafkaTemplate);
+    assertInstanceOf(KafkaTemplate.class, kafkaTemplate);
 
-        // Then
-        Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
-        assertEquals(customBootstrapAddress, configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
-    }
+    // Verify it uses the producer factory
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+    assertNotNull(producerFactory);
+  }
 
-    @Test
-    void producerFactory_ShouldHaveCorrectSerializers() {
-        // When
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+  @Test
+  void producerFactory_WithDifferentBootstrapAddress_ShouldUseCorrectAddress() {
+    // Given
+    String customBootstrapAddress = "kafka-server:9093";
+    ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", customBootstrapAddress);
 
-        // Then
-        Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
-        assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
-        assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
-    }
+    // When
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
-    @Test
-    void producerFactory_ShouldHaveCorrectDeliveryTimeout() {
-        // When
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+    // Then
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
+    assertEquals(customBootstrapAddress, configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
+  }
 
-        // Then
-        Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
-        assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
-    }
+  @Test
+  void producerFactory_ShouldHaveCorrectSerializers() {
+    // When
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
 
-    @Test
-    void producerFactory_ShouldDisableTypeInfoHeaders() {
-        // When
-        ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+    // Then
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
+    assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
+    assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
+  }
 
-        // Then
-        Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, "configs");
-        assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
-    }
+  @Test
+  void producerFactory_ShouldHaveCorrectDeliveryTimeout() {
+    // When
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+
+    // Then
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
+    assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
+  }
+
+  @Test
+  void producerFactory_ShouldDisableTypeInfoHeaders() {
+    // When
+    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
+
+    // Then
+    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
+    assertNotNull(configProps);
+    assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
+  }
 } 

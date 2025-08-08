@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,6 +16,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "subscriptions")
 public class Subscription implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 3399651306360537641L;
 
   @Id
   @GeneratedValue
@@ -43,7 +47,8 @@ public class Subscription implements Serializable {
   @Column(insertable = false)
   private Instant updatedAt;
 
-  public Subscription() {}
+  public Subscription() {
+  }
 
   public Subscription(UUID id,
                       String currencyPair,

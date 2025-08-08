@@ -16,4 +16,5 @@ public record SubscriptionUpdateRequest(
         String direction,
         String status,
         @NotEmpty(message = "Notification channels are mandatory and should contain at least 1 item")
-        List<String> notificationChannels) {}
+        List<String> notificationChannels) {
+}

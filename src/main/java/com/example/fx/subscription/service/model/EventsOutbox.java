@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
@@ -14,6 +15,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "events_outbox")
 public class EventsOutbox implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 6192587654480707584L;
 
   @Id
   @GeneratedValue
@@ -88,6 +92,13 @@ public class EventsOutbox implements Serializable {
 
   public void setTimestamp(long timestamp) {
     this.timestamp = timestamp;
+  }
+
+  public EventsOutbox() {}
+
+  public EventsOutbox(UUID id, String status) {
+    this.id = id;
+    this.status = status;
   }
 
   @Override

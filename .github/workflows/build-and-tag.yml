@@ -1,9 +1,9 @@
 name: Build and Create a Tag Workflow
 
 on:
-#  push:
-#    branches:
-#      - main
+  #  push:
+  #    branches:
+  #      - main
   workflow_dispatch:
     inputs:
       version_type:
@@ -61,6 +61,12 @@ jobs:
           echo "--- Running JaCoCo Coverage/Line Verification ---"
           # Executes your specific JaCoCo task for coverage and line verification.
           ./gradlew jacocoTestCoverageVerification
+
+      - name: Build with Gradle
+        run: |
+          echo "--- Building the Application ---"
+          # This command compiles the code and packages it into a JAR file.
+          ./gradlew clean build
 
       - name: Determine current version and new version
         id: versioning # Assign an ID to this step to reference its outputs later.

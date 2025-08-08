@@ -1,79 +1,83 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.4'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'jacoco'
-	id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.4'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 ext {
-	set('springAiVersion', "1.0.1")
+    set('springAiVersion', "1.0.1")
+    withoutCommonsLang3 = {
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.kafka:spring-kafka'
-	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.3'
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
-	// for micrometer observation and metrics
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation "org.springframework.boot:spring-boot-starter-aop"
-	implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
-	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
-	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
-	// for openapi spec generation
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.9'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.3'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
+    // for micrometer observation and metrics
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    // for openapi spec generation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.9', withoutCommonsLang3
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
 
-	runtimeOnly 'com.h2database:h2'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
-	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.springframework.kafka:spring-kafka-test'
-	testImplementation 'net.bytebuddy:byte-buddy-agent'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testImplementation 'net.bytebuddy:byte-buddy-agent'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 dependencyManagement {
-	imports {
-		mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
-	}
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
 }
 
 jacoco {
-	toolVersion = "0.8.13"
+    toolVersion = "0.8.13"
 }
 
 jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required = false
-		html.required = true
-		csv.required = false
-	}
+    dependsOn test
+    reports {
+        xml.required = false
+        html.required = true
+        csv.required = false
+    }
 
-	// Exclude specific classes/packages from coverage
-	afterEvaluate {
-		classDirectories.setFrom(files(classDirectories.files.collect {
+    // Exclude specific classes/packages from coverage
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
                     '**/FxSubscriptionServiceApplication.class',
                     '**/OpenApiConfig.class',
@@ -89,74 +93,74 @@ jacocoTestReport {
 }
 
 jacocoTestCoverageVerification {
-	dependsOn test
-	violationRules {
-		rule {
-			limit {
-				counter = 'LINE'
-				value = 'COVEREDRATIO'
-				minimum = 0.85  // 85% line coverage required
-			}
-		}
-		rule {
-			limit {
-				counter = 'BRANCH'
-				value = 'COVEREDRATIO'
-				minimum = 0.70  // 70% branch coverage required
-			}
-		}
-		rule {
-			limit {
-				counter = 'METHOD'
-				value = 'COVEREDRATIO'
-				minimum = 0.85  // 85% method coverage required
-			}
-		}
-		rule {
-			limit {
-				counter = 'CLASS'
-				value = 'COVEREDRATIO'
-				minimum = 0.90  // 90% class coverage required
-			}
-		}
-	}
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.85  // 85% line coverage required
+            }
+        }
+        rule {
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.70  // 70% branch coverage required
+            }
+        }
+        rule {
+            limit {
+                counter = 'METHOD'
+                value = 'COVEREDRATIO'
+                minimum = 0.85  // 85% method coverage required
+            }
+        }
+        rule {
+            limit {
+                counter = 'CLASS'
+                value = 'COVEREDRATIO'
+                minimum = 0.90  // 90% class coverage required
+            }
+        }
+    }
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-	doFirst {
-		if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-			jvmArgs = [
-					"-javaagent:${classpath.find { it.name.contains("byte-buddy-agent") }.absolutePath}"
-			]
-		}
-	}
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+    doFirst {
+        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
+            jvmArgs = [
+                    "-javaagent:${classpath.find { it.name.contains("byte-buddy-agent") }.absolutePath}"
+            ]
+        }
+    }
 }
 
 // Task to run tests with coverage verification
 tasks.register('testWithCoverage') {
-	dependsOn test, jacocoTestReport, jacocoTestCoverageVerification
-	group = 'verification'
-	description = 'Run tests and verify code coverage'
+    dependsOn test, jacocoTestReport, jacocoTestCoverageVerification
+    group = 'verification'
+    description = 'Run tests and verify code coverage'
 }
 
 // Task to generate coverage report only
 tasks.register('coverageReport') {
-	dependsOn jacocoTestReport
-	group = 'reporting'
-	description = 'Generate code coverage report'
+    dependsOn jacocoTestReport
+    group = 'reporting'
+    description = 'Generate code coverage report'
 }
 
 openApi {
-	apiDocsUrl.set("https://localhost:8443/v3/api-docs")
-	trustStore.set("$rootDir/src/main/resources/keystore.p12")
-	trustStorePassword.set(System.getenv("KEYSTORE_PASSWORD")?.toCharArray())
+    apiDocsUrl.set("https://localhost:8443/v3/api-docs")
+    trustStore.set("$rootDir/src/main/resources/keystore.p12")
+    trustStorePassword.set(System.getenv("KEYSTORE_PASSWORD")?.toCharArray())
 
-	outputDir.set(file("$rootDir/api-docs"))
-	outputFileName.set("fx-subscription-service.json")
+    outputDir.set(file("$rootDir/api-docs"))
+    outputFileName.set("fx-subscription-service.json")
 }
 
 tasks.named("build") {
-	finalizedBy("generateOpenApiDocs")
+    finalizedBy("generateOpenApiDocs")
 }

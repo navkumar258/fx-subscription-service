@@ -16,9 +16,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@TestConfiguration
+@TestConfiguration(proxyBeanMethods = false)
 @EnableMethodSecurity
-public class TestSecurityConfig {
+public class WebSecurityTestConfig {
 
   @Autowired
   private JwtTokenProvider testJwtTokenProvider;

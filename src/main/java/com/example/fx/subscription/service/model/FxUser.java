@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
@@ -16,6 +17,9 @@ import java.util.*;
 @Entity
 @Table(name = "fx_users")
 public class FxUser implements Serializable, UserDetails {
+  @Serial
+  private static final long serialVersionUID = -2164347536884263543L;
+
   @Id
   @GeneratedValue
   private UUID id;
@@ -56,7 +60,8 @@ public class FxUser implements Serializable, UserDetails {
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Set<Subscription> subscriptions = new HashSet<>();
 
-  public FxUser() {}
+  public FxUser() {
+  }
 
   public FxUser(UUID userId) {
     this.id = userId;

@@ -15,15 +15,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class FxSubscriptionServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(FxSubscriptionServiceApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(FxSubscriptionServiceApplication.class, args);
+  }
 
-	@Bean
-	MethodToolCallbackProvider methodToolCallbackProvider(FxSubscriptionTool fxSubscriptionTool) {
-		return MethodToolCallbackProvider
-						.builder()
-						.toolObjects(fxSubscriptionTool)
-						.build();
-	}
+  @Bean
+  MethodToolCallbackProvider methodToolCallbackProvider(FxSubscriptionTool fxSubscriptionTool) {
+    return MethodToolCallbackProvider
+            .builder()
+            .toolObjects(fxSubscriptionTool)
+            .build();
+  }
 }

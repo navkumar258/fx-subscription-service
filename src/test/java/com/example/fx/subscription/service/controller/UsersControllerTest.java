@@ -31,223 +31,223 @@ import static org.mockito.Mockito.*;
 @WebMvcTest(UsersController.class)
 class UsersControllerTest {
 
-    @MockitoBean
-    private FxSubscriptionTool fxSubscriptionTool;
+  @MockitoBean
+  private FxSubscriptionTool fxSubscriptionTool;
 
-    @MockitoBean
-    private FxUsersService fxUsersService;
+  @MockitoBean
+  private FxUsersService fxUsersService;
 
-    private UsersController usersController;
+  private UsersController usersController;
 
-    @BeforeEach
-    void setUp() {
-        usersController = new UsersController(fxUsersService);
-    }
+  @BeforeEach
+  void setUp() {
+    usersController = new UsersController(fxUsersService);
+  }
 
-    @Test
-    void getAllUsers_ShouldReturnUserList() {
-        // Given
-        Pageable pageable = PageRequest.of(0, 20);
-        List<FxUser> users = createTestUsers();
-        Page<FxUser> usersPage = new PageImpl<>(users, pageable, users.size());
+  @Test
+  void getAllUsers_ShouldReturnUserList() {
+    // Given
+    Pageable pageable = PageRequest.of(0, 20);
+    List<FxUser> users = createTestUsers();
+    Page<FxUser> usersPage = new PageImpl<>(users, pageable, users.size());
 
-        when(fxUsersService.findAllUsers(pageable)).thenReturn(usersPage);
+    when(fxUsersService.findAllUsers(pageable)).thenReturn(usersPage);
 
-        // When
-        ResponseEntity<UserListResponse> response = usersController.getAllUsers(pageable);
+    // When
+    ResponseEntity<UserListResponse> response = usersController.getAllUsers(pageable);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(users.size(), response.getBody().users().size());
-        assertEquals(users.size(), response.getBody().totalElements());
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(users.size(), response.getBody().users().size());
+    assertEquals(users.size(), response.getBody().totalElements());
 
-        verify(fxUsersService).findAllUsers(pageable);
-    }
+    verify(fxUsersService).findAllUsers(pageable);
+  }
 
-    @Test
-    void getUserById_WithValidId_ShouldReturnUser() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-        FxUser user = createTestUser(userId, "test@example.com");
+  @Test
+  void getUserById_WithValidId_ShouldReturnUser() {
+    // Given
+    String userId = UUID.randomUUID().toString();
+    FxUser user = createTestUser(userId, "test@example.com");
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(user));
+    when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(user));
 
-        // When
-        ResponseEntity<UserDetailResponse> response = usersController.getUserById(userId);
+    // When
+    ResponseEntity<UserDetailResponse> response = usersController.getUserById(userId);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(userId, response.getBody().id().toString());
-        assertEquals("test@example.com", response.getBody().email());
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(userId, response.getBody().id().toString());
+    assertEquals("test@example.com", response.getBody().email());
 
-        verify(fxUsersService).findUserById(userId);
-    }
+    verify(fxUsersService).findUserById(userId);
+  }
 
-    @Test
-    void getUserById_WithInvalidId_ShouldThrowUserNotFoundException() {
-        // Given
-        String userId = UUID.randomUUID().toString();
+  @Test
+  void getUserById_WithInvalidId_ShouldThrowUserNotFoundException() {
+    // Given
+    String userId = UUID.randomUUID().toString();
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.empty());
+    when(fxUsersService.findUserById(userId)).thenReturn(Optional.empty());
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
             usersController.getUserById(userId));
 
-        assertEquals("User not found with ID: " + userId, exception.getMessage());
-        assertEquals(userId, exception.getUserId());
+    assertEquals("User not found with ID: " + userId, exception.getMessage());
+    assertEquals(userId, exception.getUserId());
 
-        verify(fxUsersService).findUserById(userId);
-    }
+    verify(fxUsersService).findUserById(userId);
+  }
 
-    @Test
-    void searchUsers_WithValidCriteria_ShouldReturnFilteredUsers() {
-        // Given
-        String email = "test@example.com";
-        String mobile = "+1234567890";
-        boolean enabled = true;
-        Pageable pageable = PageRequest.of(0, 20);
-        
-        List<FxUser> users = createTestUsers();
-        Page<FxUser> usersPage = new PageImpl<>(users, pageable, users.size());
+  @Test
+  void searchUsers_WithValidCriteria_ShouldReturnFilteredUsers() {
+    // Given
+    String email = "test@example.com";
+    String mobile = "+1234567890";
+    boolean enabled = true;
+    Pageable pageable = PageRequest.of(0, 20);
 
-        when(fxUsersService.searchUsers(email, mobile, enabled, pageable)).thenReturn(usersPage);
+    List<FxUser> users = createTestUsers();
+    Page<FxUser> usersPage = new PageImpl<>(users, pageable, users.size());
 
-        // When
-        ResponseEntity<UserListResponse> response = usersController.searchUsers(email, mobile, enabled, pageable);
+    when(fxUsersService.searchUsers(email, mobile, enabled, pageable)).thenReturn(usersPage);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(users.size(), response.getBody().users().size());
+    // When
+    ResponseEntity<UserListResponse> response = usersController.searchUsers(email, mobile, enabled, pageable);
 
-        verify(fxUsersService).searchUsers(email, mobile, enabled, pageable);
-    }
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(users.size(), response.getBody().users().size());
 
-    @Test
-    void updateUser_WithValidData_ShouldUpdateUser() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-        UserUpdateRequest updateRequest = new UserUpdateRequest(
-                "updated@example.com", "+9876543210", "device-token-123");
-        
-        FxUser updatedUser = createTestUser(userId, "updated@example.com");
+    verify(fxUsersService).searchUsers(email, mobile, enabled, pageable);
+  }
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(updatedUser));
-        when(fxUsersService.updateUser(userId, updateRequest)).thenReturn(updatedUser);
+  @Test
+  void updateUser_WithValidData_ShouldUpdateUser() {
+    // Given
+    String userId = UUID.randomUUID().toString();
+    UserUpdateRequest updateRequest = new UserUpdateRequest(
+            "updated@example.com", "+9876543210", "device-token-123");
 
-        // When
-        ResponseEntity<UserUpdateResponse> response = usersController.updateUser(userId, updateRequest);
+    FxUser updatedUser = createTestUser(userId, "updated@example.com");
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(userId, response.getBody().userId().toString());
-        assertEquals("updated@example.com", response.getBody().user().email());
+    when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(updatedUser));
+    when(fxUsersService.updateUser(userId, updateRequest)).thenReturn(updatedUser);
 
-        verify(fxUsersService).updateUser(userId, updateRequest);
-    }
+    // When
+    ResponseEntity<UserUpdateResponse> response = usersController.updateUser(userId, updateRequest);
 
-    @Test
-    void updateUser_WithInvalidId_ShouldThrowUserNotFoundException() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-        UserUpdateRequest updateRequest = new UserUpdateRequest(
-                "updated@example.com", "+9876543210", "device-token-123");
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(userId, response.getBody().userId().toString());
+    assertEquals("updated@example.com", response.getBody().user().email());
 
-        when(fxUsersService.updateUser(anyString(), any(UserUpdateRequest.class))).thenThrow(
-                new UserNotFoundException("User not found with ID: " + userId, userId));
+    verify(fxUsersService).updateUser(userId, updateRequest);
+  }
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> 
+  @Test
+  void updateUser_WithInvalidId_ShouldThrowUserNotFoundException() {
+    // Given
+    String userId = UUID.randomUUID().toString();
+    UserUpdateRequest updateRequest = new UserUpdateRequest(
+            "updated@example.com", "+9876543210", "device-token-123");
+
+    when(fxUsersService.updateUser(anyString(), any(UserUpdateRequest.class))).thenThrow(
+            new UserNotFoundException("User not found with ID: " + userId, userId));
+
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
             usersController.updateUser(userId, updateRequest));
 
-        assertEquals("User not found with ID: " + userId, exception.getMessage());
-        assertEquals(userId, exception.getUserId());
+    assertEquals("User not found with ID: " + userId, exception.getMessage());
+    assertEquals(userId, exception.getUserId());
 
-        verify(fxUsersService).updateUser(anyString(), any());
-    }
+    verify(fxUsersService).updateUser(anyString(), any());
+  }
 
-    @Test
-    void deleteUser_WithValidId_ShouldDeleteUser() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-        FxUser existingUser = createTestUser(userId, "test@example.com");
+  @Test
+  void deleteUser_WithValidId_ShouldDeleteUser() {
+    // Given
+    String userId = UUID.randomUUID().toString();
+    FxUser existingUser = createTestUser(userId, "test@example.com");
 
-        when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(existingUser));
-        doNothing().when(fxUsersService).deleteUser(userId);
+    when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(existingUser));
+    doNothing().when(fxUsersService).deleteUser(userId);
 
-        // When
-        ResponseEntity<Void> response = usersController.deleteUser(userId);
+    // When
+    ResponseEntity<Void> response = usersController.deleteUser(userId);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        assertNull(response.getBody());
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    assertNull(response.getBody());
 
-        verify(fxUsersService).deleteUser(userId);
-    }
+    verify(fxUsersService).deleteUser(userId);
+  }
 
-    @Test
-    void getUserSubscriptions_WithValidId_ShouldReturnSubscriptions() {
-        // Given
-        String userId = UUID.randomUUID().toString();
-        UserSubscriptionsResponse subscriptionsResponse = new UserSubscriptionsResponse(
-                UUID.fromString(userId),
-                new ArrayList<>(),
-                0
-        );
+  @Test
+  void getUserSubscriptions_WithValidId_ShouldReturnSubscriptions() {
+    // Given
+    String userId = UUID.randomUUID().toString();
+    UserSubscriptionsResponse subscriptionsResponse = new UserSubscriptionsResponse(
+            UUID.fromString(userId),
+            new ArrayList<>(),
+            0
+    );
 
-        when(fxUsersService.getUserSubscriptions(userId)).thenReturn(subscriptionsResponse);
+    when(fxUsersService.getUserSubscriptions(userId)).thenReturn(subscriptionsResponse);
 
-        // When
-        ResponseEntity<UserSubscriptionsResponse> response = usersController.getUserSubscriptions(userId);
+    // When
+    ResponseEntity<UserSubscriptionsResponse> response = usersController.getUserSubscriptions(userId);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(subscriptionsResponse, response.getBody());
+    // Then
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(subscriptionsResponse, response.getBody());
 
-        verify(fxUsersService).getUserSubscriptions(userId);
-    }
+    verify(fxUsersService).getUserSubscriptions(userId);
+  }
 
-    @Test
-    void getUserSubscriptions_WithInvalidId_ShouldThrowUserNotFoundException() {
-        // Given
-        String userId = UUID.randomUUID().toString();
+  @Test
+  void getUserSubscriptions_WithInvalidId_ShouldThrowUserNotFoundException() {
+    // Given
+    String userId = UUID.randomUUID().toString();
 
-        when(fxUsersService.getUserSubscriptions(userId)).thenThrow(
-                new UserNotFoundException("User not found with ID: " + userId, userId));
+    when(fxUsersService.getUserSubscriptions(userId)).thenThrow(
+            new UserNotFoundException("User not found with ID: " + userId, userId));
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
-                usersController.getUserSubscriptions(userId));
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class, () ->
+            usersController.getUserSubscriptions(userId));
 
-        assertEquals("User not found with ID: " + userId, exception.getMessage());
-        assertEquals(userId, exception.getUserId());
-    }
+    assertEquals("User not found with ID: " + userId, exception.getMessage());
+    assertEquals(userId, exception.getUserId());
+  }
 
-    // Helper methods
-    private List<FxUser> createTestUsers() {
-        return List.of(
-                createTestUser(UUID.randomUUID().toString(), "user1@example.com"),
-                createTestUser(UUID.randomUUID().toString(), "user2@example.com"),
-                createTestUser(UUID.randomUUID().toString(), "user3@example.com")
-        );
-    }
+  // Helper methods
+  private List<FxUser> createTestUsers() {
+    return List.of(
+            createTestUser(UUID.randomUUID().toString(), "user1@example.com"),
+            createTestUser(UUID.randomUUID().toString(), "user2@example.com"),
+            createTestUser(UUID.randomUUID().toString(), "user3@example.com")
+    );
+  }
 
-    private FxUser createTestUser(String id, String email) {
-        FxUser user = new FxUser();
-        user.setId(UUID.fromString(id));
-        user.setEmail(email);
-        user.setMobile("+1234567890");
-        user.setPassword("encodedPassword");
-        user.setRole(UserRole.USER);
-        user.setEnabled(true);
-        user.setCreatedAt(Instant.now());
-        user.setUpdatedAt(Instant.now());
-        return user;
-    }
+  private FxUser createTestUser(String id, String email) {
+    FxUser user = new FxUser();
+    user.setId(UUID.fromString(id));
+    user.setEmail(email);
+    user.setMobile("+1234567890");
+    user.setPassword("encodedPassword");
+    user.setRole(UserRole.USER);
+    user.setEnabled(true);
+    user.setCreatedAt(Instant.now());
+    user.setUpdatedAt(Instant.now());
+    return user;
+  }
 } 

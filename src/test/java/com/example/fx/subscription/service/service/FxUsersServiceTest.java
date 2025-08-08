@@ -34,261 +34,263 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FxUsersServiceTest {
 
-    @Mock
-    private FxUserRepository fxUserRepository;
+  private static final String USER_NOT_FOUND = "User not found with ID: ";
 
-    @Mock
-    private SubscriptionRepository subscriptionRepository;
+  @Mock
+  private FxUserRepository fxUserRepository;
 
-    @InjectMocks
-    private FxUsersService fxUsersService;
+  @Mock
+  private SubscriptionRepository subscriptionRepository;
 
-    private FxUser testUser;
-    private Subscription testSubscription;
-    private UUID testUserId;
+  @InjectMocks
+  private FxUsersService fxUsersService;
 
-    @BeforeEach
-    void setUp() {
-        testUserId = UUID.randomUUID();
-        
-        testUser = new FxUser();
-        testUser.setId(testUserId);
-        testUser.setEmail("test@example.com");
-        testUser.setMobile("+1234567890");
-        testUser.setEnabled(true);
-        testUser.setCreatedAt(Instant.now());
-        testUser.setUpdatedAt(Instant.now());
-        
-        testSubscription = new Subscription();
-        testSubscription.setId(UUID.randomUUID());
-        testSubscription.setUser(testUser);
-        testSubscription.setCurrencyPair("GBP/USD");
-        testSubscription.setThreshold(BigDecimal.valueOf(1.25));
-        testSubscription.setDirection(ThresholdDirection.ABOVE);
-        testSubscription.setNotificationsChannels(List.of("email", "sms"));
-        testSubscription.setStatus(SubscriptionStatus.ACTIVE);
-        testSubscription.setCreatedAt(Instant.now());
-        testSubscription.setUpdatedAt(Instant.now());
-    }
+  private FxUser testUser;
+  private Subscription testSubscription;
+  private UUID testUserId;
 
-    @Test
-    void findAllUsers_ShouldReturnPagedUsers() {
-        // Given
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<FxUser> userPage = new PageImpl<>(List.of(testUser), pageable, 1);
-        when(fxUserRepository.findAll(pageable)).thenReturn(userPage);
+  @BeforeEach
+  void setUp() {
+    testUserId = UUID.randomUUID();
 
-        // When
-        Page<FxUser> result = fxUsersService.findAllUsers(pageable);
+    testUser = new FxUser();
+    testUser.setId(testUserId);
+    testUser.setEmail("test@example.com");
+    testUser.setMobile("+1234567890");
+    testUser.setEnabled(true);
+    testUser.setCreatedAt(Instant.now());
+    testUser.setUpdatedAt(Instant.now());
 
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals(testUser, result.getContent().getFirst());
-        assertEquals(1, result.getTotalElements());
-    }
+    testSubscription = new Subscription();
+    testSubscription.setId(UUID.randomUUID());
+    testSubscription.setUser(testUser);
+    testSubscription.setCurrencyPair("GBP/USD");
+    testSubscription.setThreshold(BigDecimal.valueOf(1.25));
+    testSubscription.setDirection(ThresholdDirection.ABOVE);
+    testSubscription.setNotificationsChannels(List.of("email", "sms"));
+    testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription.setCreatedAt(Instant.now());
+    testSubscription.setUpdatedAt(Instant.now());
+  }
 
-    @Test
-    void findUserById_WhenUserExists_ShouldReturnUser() {
-        // Given
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
+  @Test
+  void findAllUsers_ShouldReturnPagedUsers() {
+    // Given
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<FxUser> userPage = new PageImpl<>(List.of(testUser), pageable, 1);
+    when(fxUserRepository.findAll(pageable)).thenReturn(userPage);
 
-        // When
-        Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
+    // When
+    Page<FxUser> result = fxUsersService.findAllUsers(pageable);
 
-        // Then
-        assertTrue(result.isPresent());
-        assertEquals(testUser, result.get());
-    }
+    // Then
+    assertNotNull(result);
+    assertEquals(1, result.getContent().size());
+    assertEquals(testUser, result.getContent().getFirst());
+    assertEquals(1, result.getTotalElements());
+  }
 
-    @Test
-    void findUserById_WhenUserDoesNotExist_ShouldReturnEmpty() {
-        // Given
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
+  @Test
+  void findUserById_WhenUserExists_ShouldReturnUser() {
+    // Given
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
 
-        // When
-        Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
+    // When
+    Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
 
-        // Then
-        assertFalse(result.isPresent());
-    }
+    // Then
+    assertTrue(result.isPresent());
+    assertEquals(testUser, result.get());
+  }
 
-    @Test
-    void searchUsers_ShouldReturnPagedUsers() {
-        // Given
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<FxUser> userPage = new PageImpl<>(List.of(testUser), pageable, 1);
-        when(fxUserRepository.searchUsers(any(), any(), any(), any())).thenReturn(userPage);
+  @Test
+  void findUserById_WhenUserDoesNotExist_ShouldReturnEmpty() {
+    // Given
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
-        // When
-        Page<FxUser> result = fxUsersService.searchUsers("test@example.com", "+1234567890", true, pageable);
+    // When
+    Optional<FxUser> result = fxUsersService.findUserById(testUserId.toString());
 
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals(testUser, result.getContent().getFirst());
-    }
+    // Then
+    assertFalse(result.isPresent());
+  }
 
-    @Test
-    void updateUser_WhenUserExists_ShouldUpdateAndReturnUser() {
-        // Given
-        UserUpdateRequest updateRequest = new UserUpdateRequest(
-                "updated@example.com",
-                "+9876543210",
-                "new-device-token"
-        );
+  @Test
+  void searchUsers_ShouldReturnPagedUsers() {
+    // Given
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<FxUser> userPage = new PageImpl<>(List.of(testUser), pageable, 1);
+    when(fxUserRepository.searchUsers(any(), any(), any(), any())).thenReturn(userPage);
 
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
-        when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
+    // When
+    Page<FxUser> result = fxUsersService.searchUsers("test@example.com", "+1234567890", true, pageable);
 
-        // When
-        FxUser result = fxUsersService.updateUser(testUserId.toString(), updateRequest);
+    // Then
+    assertNotNull(result);
+    assertEquals(1, result.getContent().size());
+    assertEquals(testUser, result.getContent().getFirst());
+  }
 
-        // Then
-        assertNotNull(result);
-        verify(fxUserRepository).save(testUser);
-    }
+  @Test
+  void updateUser_WhenUserExists_ShouldUpdateAndReturnUser() {
+    // Given
+    UserUpdateRequest updateRequest = new UserUpdateRequest(
+            "updated@example.com",
+            "+9876543210",
+            "new-device-token"
+    );
 
-    @Test
-    void updateUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
-        // Given
-        UserUpdateRequest updateRequest = new UserUpdateRequest(
-                "updated@example.com",
-                "+9876543210",
-                "new-device-token"
-        );
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
+    when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
+    // When
+    FxUser result = fxUsersService.updateUser(testUserId.toString(), updateRequest);
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> fxUsersService.updateUser(testUserId.toString(), updateRequest));
-        assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
-    }
+    // Then
+    assertNotNull(result);
+    verify(fxUserRepository).save(testUser);
+  }
 
-    @Test
-    void updateUser_WithNullValues_ShouldOnlyUpdateProvidedFields() {
-        // Given
-        UserUpdateRequest updateRequest = new UserUpdateRequest(
-                null,
-                null,
-                "new-device-token"
-        );
+  @Test
+  void updateUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
+    // Given
+    UserUpdateRequest updateRequest = new UserUpdateRequest(
+            "updated@example.com",
+            "+9876543210",
+            "new-device-token"
+    );
 
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
-        when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
-        // When
-        FxUser result = fxUsersService.updateUser(testUserId.toString(), updateRequest);
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+            () -> fxUsersService.updateUser(testUserId.toString(), updateRequest));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
+  }
 
-        // Then
-        assertNotNull(result);
-        verify(fxUserRepository).save(testUser);
-    }
+  @Test
+  void updateUser_WithNullValues_ShouldOnlyUpdateProvidedFields() {
+    // Given
+    UserUpdateRequest updateRequest = new UserUpdateRequest(
+            null,
+            null,
+            "new-device-token"
+    );
 
-    @Test
-    void updateUserStatus_WhenUserExists_ShouldUpdateStatusAndReturnUser() {
-        // Given
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
-        when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
+    when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
-        // When
-        FxUser result = fxUsersService.updateUserStatus(testUserId.toString(), false);
+    // When
+    FxUser result = fxUsersService.updateUser(testUserId.toString(), updateRequest);
 
-        // Then
-        assertNotNull(result);
-        assertFalse(testUser.isEnabled());
-        verify(fxUserRepository).save(testUser);
-    }
+    // Then
+    assertNotNull(result);
+    verify(fxUserRepository).save(testUser);
+  }
 
-    @Test
-    void updateUserStatus_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
-        // Given
-        when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
+  @Test
+  void updateUserStatus_WhenUserExists_ShouldUpdateStatusAndReturnUser() {
+    // Given
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.of(testUser));
+    when(fxUserRepository.save(any(FxUser.class))).thenReturn(testUser);
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> fxUsersService.updateUserStatus(testUserId.toString(), false));
-        assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
-    }
+    // When
+    FxUser result = fxUsersService.updateUserStatus(testUserId.toString(), false);
 
-    @Test
-    void deleteUser_WhenUserExistsAndNoActiveSubscriptions_ShouldDeleteSuccessfully() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-        when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
+    // Then
+    assertNotNull(result);
+    assertFalse(testUser.isEnabled());
+    verify(fxUserRepository).save(testUser);
+  }
 
-        // When
-        fxUsersService.deleteUser(testUserId.toString());
+  @Test
+  void updateUserStatus_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
+    // Given
+    when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
-        // Then
-        verify(fxUserRepository).delete(testUser);
-    }
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+            () -> fxUsersService.updateUserStatus(testUserId.toString(), false));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
+  }
 
-    @Test
-    void deleteUser_WhenUserExistsButHasActiveSubscriptions_ShouldThrowIllegalStateException() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-        when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
+  @Test
+  void deleteUser_WhenUserExistsAndNoActiveSubscriptions_ShouldDeleteSuccessfully() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
 
-        // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> fxUsersService.deleteUser(testUserId.toString()));
-        assertTrue(exception.getMessage().contains("Cannot delete user with active subscriptions"));
-    }
+    // When
+    fxUsersService.deleteUser(testUserId.toString());
 
-    @Test
-    void deleteUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
+    // Then
+    verify(fxUserRepository).delete(testUser);
+  }
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> fxUsersService.deleteUser(testUserId.toString()));
-        assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
-    }
+  @Test
+  void deleteUser_WhenUserExistsButHasActiveSubscriptions_ShouldThrowIllegalStateException() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
 
-    @Test
-    void getUserSubscriptions_WhenUserExists_ShouldReturnUserSubscriptionsResponse() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-        when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
+    // When & Then
+    IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> fxUsersService.deleteUser(testUserId.toString()));
+    assertTrue(exception.getMessage().contains("Cannot delete user with active subscriptions"));
+  }
 
-        // When
-        UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());
+  @Test
+  void deleteUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
 
-        // Then
-        assertNotNull(result);
-        assertEquals(testUserId, result.userId());
-        assertEquals(1, result.subscriptions().size());
-        assertEquals(1, result.totalCount());
-        assertEquals(testSubscription.getId(), result.subscriptions().get(0).id());
-    }
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+            () -> fxUsersService.deleteUser(testUserId.toString()));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
+  }
 
-    @Test
-    void getUserSubscriptions_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
+  @Test
+  void getUserSubscriptions_WhenUserExists_ShouldReturnUserSubscriptionsResponse() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
 
-        // When & Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> fxUsersService.getUserSubscriptions(testUserId.toString()));
-        assertTrue(exception.getMessage().contains("User not found with ID: " + testUserId));
-    }
+    // When
+    UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());
 
-    @Test
-    void getUserSubscriptions_WhenUserHasNoSubscriptions_ShouldReturnEmptyList() {
-        // Given
-        when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-        when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
+    // Then
+    assertNotNull(result);
+    assertEquals(testUserId, result.userId());
+    assertEquals(1, result.subscriptions().size());
+    assertEquals(1, result.totalCount());
+    assertEquals(testSubscription.getId(), result.subscriptions().get(0).id());
+  }
 
-        // When
-        UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());
+  @Test
+  void getUserSubscriptions_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
 
-        // Then
-        assertNotNull(result);
-        assertEquals(testUserId, result.userId());
-        assertEquals(0, result.subscriptions().size());
-        assertEquals(0, result.totalCount());
-    }
+    // When & Then
+    UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+            () -> fxUsersService.getUserSubscriptions(testUserId.toString()));
+    assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
+  }
+
+  @Test
+  void getUserSubscriptions_WhenUserHasNoSubscriptions_ShouldReturnEmptyList() {
+    // Given
+    when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
+
+    // When
+    UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());
+
+    // Then
+    assertNotNull(result);
+    assertEquals(testUserId, result.userId());
+    assertEquals(0, result.subscriptions().size());
+    assertEquals(0, result.totalCount());
+  }
 } 

@@ -9,4 +9,5 @@ public record UserSubscriptionsResponse(
         UUID userId,
         List<SubscriptionResponse> subscriptions,
         int totalCount
-) {} 
+) {
+}

@@ -76,7 +76,7 @@ public class AuthController {
 
     } catch (AuthenticationException ex) {
       LOGGER.warn("Authentication failed: username={}, message={}",
-                authRequest.username(), ex.getMessage());
+              authRequest.username(), ex.getMessage());
 
       // Let the ControllerAdvice handle this exception
       throw new AuthenticationException("Invalid username/password") {

@@ -95,10 +95,10 @@ class SubscriptionChangePublisherIT {
     TimeUnit.MILLISECONDS.sleep(100);
 
     ConsumerRecords<String, SubscriptionChangeEvent> received = consumer.poll(Duration.ofSeconds(2));
-    
+
     // Verify we received at least one record
     Assertions.assertTrue(received.count() > 0, "No messages received from Kafka");
-    
+
     // Get the first record and verify it
     var record = received.iterator().next();
     assertThat(record, hasKey(testEvent.payload().id().toString()));
@@ -128,10 +128,10 @@ class SubscriptionChangePublisherIT {
     TimeUnit.MILLISECONDS.sleep(100);
 
     ConsumerRecords<String, SubscriptionChangeEvent> received = consumer.poll(Duration.ofSeconds(2));
-    
+
     // Verify we received at least one record
     Assertions.assertTrue(received.count() > 0, "No messages received from Kafka");
-    
+
     // Get the first record and verify it
     var record = received.iterator().next();
     assertThat(record, hasKey(subscription.getId().toString()));
@@ -164,10 +164,10 @@ class SubscriptionChangePublisherIT {
     TimeUnit.MILLISECONDS.sleep(100);
 
     ConsumerRecords<String, SubscriptionChangeEvent> received = consumer.poll(Duration.ofSeconds(2));
-    
+
     // Verify we received at least one record
     Assertions.assertTrue(received.count() > 0, "No messages received from Kafka");
-    
+
     // Get the first record and verify it
     var record = received.iterator().next();
     assertThat(record, hasKey(subscription.getId().toString()));
