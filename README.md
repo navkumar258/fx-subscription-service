@@ -19,7 +19,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 - **Database**: H2 in-memory database with JPA/Hibernate
 - **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
-- **Observability**: Distributed tracing with Zipkin integration
+- **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
 - **Scheduling**: Automated subscription processing and event publishing
 - **Testing**: Comprehensive unit and integration tests
 
@@ -63,7 +63,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 
 - Java 21+
 - Gradle 8.0+
-- Docker (for Prometheus monitoring)
+- Docker Compose (for observability stack)
 - FX MCP Client (for AI interactions)
 
 ## 🛠️ Installation & Setup
@@ -354,14 +354,21 @@ consumption.
 
 ### Tracing (Zipkin via micrometer)
 
-- Distributed tracing with Zipkin
-- Request correlation IDs
-- Performance monitoring
+- **Request Tracing**: End-to-end request flow visualization
+- **Performance Analysis**: Latency breakdown by service
+- **Error Tracking**: Trace error propagation across services
 
 ### Logging (Loki)
 
-- Loki logging appender
-- Available in grafana logs
+- **Structured Logging**: JSON format with correlation IDs
+- **Log Queries**: Powerful query language for log analysis
+- **Log Retention**: Configurable retention policies
+
+### Grafana Dashboards
+- **Application Metrics**: HTTP requests, response times, error rates
+- **Database Metrics**: Connection pool, query performance
+- **Business Metrics**: Subscription creation, user activity
+- **Custom Dashboards**: FX-specific metrics and alerts
 
 ## 🤖 MCP Server & AI Integration
 
@@ -405,7 +412,7 @@ The service exposes the following tools for AI clients:
 
 ## 🧪 Testing
 
-### Test Coverage
+### Test Infrastructure
 
 - Unit tests for all services
 - Integration tests for controllers
@@ -440,7 +447,7 @@ docker run -p 8443:8443 fx-subscription-service
 ### Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 📈 Performance
