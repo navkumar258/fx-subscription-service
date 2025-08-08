@@ -15,4 +15,5 @@ public record SubscriptionCreateRequest(
         @NotBlank(message = "Direction is mandatory and should not be blank")
         String direction,
         @NotEmpty(message = "Notification channels are mandatory and should contain at least 1 item")
-        List<String> notificationChannels) {}
+        List<String> notificationChannels) {
+}

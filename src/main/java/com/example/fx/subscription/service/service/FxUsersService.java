@@ -54,11 +54,11 @@ public class FxUsersService {
     if (StringUtils.hasText(userUpdateRequest.email())) {
       user.setEmail(userUpdateRequest.email());
     }
-    
+
     if (StringUtils.hasText(userUpdateRequest.mobile())) {
       user.setMobile(userUpdateRequest.mobile());
     }
-    
+
     if (StringUtils.hasText(userUpdateRequest.pushDeviceToken())) {
       user.setPushDeviceToken(userUpdateRequest.pushDeviceToken());
     }
@@ -95,7 +95,7 @@ public class FxUsersService {
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + userId, userId));
 
     List<Subscription> subscriptions = subscriptionRepository.findAllByUserId(user.getId());
-    
+
     List<SubscriptionResponse> subscriptionResponses =
             subscriptions.stream()
                     .map(SubscriptionResponse::fromSubscription)

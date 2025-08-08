@@ -43,7 +43,8 @@ public class Subscription implements Serializable {
   @Column(insertable = false)
   private Instant updatedAt;
 
-  public Subscription() {}
+  public Subscription() {
+  }
 
   public Subscription(UUID id,
                       String currencyPair,

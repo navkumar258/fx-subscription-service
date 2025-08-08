@@ -7,4 +7,5 @@ public record SubscriptionChangeEvent(
         long timestamp,
         String eventType,
         SubscriptionResponse payload
-) {}
+) {
+}

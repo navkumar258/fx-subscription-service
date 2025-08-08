@@ -56,7 +56,8 @@ public class FxUser implements Serializable, UserDetails {
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Set<Subscription> subscriptions = new HashSet<>();
 
-  public FxUser() {}
+  public FxUser() {
+  }
 
   public FxUser(UUID userId) {
     this.id = userId;

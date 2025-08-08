@@ -23,226 +23,226 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WebSecurityConfigTest {
 
-    @Mock
-    private JwtTokenProvider jwtTokenProvider;
+  @Mock
+  private JwtTokenProvider jwtTokenProvider;
 
-    @Mock
-    private AuthenticationConfiguration authConfig;
+  @Mock
+  private AuthenticationConfiguration authConfig;
 
-    @Mock
-    private AuthenticationManager authenticationManager;
+  @Mock
+  private AuthenticationManager authenticationManager;
 
-    @Mock
-    private HttpSecurity httpSecurity;
+  @Mock
+  private HttpSecurity httpSecurity;
 
-    @Mock
-    private SecurityFilterChain securityFilterChain;
+  @Mock
+  private SecurityFilterChain securityFilterChain;
 
-    private WebSecurityConfig webSecurityConfig;
+  private WebSecurityConfig webSecurityConfig;
 
-    @BeforeEach
-    void setUp() {
-        webSecurityConfig = new WebSecurityConfig(jwtTokenProvider);
-    }
+  @BeforeEach
+  void setUp() {
+    webSecurityConfig = new WebSecurityConfig(jwtTokenProvider);
+  }
 
-    @Test
-    void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
-        // Given
-        when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
-        when(httpSecurity.headers(any())).thenReturn(httpSecurity);
-        when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
-        when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
-        when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
-        when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
-        when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
-        doReturn(securityFilterChain).when(httpSecurity).build();
+  @Test
+  void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
+    // Given
+    when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
+    when(httpSecurity.headers(any())).thenReturn(httpSecurity);
+    when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
+    when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
+    when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
+    when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
+    when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
+    doReturn(securityFilterChain).when(httpSecurity).build();
 
-        // When
-        SecurityFilterChain result = webSecurityConfig.securityFilterChain(httpSecurity);
+    // When
+    SecurityFilterChain result = webSecurityConfig.securityFilterChain(httpSecurity);
 
-        // Then
-        assertNotNull(result);
-        assertEquals(securityFilterChain, result);
-        
-        // Verify all security configurations were applied
-        verify(httpSecurity).csrf(any());
-        verify(httpSecurity).headers(any());
-        verify(httpSecurity).sessionManagement(any());
-        verify(httpSecurity).exceptionHandling(any());
-        verify(httpSecurity).authorizeHttpRequests(any());
-        verify(httpSecurity).addFilterBefore(any(JwtTokenFilter.class), eq(UsernamePasswordAuthenticationFilter.class));
-        verify(httpSecurity).redirectToHttps(any());
-        verify(httpSecurity).build();
-    }
+    // Then
+    assertNotNull(result);
+    assertEquals(securityFilterChain, result);
 
-    @Test
-    void authenticationManager_ShouldReturnAuthenticationManager() throws Exception {
-        // Given
-        when(authConfig.getAuthenticationManager()).thenReturn(authenticationManager);
+    // Verify all security configurations were applied
+    verify(httpSecurity).csrf(any());
+    verify(httpSecurity).headers(any());
+    verify(httpSecurity).sessionManagement(any());
+    verify(httpSecurity).exceptionHandling(any());
+    verify(httpSecurity).authorizeHttpRequests(any());
+    verify(httpSecurity).addFilterBefore(any(JwtTokenFilter.class), eq(UsernamePasswordAuthenticationFilter.class));
+    verify(httpSecurity).redirectToHttps(any());
+    verify(httpSecurity).build();
+  }
 
-        // When
-        AuthenticationManager result = webSecurityConfig.authenticationManager(authConfig);
+  @Test
+  void authenticationManager_ShouldReturnAuthenticationManager() throws Exception {
+    // Given
+    when(authConfig.getAuthenticationManager()).thenReturn(authenticationManager);
 
-        // Then
-        assertNotNull(result);
-        assertEquals(authenticationManager, result);
-        verify(authConfig).getAuthenticationManager();
-    }
+    // When
+    AuthenticationManager result = webSecurityConfig.authenticationManager(authConfig);
 
-    @Test
-    void passwordEncoder_ShouldReturnBCryptPasswordEncoder() {
-        // When
-        PasswordEncoder result = webSecurityConfig.passwordEncoder();
+    // Then
+    assertNotNull(result);
+    assertEquals(authenticationManager, result);
+    verify(authConfig).getAuthenticationManager();
+  }
 
-        // Then
-        assertNotNull(result);
-        assertInstanceOf(BCryptPasswordEncoder.class, result);
-    }
+  @Test
+  void passwordEncoder_ShouldReturnBCryptPasswordEncoder() {
+    // When
+    PasswordEncoder result = webSecurityConfig.passwordEncoder();
 
-    @Test
-    void passwordEncoder_ShouldEncodeAndMatchPasswords() {
-        // Given
-        PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
-        String rawPassword = "testPassword123";
+    // Then
+    assertNotNull(result);
+    assertInstanceOf(BCryptPasswordEncoder.class, result);
+  }
 
-        // When
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-        boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
+  @Test
+  void passwordEncoder_ShouldEncodeAndMatchPasswords() {
+    // Given
+    PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
+    String rawPassword = "testPassword123";
 
-        // Then
-        assertNotNull(encodedPassword);
-        assertNotEquals(rawPassword, encodedPassword);
-        assertTrue(matches);
-    }
+    // When
+    String encodedPassword = passwordEncoder.encode(rawPassword);
+    boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
 
-    @Test
-    void passwordEncoder_ShouldNotMatchDifferentPasswords() {
-        // Given
-        PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
-        String password1 = "testPassword123";
-        String password2 = "differentPassword456";
+    // Then
+    assertNotNull(encodedPassword);
+    assertNotEquals(rawPassword, encodedPassword);
+    assertTrue(matches);
+  }
 
-        // When
-        String encodedPassword1 = passwordEncoder.encode(password1);
-        boolean matches = passwordEncoder.matches(password2, encodedPassword1);
+  @Test
+  void passwordEncoder_ShouldNotMatchDifferentPasswords() {
+    // Given
+    PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
+    String password1 = "testPassword123";
+    String password2 = "differentPassword456";
 
-        // Then
-        assertFalse(matches);
-    }
+    // When
+    String encodedPassword1 = passwordEncoder.encode(password1);
+    boolean matches = passwordEncoder.matches(password2, encodedPassword1);
 
-    @Test
-    void unauthorizedEntryPoint_ShouldReturnAuthenticationEntryPoint() {
-        // When
-        AuthenticationEntryPoint result = webSecurityConfig.unauthorizedEntryPoint();
+    // Then
+    assertFalse(matches);
+  }
 
-        // Then
-        assertNotNull(result);
-    }
+  @Test
+  void unauthorizedEntryPoint_ShouldReturnAuthenticationEntryPoint() {
+    // When
+    AuthenticationEntryPoint result = webSecurityConfig.unauthorizedEntryPoint();
 
-    @Test
-    void unauthorizedEntryPoint_ShouldSendUnauthorizedResponse() throws Exception {
-        // Given
-        AuthenticationEntryPoint entryPoint = webSecurityConfig.unauthorizedEntryPoint();
-        jakarta.servlet.http.HttpServletRequest request = mock(jakarta.servlet.http.HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        org.springframework.security.core.AuthenticationException authException = 
+    // Then
+    assertNotNull(result);
+  }
+
+  @Test
+  void unauthorizedEntryPoint_ShouldSendUnauthorizedResponse() throws Exception {
+    // Given
+    AuthenticationEntryPoint entryPoint = webSecurityConfig.unauthorizedEntryPoint();
+    jakarta.servlet.http.HttpServletRequest request = mock(jakarta.servlet.http.HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    org.springframework.security.core.AuthenticationException authException =
             mock(org.springframework.security.core.AuthenticationException.class);
 
-        // When
-        entryPoint.commence(request, response, authException);
+    // When
+    entryPoint.commence(request, response, authException);
 
-        // Then
-        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-    }
+    // Then
+    verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+  }
 
-    @Test
-    void constructor_ShouldInjectJwtTokenProvider() {
-        // Given
-        JwtTokenProvider injectedProvider = (JwtTokenProvider) ReflectionTestUtils.getField(webSecurityConfig, "jwtTokenProvider");
+  @Test
+  void constructor_ShouldInjectJwtTokenProvider() {
+    // Given
+    JwtTokenProvider injectedProvider = (JwtTokenProvider) ReflectionTestUtils.getField(webSecurityConfig, "jwtTokenProvider");
 
-        // Then
-        assertNotNull(injectedProvider);
-        assertEquals(jwtTokenProvider, injectedProvider);
-    }
+    // Then
+    assertNotNull(injectedProvider);
+    assertEquals(jwtTokenProvider, injectedProvider);
+  }
 
-    @Test
-    void securityFilterChain_ShouldCreateJwtTokenFilter() throws Exception {
-        // Given
-        when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
-        when(httpSecurity.headers(any())).thenReturn(httpSecurity);
-        when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
-        when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
-        when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
-        when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
-        when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
-        doReturn(securityFilterChain).when(httpSecurity).build();
+  @Test
+  void securityFilterChain_ShouldCreateJwtTokenFilter() throws Exception {
+    // Given
+    when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
+    when(httpSecurity.headers(any())).thenReturn(httpSecurity);
+    when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
+    when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
+    when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
+    when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
+    when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
+    doReturn(securityFilterChain).when(httpSecurity).build();
 
-        // When
-        webSecurityConfig.securityFilterChain(httpSecurity);
+    // When
+    webSecurityConfig.securityFilterChain(httpSecurity);
 
-        // Then
-        verify(httpSecurity).addFilterBefore(any(JwtTokenFilter.class), eq(UsernamePasswordAuthenticationFilter.class));
-    }
+    // Then
+    verify(httpSecurity).addFilterBefore(any(JwtTokenFilter.class), eq(UsernamePasswordAuthenticationFilter.class));
+  }
 
-    @Test
-    void passwordEncoder_ShouldGenerateDifferentEncodingsForSamePassword() {
-        // Given
-        PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
-        String rawPassword = "testPassword123";
+  @Test
+  void passwordEncoder_ShouldGenerateDifferentEncodingsForSamePassword() {
+    // Given
+    PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
+    String rawPassword = "testPassword123";
 
-        // When
-        String encodedPassword1 = passwordEncoder.encode(rawPassword);
-        String encodedPassword2 = passwordEncoder.encode(rawPassword);
+    // When
+    String encodedPassword1 = passwordEncoder.encode(rawPassword);
+    String encodedPassword2 = passwordEncoder.encode(rawPassword);
 
-        // Then
-        assertNotEquals(encodedPassword1, encodedPassword2); // BCrypt generates different salts
-        assertTrue(passwordEncoder.matches(rawPassword, encodedPassword1));
-        assertTrue(passwordEncoder.matches(rawPassword, encodedPassword2));
-    }
+    // Then
+    assertNotEquals(encodedPassword1, encodedPassword2); // BCrypt generates different salts
+    assertTrue(passwordEncoder.matches(rawPassword, encodedPassword1));
+    assertTrue(passwordEncoder.matches(rawPassword, encodedPassword2));
+  }
 
-    @Test
-    void passwordEncoder_ShouldHandleNullPassword() {
-        // Given
-        PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
+  @Test
+  void passwordEncoder_ShouldHandleNullPassword() {
+    // Given
+    PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
 
-        // When & Then
-        assertThrows(IllegalArgumentException.class, () -> passwordEncoder.encode(null));
-        assertThrows(IllegalArgumentException.class, () -> passwordEncoder.matches(null, "encoded"));
-        assertFalse(passwordEncoder.matches("raw", null));
-    }
+    // When & Then
+    assertThrows(IllegalArgumentException.class, () -> passwordEncoder.encode(null));
+    assertThrows(IllegalArgumentException.class, () -> passwordEncoder.matches(null, "encoded"));
+    assertFalse(passwordEncoder.matches("raw", null));
+  }
 
-    @Test
-    void passwordEncoder_ShouldHandleEmptyPassword() {
-        // Given
-        PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
-        String emptyPassword = "";
+  @Test
+  void passwordEncoder_ShouldHandleEmptyPassword() {
+    // Given
+    PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
+    String emptyPassword = "";
 
-        // When
-        String encodedPassword = passwordEncoder.encode(emptyPassword);
-        boolean matches = passwordEncoder.matches(emptyPassword, encodedPassword);
+    // When
+    String encodedPassword = passwordEncoder.encode(emptyPassword);
+    boolean matches = passwordEncoder.matches(emptyPassword, encodedPassword);
 
-        // Then
-        assertNotNull(encodedPassword);
-        assertTrue(matches);
-    }
+    // Then
+    assertNotNull(encodedPassword);
+    assertTrue(matches);
+  }
 
-    @Test
-    void authenticationManager_ShouldThrowExceptionWhenAuthConfigFails() throws Exception {
-        // Given
-        when(authConfig.getAuthenticationManager()).thenThrow(new RuntimeException("Auth config error"));
+  @Test
+  void authenticationManager_ShouldThrowExceptionWhenAuthConfigFails() throws Exception {
+    // Given
+    when(authConfig.getAuthenticationManager()).thenThrow(new RuntimeException("Auth config error"));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> webSecurityConfig.authenticationManager(authConfig));
-        verify(authConfig).getAuthenticationManager();
-    }
+    // When & Then
+    assertThrows(RuntimeException.class, () -> webSecurityConfig.authenticationManager(authConfig));
+    verify(authConfig).getAuthenticationManager();
+  }
 
-    @Test
-    void securityFilterChain_ShouldThrowExceptionWhenHttpSecurityFails() throws Exception {
-        // Given
-        when(httpSecurity.csrf(any())).thenThrow(new RuntimeException("Security config error"));
+  @Test
+  void securityFilterChain_ShouldThrowExceptionWhenHttpSecurityFails() throws Exception {
+    // Given
+    when(httpSecurity.csrf(any())).thenThrow(new RuntimeException("Security config error"));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> webSecurityConfig.securityFilterChain(httpSecurity));
-        verify(httpSecurity).csrf(any());
-    }
+    // When & Then
+    assertThrows(RuntimeException.class, () -> webSecurityConfig.securityFilterChain(httpSecurity));
+    verify(httpSecurity).csrf(any());
+  }
 } 

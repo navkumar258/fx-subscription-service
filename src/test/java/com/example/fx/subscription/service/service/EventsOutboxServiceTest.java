@@ -39,7 +39,7 @@ class EventsOutboxServiceTest {
   void setUp() {
     testId = UUID.randomUUID();
     testIdString = testId.toString();
-    
+
     testOutbox = new EventsOutbox();
     testOutbox.setId(testId);
     testOutbox.setAggregateType("Subscription");
@@ -62,9 +62,9 @@ class EventsOutboxServiceTest {
 
     // Then
     verify(eventsOutboxRepository).findById(testId);
-    verify(eventsOutboxRepository).save(argThat(outbox -> 
-        outbox.getId().equals(testId) && 
-        newStatus.equals(outbox.getStatus())
+    verify(eventsOutboxRepository).save(argThat(outbox ->
+            outbox.getId().equals(testId) &&
+                    newStatus.equals(outbox.getStatus())
     ));
   }
 
@@ -75,10 +75,10 @@ class EventsOutboxServiceTest {
     when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.empty());
 
     // When & Then
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-        eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
+    RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
     );
-    
+
     assertEquals("Outbox event not found with id: " + testIdString, exception.getMessage());
     verify(eventsOutboxRepository).findById(testId);
     verify(eventsOutboxRepository, never()).save(any(EventsOutbox.class));
@@ -91,10 +91,10 @@ class EventsOutboxServiceTest {
     String newStatus = "SENT";
 
     // When & Then
-    assertThrows(IllegalArgumentException.class, () -> 
-        eventsOutboxService.updateOutboxStatus(invalidId, newStatus)
+    assertThrows(IllegalArgumentException.class, () ->
+            eventsOutboxService.updateOutboxStatus(invalidId, newStatus)
     );
-    
+
     verify(eventsOutboxRepository, never()).findById(any());
     verify(eventsOutboxRepository, never()).save(any(EventsOutbox.class));
   }
@@ -105,10 +105,10 @@ class EventsOutboxServiceTest {
     String newStatus = "SENT";
 
     // When & Then
-    assertThrows(NullPointerException.class, () -> 
-        eventsOutboxService.updateOutboxStatus(null, newStatus)
+    assertThrows(NullPointerException.class, () ->
+            eventsOutboxService.updateOutboxStatus(null, newStatus)
     );
-    
+
     verify(eventsOutboxRepository, never()).findById(any());
     verify(eventsOutboxRepository, never()).save(any(EventsOutbox.class));
   }
@@ -124,9 +124,9 @@ class EventsOutboxServiceTest {
 
     // Then
     verify(eventsOutboxRepository).findById(testId);
-    verify(eventsOutboxRepository).save(argThat(outbox -> 
-        outbox.getId().equals(testId) && 
-        outbox.getStatus() == null
+    verify(eventsOutboxRepository).save(argThat(outbox ->
+            outbox.getId().equals(testId) &&
+                    outbox.getStatus() == null
     ));
   }
 
@@ -142,9 +142,9 @@ class EventsOutboxServiceTest {
 
     // Then
     verify(eventsOutboxRepository).findById(testId);
-    verify(eventsOutboxRepository).save(argThat(outbox -> 
-        outbox.getId().equals(testId) && 
-        emptyStatus.equals(outbox.getStatus())
+    verify(eventsOutboxRepository).save(argThat(outbox ->
+            outbox.getId().equals(testId) &&
+                    emptyStatus.equals(outbox.getStatus())
     ));
   }
 
@@ -168,10 +168,10 @@ class EventsOutboxServiceTest {
     when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.empty());
 
     // When & Then
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-        eventsOutboxService.findOutboxById(testIdString)
+    RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            eventsOutboxService.findOutboxById(testIdString)
     );
-    
+
     assertEquals("Outbox event not found with id: " + testIdString, exception.getMessage());
     verify(eventsOutboxRepository).findById(testId);
   }
@@ -182,20 +182,20 @@ class EventsOutboxServiceTest {
     String invalidId = "invalid-uuid";
 
     // When & Then
-    assertThrows(IllegalArgumentException.class, () -> 
-        eventsOutboxService.findOutboxById(invalidId)
+    assertThrows(IllegalArgumentException.class, () ->
+            eventsOutboxService.findOutboxById(invalidId)
     );
-    
+
     verify(eventsOutboxRepository, never()).findById(any());
   }
 
   @Test
   void findOutboxById_WhenNullId_ShouldThrowNullPointerException() {
     // When & Then
-    assertThrows(NullPointerException.class, () -> 
-        eventsOutboxService.findOutboxById(null)
+    assertThrows(NullPointerException.class, () ->
+            eventsOutboxService.findOutboxById(null)
     );
-    
+
     verify(eventsOutboxRepository, never()).findById(any());
   }
 
@@ -210,14 +210,14 @@ class EventsOutboxServiceTest {
     eventsOutboxService.updateOutboxStatus(testIdString, newStatus);
 
     // Then
-    verify(eventsOutboxRepository).save(argThat(outbox -> 
-        outbox.getId().equals(testId) &&
-        outbox.getAggregateType().equals(testOutbox.getAggregateType()) &&
-        outbox.getAggregateId().equals(testOutbox.getAggregateId()) &&
-        outbox.getEventType().equals(testOutbox.getEventType()) &&
-        outbox.getPayload().equals(testOutbox.getPayload()) &&
-        outbox.getTimestamp() == testOutbox.getTimestamp() &&
-        newStatus.equals(outbox.getStatus())
+    verify(eventsOutboxRepository).save(argThat(outbox ->
+            outbox.getId().equals(testId) &&
+                    outbox.getAggregateType().equals(testOutbox.getAggregateType()) &&
+                    outbox.getAggregateId().equals(testOutbox.getAggregateId()) &&
+                    outbox.getEventType().equals(testOutbox.getEventType()) &&
+                    outbox.getPayload().equals(testOutbox.getPayload()) &&
+                    outbox.getTimestamp() == testOutbox.getTimestamp() &&
+                    newStatus.equals(outbox.getStatus())
     ));
   }
 
@@ -226,15 +226,15 @@ class EventsOutboxServiceTest {
     // Given
     String newStatus = "SENT";
     RuntimeException saveException = new RuntimeException("Database connection failed");
-    
+
     when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
     when(eventsOutboxRepository.save(any(EventsOutbox.class))).thenThrow(saveException);
 
     // When & Then
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-        eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
+    RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
     );
-    
+
     assertEquals("Database connection failed", exception.getMessage());
     verify(eventsOutboxRepository).findById(testId);
     verify(eventsOutboxRepository).save(any(EventsOutbox.class));
@@ -246,7 +246,7 @@ class EventsOutboxServiceTest {
     EventsOutbox anotherOutbox = new EventsOutbox();
     anotherOutbox.setId(UUID.randomUUID());
     anotherOutbox.setStatus("SENT");
-    
+
     when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
 
     // When
@@ -270,7 +270,7 @@ class EventsOutboxServiceTest {
     subscription.setDirection(ThresholdDirection.ABOVE);
     subscription.setNotificationsChannels(List.of("email", "sms"));
     subscription.setStatus(SubscriptionStatus.ACTIVE);
-    
+
     return SubscriptionResponse.fromSubscription(subscription);
   }
 } 

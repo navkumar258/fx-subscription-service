@@ -8,4 +8,5 @@ public record UserListResponse(
         int totalPages,
         int currentPage,
         int pageSize
-) {} 
+) {
+}
