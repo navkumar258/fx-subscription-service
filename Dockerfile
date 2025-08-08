@@ -19,5 +19,6 @@ RUN --mount=type=secret,id=keystore_p12,dst=keystore.p12 sh -c 'base64 -d /run/s
 EXPOSE 8443
 
 ENV KEYSTORE_LOCATION=keystore.p12
+ENV KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}
 
 ENTRYPOINT ["java","-jar","app.jar"]
