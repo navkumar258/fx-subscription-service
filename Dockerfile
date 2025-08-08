@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 ARG JAR_FILE_NAME
 LABEL version=${JAR_FILE_NAME}

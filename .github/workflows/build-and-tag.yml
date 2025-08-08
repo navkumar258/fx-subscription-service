@@ -62,14 +62,8 @@ jobs:
           # Executes your specific JaCoCo task for coverage and line verification.
           ./gradlew jacocoTestCoverageVerification
 
-      - name: Build with Gradle
-        run: |
-          echo "--- Building the Application ---"
-          # This command compiles the code and packages it into a JAR file.
-          ./gradlew clean build -x test -x generateOpenApiDocs
-
       - name: Determine current version and new version
-        id: versioning # Assign an ID to this step to reference its outputs later.
+        id: versioning
         run: |
           echo "--- Determining Version ---"
           # Read the current version from build.gradle.
@@ -135,14 +129,33 @@ jobs:
           fi
 
           echo "New version determined: $NEW_VERSION"
-          # Set outputs that can be used by subsequent steps
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if version needs update
+        id: version_check
+        run: |
+          echo "--- Checking if Version Needs Update ---"
+          if [ "${{ steps.versioning.outputs.CURRENT_VERSION }}" == "${{ steps.versioning.outputs.NEW_VERSION }}" ]; then
+            echo "Version is already ${{ steps.versioning.outputs.NEW_VERSION }}. No update needed in build.gradle or new tag."
+            echo "skip_update=true" >> "$GITHUB_OUTPUT" # Set output to skip subsequent steps
+          else
+            echo "Version needs update from ${{ steps.versioning.outputs.CURRENT_VERSION }} to ${{ steps.versioning.outputs.NEW_VERSION }}."
+            echo "skip_update=false" >> "$GITHUB_OUTPUT" # Set output to proceed
+          fi
+
+      - name: Update version in build.gradle
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Updating build.gradle ---"
+          # Use sed to replace the old version string with the new one in build.gradle.
+          # The regex handles both single and double quotes around the version number.
+          sed -i "s/version\s*=\s*['|\"]${{ steps.versioning.outputs.CURRENT_VERSION }}['|\"]/version = '${{ steps.versioning.outputs.NEW_VERSION }}'/g" build.gradle
+          echo "Updated build.gradle to version ${{ steps.versioning.outputs.NEW_VERSION }}"
 
       - name: Determine project name
         id: project-name
         run: |
-          # Read the project name from settings.gradle
           PROJECT_NAME=$(grep -oP "rootProject.name\s*=\s*['|\"]\K[a-zA-Z0-9_-]+" settings.gradle | head -1)
           if [ -z "$PROJECT_NAME" ]; then
             echo "::error::Could not find 'rootProject.name' in settings.gradle. Exiting."
@@ -150,6 +163,11 @@ jobs:
           fi
           echo "Project name found: $PROJECT_NAME"
           echo "PROJECT_NAME=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        run: |
+          echo "--- Building the Application ---"
+          ./gradlew clean build -x test -x generateOpenApiDocs
 
       - name: Build Docker Image
         uses: docker/build-push-action@v5
@@ -161,12 +179,11 @@ jobs:
             "keystore_p12=${{ secrets.KEYSTORE_P12_BASE64 }}"
           build-args: |
             JAR_FILE_NAME=${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.jar
-            KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
 
       - name: Save Docker Image to tar file
         run: |
           # Use `docker save` to export the local image to a tar archive
-          docker save ${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }} -o ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}-docker.tar
+          docker save ${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }} -o ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -175,56 +192,31 @@ jobs:
           path: |
             build/libs/*.jar
             build/reports/jacoco/test/html/
-            ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}-docker.tar
+            ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar
 
+      - name: Commit and push version update
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Committing and Pushing Version Update ---"
+          # Configure Git user for the commit.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-#      - name: Check if version needs update
-#        id: version_check # Assign an ID to this step.
-#        run: |
-#          echo "--- Checking if Version Needs Update ---"
-#          if [ "${{ steps.versioning.outputs.CURRENT_VERSION }}" == "${{ steps.versioning.outputs.NEW_VERSION }}" ]; then
-#            echo "Version is already ${{ steps.versioning.outputs.NEW_VERSION }}. No update needed in build.gradle or new tag."
-#            echo "skip_update=true" >> "$GITHUB_OUTPUT" # Set output to skip subsequent steps
-#          else
-#            echo "Version needs update from ${{ steps.versioning.outputs.CURRENT_VERSION }} to ${{ steps.versioning.outputs.NEW_VERSION }}."
-#            echo "skip_update=false" >> "$GITHUB_OUTPUT" # Set output to proceed
-#          fi
-#
-#      - name: Update version in build.gradle
-#        # This step runs only if 'skip_update' is 'false'.
-#        if: steps.version_check.outputs.skip_update == 'false'
-#        run: |
-#          echo "--- Updating build.gradle ---"
-#          # Use sed to replace the old version string with the new one in build.gradle.
-#          # The regex handles both single and double quotes around the version number.
-#          sed -i "s/version\s*=\s*['|\"]${{ steps.versioning.outputs.CURRENT_VERSION }}['|\"]/version = '${{ steps.versioning.outputs.NEW_VERSION }}'/g" build.gradle
-#          echo "Updated build.gradle to version ${{ steps.versioning.outputs.NEW_VERSION }}"
-#
-#      - name: Commit and push version update
-#        # This step runs only if 'skip_update' is 'false'.
-#        if: steps.version_check.outputs.skip_update == 'false'
-#        run: |
-#          echo "--- Committing and Pushing Version Update ---"
-#          # Configure Git user for the commit.
-#          git config user.name "github-actions[bot]"
-#          git config user.email "github-actions[bot]@users.noreply.github.com"
-#
-#          # Add the modified build.gradle file.
-#          git add build.gradle
-#          # Commit the changes. '|| true' prevents the workflow from failing if no changes were made (e.g., sed didn't find anything).
-#          git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit for version bump."
-#          # Push the commit to the main branch.
-#          git push
-#
-#      - name: Create and push Git tag
-#        # This step runs only if 'skip_update' is 'false'.
-#        if: steps.version_check.outputs.skip_update == 'false'
-#        run: |
-#          echo "--- Creating and Pushing Git Tag ---"
-#          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
-#          echo "Creating tag: $TAG_NAME"
-#          # Create the Git tag.
-#          git tag $TAG_NAME
-#          # Push the new tag to the remote repository.
-#          git push origin $TAG_NAME
-#          echo "Successfully pushed tag $TAG_NAME"
+          # Add the modified build.gradle file.
+          git add build.gradle
+          # Commit the changes. '|| true' prevents the workflow from failing if no changes were made (e.g., sed didn't find anything).
+          git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit for version bump."
+          # Push the commit to the main branch.
+          git push
+
+      - name: Create and push Git tag
+        if: steps.version_check.outputs.skip_update == 'false'
+        run: |
+          echo "--- Creating and Pushing Git Tag ---"
+          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          echo "Creating tag: $TAG_NAME"
+          # Create the Git tag.
+          git tag $TAG_NAME
+          # Push the new tag to the remote repository.
+          git push origin $TAG_NAME
+          echo "Successfully pushed tag $TAG_NAME"
