@@ -380,11 +380,13 @@ consumption.
 - Custom business metrics
 
 ### Tracing (Zipkin via micrometer)
+
 - **Request Tracing**: End-to-end request flow visualization
 - **Performance Analysis**: Latency breakdown by service
 - **Error Tracking**: Trace error propagation across services
 
 ### Logging (Loki)
+
 - **Structured Logging**: JSON format with correlation IDs
 - **Log Queries**: Powerful query language for log analysis
 - **Log Retention**: Configurable retention policies
@@ -438,6 +440,7 @@ The service exposes the following tools for AI clients:
 ## 🧪 Testing
 
 ### Test Infrastructure
+
 - Unit tests for all services
 - Integration tests for controllers
 - Repository layer testing
