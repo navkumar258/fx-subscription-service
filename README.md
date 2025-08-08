@@ -15,6 +15,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 - **Security**: JWT-based authentication with role-based access control
 
 ### Technical Features
+
 - **Database**: PostgreSQL database with JPA/Hibernate
 - **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
@@ -89,6 +90,7 @@ This will also generate OpenAPI documentation in the `api-docs/` directory.
 ```
 
 ### 3(a). Run with Docker Compose (Optional)
+
 ```bash
 # Build & Start all services including PostgreSQL
 docker compose build
@@ -101,6 +103,7 @@ docker compose ps
 The application will start on `https://localhost:8443`
 
 ### 4. Start Observability Stack (Optional)
+
 ```bash
 # Start Grafana OSS
 docker run -d --name grafana -it -p 3000:3000 grafana/grafana:latest
@@ -119,6 +122,7 @@ docker compose -f docker-compose.observability.yml up -d
 ```
 
 ### 5. Access Observability Tools
+
 ```bash
 # Grafana Dashboard: http://localhost:3000 (admin/admin)
 # Loki Logs: http://localhost:3100
@@ -126,7 +130,7 @@ docker compose -f docker-compose.observability.yml up -d
 # Prometheus Metrics: http://localhost:9090
 ```
 
-### 5. Start FX MCP Client (for AI features)
+### 6. Start FX MCP Client (Optional, for AI features)
 
 ```bash
 # Ensure the FX MCP Client is running and configured to connect to this service
@@ -557,5 +561,4 @@ For support and questions:
 
 ---
 
-**Note**: This service uses PostgreSQL with TestContainers for development and testing, providing a production-ready database setup with isolated test environments. The AI chat functionality is now handled by the separate FX MCP Client service. The AI chat functionality is now handled by
-the separate FX MCP Client service.
+**Note**: This service uses PostgreSQL with TestContainers for development and testing, providing a production-ready database setup with isolated test environments. The AI chat functionality is now handled by the separate FX MCP Client service.
