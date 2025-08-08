@@ -1,4 +1,4 @@
-name: Build and Create a Tag Workflow
+name: Build and Create a Tag
 
 on:
   #  push:
@@ -66,7 +66,7 @@ jobs:
         run: |
           echo "--- Building the Application ---"
           # This command compiles the code and packages it into a JAR file.
-          ./gradlew clean build
+          ./gradlew clean build -x generateOpenApiDocs
 
       - name: Determine current version and new version
         id: versioning # Assign an ID to this step to reference its outputs later.
