@@ -2,6 +2,7 @@ package com.example.fx.subscription.service.repository;
 
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
+import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
 import com.example.fx.subscription.service.model.EventsOutbox;
 import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
@@ -22,10 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@TestPropertySource(properties = {
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.datasource.url=jdbc:h2:mem:testdb"
-})
+@Import(PostgresTestContainersConfig.class)
 class EventsOutboxRepositoryTest {
 
   @MockitoBean

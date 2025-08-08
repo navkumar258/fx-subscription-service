@@ -16,7 +16,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 
 ### Technical Features
 
-- **Database**: H2 in-memory database with JPA/Hibernate
+- **Database**: PostgreSQL database with JPA/Hibernate
 - **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
 - **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
@@ -50,7 +50,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
                      └────────────┼──────────────┘
                                   │
                      ┌─────────────▼─────────────┐
-                     │        H2 Database        │
+                     │       PostgreSQL DB       │
                      └───────────────────────────┘
                                   │
                      ┌─────────────▼─────────────┐
@@ -149,9 +149,9 @@ KEY_PASSWORD=your_key_password
 # JWT Configuration
 JWT_SECRET_KEY=your_jwt_secret_key
 
-# Database (H2 - default)
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.datasource.username=sa
+# Database (PostgreSQL)
+spring.datasource.url=jdbc:postgresql://localhost:5432/fx_subscription_db
+spring.datasource.username=postgres
 spring.datasource.password=password
 
 # Kafka Configuration
@@ -555,10 +555,10 @@ For support and questions:
 
 - **v1.0.0** - Initial release with core subscription management
 - **v1.1.0** - Added AI integration and improved security
-- **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
+- **v1.2.0** - Enhanced monitoring and observability features with Grafana stack
+- **v1.3.0** - Migrated to PostgreSQL with TestContainers for reliable testing
+- - **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
 
 ---
 
-**Note**: This service is designed for development and testing purposes. For production deployment, consider using a
-production-grade database like PostgreSQL and proper infrastructure setup. The AI chat functionality is now handled by
-the separate FX MCP Client service.
+**Note**: This service uses PostgreSQL with TestContainers for development and testing, providing a production-ready database setup with isolated test environments. The AI chat functionality is now handled by the separate FX MCP Client service.
