@@ -7,7 +7,7 @@ LABEL version=${JAR_FILE_NAME}
 WORKDIR /app
 
 RUN addgroup -S spring &&  \
-    adduser -S spring -G spring \
+    adduser -S spring -G spring && \
     chown -R spring:spring /app
 USER spring:spring
 
