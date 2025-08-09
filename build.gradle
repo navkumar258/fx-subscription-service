@@ -44,6 +44,7 @@ dependencies {
 	// for openapi spec generation
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.9', withoutCommonsLang3
     implementation 'org.apache.commons:commons-lang3:3.18.0'
+    runtimeOnly 'com.h2database:h2'
 
 	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
@@ -158,11 +159,15 @@ tasks.register('coverageReport') {
 
 openApi {
     apiDocsUrl.set("https://localhost:8443/v3/api-docs")
-    trustStore.set("$rootDir/src/main/resources/keystore.p12")
-    trustStorePassword.set(System.getenv("KEYSTORE_PASSWORD")?.toCharArray())
+    trustStore.set(System.getenv("FX_KEYSTORE_LOCATION"))
+    trustStorePassword.set(System.getenv("FX_KEYSTORE_PASSWORD")?.toCharArray())
 
     outputDir.set(file("$rootDir/api-docs"))
     outputFileName.set("fx-subscription-service.json")
+
+    customBootRun {
+        args = ["--spring.profiles.active=openapi"]
+    }
 }
 
 tasks.named("build") {

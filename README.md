@@ -61,93 +61,253 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 
 ## 📝 Prerequisites
 
+### For Local Development (Docker-based - Recommended)
+- Docker and Docker Compose
+- A valid PKCS12 keystore file (for SSL/TLS)
+- Environment variables configured (see Configuration section)
+
+### For Host-based Development
 - Java 21+
 - Gradle 8.0+
+- PostgreSQL 17.5+
+- Apache Kafka 3.9.1+
 - Docker Compose (for observability stack)
 - FX MCP Client (for AI interactions)
 
 ## 🛠️ Installation & Setup
 
-### 1. Clone the Repository
+### Option 1: Quick Start with Docker (Recommended)
+
+This is the fastest way to get the entire application stack running locally with minimal setup.
+
+#### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd fx-subscription-service
 ```
 
-### 2. Build the Application
+#### 2. Configure Environment Variables
+
+Create a `.env` file in the project root or set the following environment variables:
 
 ```bash
-./gradlew build
+# Required: SSL Keystore Configuration
+export FX_KEYSTORE_LOCATION=path/to/your/keystore.p12
+export FX_KEYSTORE_PASSWORD=your_keystore_password
+
+# Required: JWT Secret Key
+export FX_JWT_SECRET_KEY=your_jwt_secret_key_at_least_256_bits
+
+# Optional: Database Configuration (defaults provided)
+# export FX_POSTGRES_DB=fx_subscription_db
+# export FX_POSTGRES_USER=postgres
+# export FX_POSTGRES_PASSWORD=password
 ```
 
-This will also generate OpenAPI documentation in the `api-docs/` directory.
-
-### 3. Run the Application
+#### 3. Run the Complete Setup Script
 
 ```bash
-./gradlew bootRun
+# This script runs tests, builds, and starts all services
+chmod +x build_and_run.sh
+./build_and_run.sh
 ```
 
-### 3(a). Run with Docker Compose (Optional)
+**What this script does:**
+- ✅ Runs all tests on the host machine
+- ✅ Generates OpenAPI documentation
+- ✅ Runs JaCoCo coverage verification
+- ✅ Performs code quality checks
+- ✅ Builds and starts all Docker services including:
+  - FX Subscription Service (main application)
+  - PostgreSQL database
+  - Apache Kafka (message broker)
+  - Observability stack (Grafana, Prometheus, Loki, Zipkin)
+
+#### 4. Verify Services Are Running
 
 ```bash
-# Build & Start all services including PostgreSQL
-docker compose build
-docker compose up -d
+# Check all services status
+docker compose ps
+
+# View logs
+docker compose logs web-service
+docker compose logs postgres
+docker compose logs kafka
+```
+
+### Option 2: Step-by-Step Docker Setup
+
+If you prefer more control over the setup process:
+
+#### 1. Clone and Configure (same as above)
+
+#### 2. Build and Run Core Services
+
+```bash
+# Build and start main application with database and Kafka
+docker compose up --build -d
 
 # Check service status
 docker compose ps
 ```
 
-The application will start on `https://localhost:8443`
-
-### 4. Start Observability Stack (Optional)
+#### 3. Start Observability Stack (Optional)
 
 ```bash
-# Start Grafana OSS
-docker run -d --name grafana -it -p 3000:3000 grafana/grafana:latest
-
-# Start prometheus for monitoring, metrics
-docker run -d --name prometheus -it -p 9090:9090 -v ./prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
-
-# Start Loki for log aggregation
-docker run -d --name loki -it -p 3100:3100 grafana/loki:latest
-
-# Start Zipkin for distributed tracing
-docker run -d --name zipkin -it -p 9411:9411 openzipkin/zipkin:latest
-
-# Or use Docker Compose for the entire observability stack
+# Start monitoring and observability tools
 docker compose -f docker-compose.observability.yml up -d
+
+# Verify observability services
+docker compose -f docker-compose.observability.yml ps
 ```
 
-### 5. Access Observability Tools
+### Option 3: Host-based Development
+
+For developers who prefer running the application directly on their host machine:
+
+#### 1. Setup Dependencies
 
 ```bash
-# Grafana Dashboard: http://localhost:3000 (admin/admin)
-# Loki Logs: http://localhost:3100
-# Zipkin Traces: http://localhost:9411
-# Prometheus Metrics: http://localhost:9090
+# Start only PostgreSQL and Kafka via Docker
+docker compose up postgres kafka -d
+
+# Or install PostgreSQL and Kafka natively on your system
 ```
 
-### 6. Start FX MCP Client (Optional, for AI features)
+#### 2. Configure Application Properties
+
+Update `src/main/resources/application.properties` with your local database and Kafka settings.
+
+#### 3. Build and Run
 
 ```bash
-# Ensure the FX MCP Client is running and configured to connect to this service
-# The MCP client will connect via SSE endpoint at /sse
+# Build the application
+./gradlew build
+
+# Run the application
+./gradlew bootRun
+```
+
+## 🌐 Service Access
+
+After successful setup, the following services will be available:
+
+### Main Application
+- **FX Subscription Service**: https://localhost:8443
+- **OpenAPI Docs**: https://localhost:8443/v3/api-docs
+- **Health Check**: https://localhost:8443/actuator/health
+- **Metrics**: https://localhost:8443/actuator/prometheus
+
+### Database & Messaging
+- **PostgreSQL**: localhost:5432
+  - Database: `fx_subscription_db`
+  - Username: `postgres`
+  - Password: `password`
+- **Kafka**: localhost:9092
+  - Topic: `subscription-change-events`
+
+### Observability Stack
+- **Grafana Dashboard**: http://localhost:3000 (admin/admin)
+- **Prometheus Metrics**: http://localhost:9090
+- **Zipkin Traces**: http://localhost:9411
+- **Loki Logs**: http://localhost:3100
+
+### MCP Integration
+- **SSE Endpoint**: https://localhost:8443/sse (for FX MCP Client)
+
+## 🚀 Development Workflow
+
+### Making Changes
+
+1. **Code Changes**: Make your changes to the source code
+2. **Test Locally**: Run tests with `./gradlew test`
+3. **Rebuild Service**: 
+   ```bash
+   # Rebuild just the web service
+   docker compose up web-service --build
+   
+   # Or use the full build script
+   ./build_and_run.sh
+   ```
+
+### Debugging
+
+```bash
+# View application logs
+docker compose logs -f web-service
+
+# Access database directly
+docker exec -it postgres psql -U postgres -d fx_subscription_db
+
+# Check Kafka topics
+docker exec -it kafka kafka-topics.sh --bootstrap-server localhost:9092 --list
+```
+
+### Stopping Services
+
+```bash
+# Stop all services
+docker compose down
+
+# Stop with observability stack
+docker compose -f docker-compose.yml -f docker-compose.observability.yml down
+
+# Stop and remove volumes (⚠️ This will delete your data)
+docker compose down -v
+```
+
+## 📁 Docker Configuration Files
+
+The project includes several Docker configuration files for different purposes:
+
+- **`Dockerfile`**: Production-ready container image
+- **`Dockerfile.local`**: Multi-stage build for local development
+- **`docker-compose.yml`**: Core services (app, database, Kafka)
+- **`docker-compose.observability.yml`**: Monitoring and observability stack
+- **`build_and_run.sh`**: Automated setup script for complete local development environment
 ```
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Environment Variables for Docker Setup
+
+The Docker-based setup uses the following environment variables:
+
+```bash
+# Required: SSL Configuration
+FX_KEYSTORE_LOCATION=path/to/your/keystore.p12
+FX_KEYSTORE_PASSWORD=your_keystore_password
+
+# Required: JWT Configuration  
+FX_JWT_SECRET_KEY=your_jwt_secret_key_at_least_256_bits
+
+# Optional: Database Configuration (defaults shown)
+FX_POSTGRES_HOST=postgres:5432
+FX_POSTGRES_DB=fx_subscription_db
+FX_POSTGRES_USER=postgres
+FX_POSTGRES_PASSWORD=password
+
+# Optional: Kafka Configuration (defaults shown)
+FX_KAFKA_HOST=kafka:29092
+
+# Optional: Tracing Configuration (defaults shown)
+FX_ZIPKIN_HOST=http://zipkin:9411
+```
+
+### Application Properties (for host-based development)
 
 ```bash
 # SSL Configuration
-KEYSTORE_PASSWORD=your_keystore_password
-KEY_PASSWORD=your_key_password
+server.port=8443
+server.ssl.enabled=true
+server.ssl.key-store=classpath:keystore.p12
+server.ssl.key-store-password=${FX_KEYSTORE_PASSWORD}
+server.ssl.key-store-type=PKCS12
 
 # JWT Configuration
-JWT_SECRET_KEY=your_jwt_secret_key
+security.jwt.token.secret-key=${FX_JWT_SECRET_KEY}
+security.jwt.token.expire-length=3600000
 
 # Database (PostgreSQL)
 spring.datasource.url=jdbc:postgresql://localhost:5432/fx_subscription_db
@@ -155,7 +315,7 @@ spring.datasource.username=postgres
 spring.datasource.password=password
 
 # Kafka Configuration
-spring.kafka.bootstrap-servers=broker:29092
+spring.kafka.bootstrap-servers=localhost:9092
 spring.kafka.topic.subscription-changes=subscription-change-events
 
 # MCP Server Configuration
@@ -465,19 +625,42 @@ The service exposes the following tools for AI clients:
 
 ## 🚀 Deployment
 
-### Docker
+### Local Development Deployment
+
+Use the automated build script for complete local setup:
 
 ```bash
-# Build Docker image
-docker build -t fx-subscription-service .
-
-# Run container
-docker run -p 8443:8443 fx-subscription-service
+# Quick setup - runs tests, builds, and starts all services
+./build_and_run.sh
 ```
 
-### Docker Compose
+### Production Docker Deployment
 
 ```bash
+# Build production Docker image
+docker build -t fx-subscription-service .
+
+# Run container with external dependencies
+docker run -d \
+  --name fx-subscription-service \
+  -p 8443:8443 \
+  -e FX_POSTGRES_HOST=your-postgres-host:5432 \
+  -e FX_KAFKA_HOST=your-kafka-host:9092 \
+  -e FX_KEYSTORE_PASSWORD=your_keystore_password \
+  -e FX_JWT_SECRET_KEY=your_jwt_secret \
+  --mount type=secret,source=keystore_p12 \
+  fx-subscription-service
+```
+
+### Docker Compose Deployment
+
+For complete stack deployment including dependencies:
+
+```bash
+# Local development with full observability
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+
+# Production-like setup with core services only
 docker compose up -d
 ```
 
@@ -501,34 +684,43 @@ docker compose up -d
 ### Project Structure
 
 ```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/example/fx/subscription/service/
-│   │       ├── controller/             # REST controllers
-│   │       ├── service/                # Business logic
-│   │       ├── repository/             # Data access
-│   │       ├── model/                  # Entities
-│   │       ├── dto/                    # Data transfer objects
-│   │       ├── config/                 # Configuration classes
-|   |       |   └── OpenApiConfig.java  # OpenAPI documentation configuration
-│   │       ├── exception/              # Custom exceptions
-│   │       └── ai/                     # MCP tool integration
-│   │           └── tool/               # AI tools for MCP
-│   └── resources/
-│       ├── application.properties
-│       └── logback-spring.xml
-└── test/
-    ├── java/                   # Test classes
-    └── resources/
-        └── application.properties
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/example/fx/subscription/service/
+│   │   │       ├── controller/             # REST controllers
+│   │   │       ├── service/                # Business logic
+│   │   │       ├── repository/             # Data access
+│   │   │       ├── model/                  # Entities
+│   │   │       ├── dto/                    # Data transfer objects
+│   │   │       ├── config/                 # Configuration classes
+│   │   │       │   └── OpenApiConfig.java  # OpenAPI documentation configuration
+│   │   │       ├── exception/              # Custom exceptions
+│   │   │       └── ai/                     # MCP tool integration
+│   │   │           └── tool/               # AI tools for MCP
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── logback-spring.xml
+│   └── test/
+│       ├── java/                           # Test classes
+│       └── resources/
+│           └── application.properties
+├── api-docs/                               # Generated OpenAPI documentation
+├── build_and_run.sh                        # Automated setup script
+├── docker-compose.yml                      # Core services (app, DB, Kafka)
+├── docker-compose.observability.yml        # Monitoring stack
+├── Dockerfile                              # Production container image
+├── Dockerfile.local                        # Local development container
+├── prometheus.yml                          # Prometheus configuration
+└── gradle/                                 # Gradle wrapper
 ```
 
 ### Code Quality
 
 - SonarQube integration
 - Code formatting with Checkstyle
-- 95% plus code and line coverage with jacoco
+- 95% plus code and line coverage with JaCoCo
+- Automated quality checks in build pipeline
 
 ## 🤝 Contributing
 
@@ -557,8 +749,9 @@ For support and questions:
 - **v1.1.0** - Added AI integration and improved security
 - **v1.2.0** - Enhanced monitoring and observability features with Grafana stack
 - **v1.3.0** - Migrated to PostgreSQL with TestContainers for reliable testing
-- - **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
+- **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
+- **v2.1.0** - Enhanced Docker setup with automated build script and comprehensive local development environment
 
 ---
 
-**Note**: This service uses PostgreSQL with TestContainers for development and testing, providing a production-ready database setup with isolated test environments. The AI chat functionality is now handled by the separate FX MCP Client service.
+**Note**: This service now provides a complete containerized development environment with automated setup via `build_and_run.sh`. The Docker-based setup includes PostgreSQL, Kafka, and full observability stack (Grafana, Prometheus, Loki, Zipkin) for a production-like local development experience. The AI chat functionality is handled by a separate FX MCP Client service.

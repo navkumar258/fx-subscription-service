@@ -9,6 +9,6 @@ scrape_configs:
     tls_config:
       insecure_skip_verify: true
     static_configs:
-      - targets: [ 'host.docker.internal:8443' ]
+      - targets: [ 'web-service:8443' ]
         labels:
           application: 'fx-subscription-service'

@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -92,6 +93,32 @@ class SubscriptionsControllerTest {
             .isEqualTo("{\"subscriptions\":" +
                     "[{\"id\":\"6f0ad90b-8b07-4342-a918-6866ce3b72d3\",\"user\":null,\"currencyPair\":\"GBP/USD\",\"threshold\":1.2,\"direction\":\"ABOVE\",\"notificationsChannels\":[\"email\",\"sms\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}," +
                     "{\"id\":\"af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2\",\"user\":null,\"currencyPair\":\"GBP/INR\",\"threshold\":110,\"direction\":\"BELOW\",\"notificationsChannels\":[\"email\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}],\"totalCount\":2}");
+  }
+
+  @Test
+  @WithMockFxUser()
+  void whenValidUserId_WithEmptySubscriptions_shouldReturn404() {
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
+            .thenReturn(new ArrayList<>());
+
+    assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("No Subscriptions found for the user ID: 7ca3517a-1930-4e18-916e-cae40f5dcfbe, please try with a different user!");
+  }
+
+  @Test
+  @WithMockFxUser()
+  void whenValidUserId_WithNullSubscriptions_shouldReturn404() {
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
+            .thenReturn(null);
+
+    assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("No Subscriptions found for the user ID: 7ca3517a-1930-4e18-916e-cae40f5dcfbe, please try with a different user!");
   }
 
   @Test
@@ -188,7 +215,23 @@ class SubscriptionsControllerTest {
   @WithMockFxUser(email = "jon@example.com")
   void getMySubscriptions_WithEmptyList_ShouldReturn404() {
     // Given
-    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(List.of());
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(new ArrayList<>());
+
+    // When & Then
+    assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("No Subscriptions found for your account");
+
+    verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
+  }
+
+  @Test
+  @WithMockFxUser(email = "jon@example.com")
+  void getMySubscriptions_WithNull_ShouldReturn404() {
+    // Given
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(null);
 
     // When & Then
     assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))

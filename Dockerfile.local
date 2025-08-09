@@ -1,0 +1,34 @@
+# Stage 1: Build
+FROM eclipse-temurin:21-alpine AS build
+
+WORKDIR /app
+
+# Copy the Gradle wrapper files and the project files
+COPY gradlew .
+COPY gradle ./gradle
+COPY build.gradle .
+COPY settings.gradle .
+COPY src ./src
+
+RUN chmod +x ./gradlew
+
+RUN ./gradlew clean build -x test -x generateOpenApiDocs
+
+# Stage 2: Runtime
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+EXPOSE 8443
+
+ARG KEYSTORE_PATH
+COPY $KEYSTORE_PATH /app/keystore.p12
+
+COPY --from=build /app/build/libs/*.jar ./app.jar
+
+RUN addgroup -S user && \
+    adduser -S user -G user && \
+    chown -R user:user /app
+USER user:user
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
