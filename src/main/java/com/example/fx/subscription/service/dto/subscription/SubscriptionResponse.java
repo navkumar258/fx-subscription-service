@@ -28,7 +28,7 @@ public record SubscriptionResponse(
             subscription.getCurrencyPair(),
             subscription.getThreshold(),
             subscription.getDirection(),
-            subscription.getNotificationsChannels(),
+            subscription.getNotificationsChannels() != null ? subscription.getNotificationsChannels() : List.of(),
             subscription.getStatus(),
             subscription.getCreatedAt(),
             subscription.getUpdatedAt()

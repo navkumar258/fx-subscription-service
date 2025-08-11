@@ -51,17 +51,17 @@ public class FxUsersService {
     FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
-    if (StringUtils.hasText(userUpdateRequest.email())) {
-      user.setEmail(userUpdateRequest.email());
-    }
+    Optional.ofNullable(userUpdateRequest.email())
+            .filter(StringUtils::hasText)
+            .ifPresent(user::setEmail);
 
-    if (StringUtils.hasText(userUpdateRequest.mobile())) {
-      user.setMobile(userUpdateRequest.mobile());
-    }
+    Optional.ofNullable(userUpdateRequest.mobile())
+            .filter(StringUtils::hasText)
+            .ifPresent(user::setMobile);
 
-    if (StringUtils.hasText(userUpdateRequest.pushDeviceToken())) {
-      user.setPushDeviceToken(userUpdateRequest.pushDeviceToken());
-    }
+    Optional.ofNullable(userUpdateRequest.pushDeviceToken())
+            .filter(StringUtils::hasText)
+            .ifPresent(user::setPushDeviceToken);
 
     return fxUserRepository.save(user);
   }

@@ -9,6 +9,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public class Subscription implements Serializable {
 
   private ThresholdDirection direction;
 
-  private List<String> notificationsChannels;
+  private List<String> notificationsChannels = new ArrayList<>();
 
   private SubscriptionStatus status;
 
@@ -89,11 +90,12 @@ public class Subscription implements Serializable {
   }
 
   public List<String> getNotificationsChannels() {
-    return notificationsChannels;
+    return notificationsChannels != null ? notificationsChannels: List.of();
   }
 
   public void setNotificationsChannels(List<String> notificationsChannels) {
-    this.notificationsChannels = notificationsChannels;
+    this.notificationsChannels = notificationsChannels != null ?
+            new ArrayList<>(notificationsChannels) : new ArrayList<>();
   }
 
   public ThresholdDirection getDirection() {

@@ -109,19 +109,6 @@ class SubscriptionsControllerTest {
   }
 
   @Test
-  @WithMockFxUser()
-  void whenValidUserId_WithNullSubscriptions_shouldReturn404() {
-    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
-            .thenReturn(null);
-
-    assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
-            .hasStatus(HttpStatus.NOT_FOUND)
-            .bodyJson()
-            .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for the user ID: 7ca3517a-1930-4e18-916e-cae40f5dcfbe, please try with a different user!");
-  }
-
-  @Test
   @WithMockUser(roles = "ADMIN")
   void whenInvalidUserId_shouldReturn404() {
     when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
@@ -216,22 +203,6 @@ class SubscriptionsControllerTest {
   void getMySubscriptions_WithEmptyList_ShouldReturn404() {
     // Given
     when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(new ArrayList<>());
-
-    // When & Then
-    assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
-            .hasStatus(HttpStatus.NOT_FOUND)
-            .bodyJson()
-            .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for your account");
-
-    verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
-  }
-
-  @Test
-  @WithMockFxUser(email = "jon@example.com")
-  void getMySubscriptions_WithNull_ShouldReturn404() {
-    // Given
-    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(null);
 
     // When & Then
     assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))

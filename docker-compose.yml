@@ -53,5 +53,15 @@ services:
     ports:
       - "9092:9092"
 
+  redis:
+    image: redis:8.2.0-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres_data:
+  redis_data:
+    driver: local

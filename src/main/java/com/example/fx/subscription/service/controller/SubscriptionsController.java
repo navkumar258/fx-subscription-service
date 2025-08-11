@@ -49,7 +49,7 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionListResponse> getSubscriptionsByUserId(@RequestParam String userId) {
     List<SubscriptionResponse> subscriptions = subscriptionsService.findSubscriptionResponsesByUserId(userId);
 
-    if (subscriptions == null || subscriptions.isEmpty()) {
+    if (subscriptions.isEmpty()) {
       String message = "No Subscriptions found for the user ID: %s, please try with a different user!".formatted(userId);
       throw new SubscriptionNotFoundException(message);
     }
@@ -64,7 +64,7 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionListResponse> getMySubscriptions(@AuthenticationPrincipal FxUser currentUser) {
     List<SubscriptionResponse> subscriptions = subscriptionsService.findSubscriptionResponsesByUserId(currentUser.getId().toString());
 
-    if (subscriptions == null || subscriptions.isEmpty()) {
+    if (subscriptions.isEmpty()) {
       String message = "No Subscriptions found for your account";
       throw new SubscriptionNotFoundException(message);
     }
