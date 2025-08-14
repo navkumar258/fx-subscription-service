@@ -5,10 +5,9 @@ import com.example.fx.subscription.service.model.FxUser;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 public record UserDetailResponse(
-        UUID id,
+        String id,
         String email,
         String mobile,
         boolean enabled,
@@ -23,7 +22,7 @@ public record UserDetailResponse(
             .toList();
 
     return new UserDetailResponse(
-            fxUser.getId(),
+            fxUser.getId().toString(),
             fxUser.getEmail(),
             fxUser.getMobile(),
             fxUser.isEnabled(),

@@ -90,7 +90,7 @@ public class Subscription implements Serializable {
   }
 
   public List<String> getNotificationsChannels() {
-    return notificationsChannels != null ? notificationsChannels: List.of();
+    return notificationsChannels != null ? notificationsChannels : List.of();
   }
 
   public void setNotificationsChannels(List<String> notificationsChannels) {
@@ -151,7 +151,7 @@ public class Subscription implements Serializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, user, getCurrencyPair(), getThreshold(), getDirection(), getNotificationsChannels(), getStatus());
+    return Objects.hash(id, getCurrencyPair(), getThreshold(), getDirection(), getNotificationsChannels(), getStatus());
   }
 
   @Override

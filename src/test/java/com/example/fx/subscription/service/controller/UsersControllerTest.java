@@ -195,7 +195,7 @@ class UsersControllerTest {
     // Given
     String userId = UUID.randomUUID().toString();
     UserSubscriptionsResponse subscriptionsResponse = new UserSubscriptionsResponse(
-            UUID.fromString(userId),
+            userId,
             new ArrayList<>(),
             0
     );

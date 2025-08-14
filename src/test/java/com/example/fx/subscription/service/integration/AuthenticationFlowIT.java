@@ -3,7 +3,7 @@ package com.example.fx.subscription.service.integration;
 import com.example.fx.subscription.service.dto.auth.AuthLoginResponse;
 import com.example.fx.subscription.service.dto.auth.AuthRequest;
 import com.example.fx.subscription.service.dto.user.UserSignUpRequest;
-import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
+import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.repository.FxUserRepository;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({PostgresTestContainersConfig.class, WebSecurityTestConfig.class})
+@Import({PostgresTestContainerConfig.class, WebSecurityTestConfig.class})
 class AuthenticationFlowIT {
 
   @Autowired

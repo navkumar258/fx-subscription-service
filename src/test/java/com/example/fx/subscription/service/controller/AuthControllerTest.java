@@ -168,7 +168,8 @@ class AuthControllerTest {
     // Then
     assertNotNull(response);
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
-    assertEquals(savedUser.getId(), response.getBody().userId());
+    assertNotNull(response.getBody());
+    assertEquals(savedUser.getId().toString(), response.getBody().userId());
     assertEquals("User registered successfully", response.getBody().message());
 
     verify(fxUserRepository).existsByEmail("test@example.com");

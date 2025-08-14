@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.exception;
 
 import io.jsonwebtoken.JwtException;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -9,11 +10,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
@@ -48,7 +53,9 @@ public class ControllerAdvice {
       problemDetail.setProperty("subscriptionId", e.getSubscriptionId());
     }
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(problemDetail);
   }
 
   @ExceptionHandler(UserNotFoundException.class)
@@ -70,12 +77,18 @@ public class ControllerAdvice {
       problemDetail.setProperty("userId", e.getUserId());
     }
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(problemDetail);
   }
 
-  @ExceptionHandler(NoResourceFoundException.class)
-  public ResponseEntity<ProblemDetail> handleNoResourceFoundException(
-          NoResourceFoundException ex,
+  @ExceptionHandler({
+          NoResourceFoundException.class,
+          NoHandlerFoundException.class
+  })
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public ResponseEntity<ProblemDetail> handleNotFoundExceptions(
+          RuntimeException ex,
           WebRequest request
   ) {
     logException(ex.getMessage(), ex, request);
@@ -88,7 +101,8 @@ public class ControllerAdvice {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ProblemDetail> handleValidationExceptions(
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<ProblemDetail> handleArgumentValidationException(
           MethodArgumentNotValidException ex,
           WebRequest request) {
 
@@ -108,12 +122,20 @@ public class ControllerAdvice {
     problemDetail.setProperty(ERROR_CODE, "VALIDATION_ERROR");
     problemDetail.setProperty("fieldErrors", fieldErrors);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
+    return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(problemDetail);
   }
 
-  @ExceptionHandler(MissingServletRequestParameterException.class)
-  public ResponseEntity<ProblemDetail> handleMissingServletRequestParameterException(
-          MissingServletRequestParameterException ex,
+  @ExceptionHandler({
+          MissingServletRequestParameterException.class,
+          HttpMessageNotReadableException.class,
+          ConstraintViolationException.class,
+          MethodArgumentTypeMismatchException.class
+  })
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<ProblemDetail> handleBadRequestExceptions(
+          Exception ex,
           WebRequest request
   ) {
     logException(ex.getMessage(), ex, request);
@@ -125,35 +147,29 @@ public class ControllerAdvice {
     );
   }
 
-  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-  public ResponseEntity<ProblemDetail> handleHttpRequestMethodNotSupportedException(
-          HttpRequestMethodNotSupportedException ex,
+  @ExceptionHandler({
+          HttpRequestMethodNotSupportedException.class,
+          HttpMediaTypeNotSupportedException.class
+  })
+  public ResponseEntity<ProblemDetail> handleUnsupportedExceptions(
+          Exception ex,
           WebRequest request
   ) {
     logException(ex.getMessage(), ex, request);
 
+    HttpStatus status = (ex instanceof HttpRequestMethodNotSupportedException) ?
+            HttpStatus.METHOD_NOT_ALLOWED :
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+
     return createProblemDetail(
-            HttpStatus.BAD_REQUEST,
+            status,
             ex.getMessage(),
-            BAD_REQUEST
-    );
-  }
-
-  @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(
-          HttpMessageNotReadableException e,
-          WebRequest request
-  ) {
-    logException(e.getMessage(), e, request);
-
-    return createProblemDetail(
-            HttpStatus.BAD_REQUEST,
-            e.getMessage(),
             BAD_REQUEST
     );
   }
 
   @ExceptionHandler(AccessDeniedException.class)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
   public ResponseEntity<ProblemDetail> handleAccessDeniedException(
           AccessDeniedException e,
           WebRequest request) {
@@ -167,6 +183,7 @@ public class ControllerAdvice {
   }
 
   @ExceptionHandler(AuthenticationException.class)
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
   public ResponseEntity<ProblemDetail> handleAuthenticationException(
           AuthenticationException e,
           WebRequest request) {
@@ -180,6 +197,7 @@ public class ControllerAdvice {
   }
 
   @ExceptionHandler(JwtException.class)
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
   public ResponseEntity<ProblemDetail> handleJwtException(
           JwtException e,
           WebRequest request
@@ -212,10 +230,13 @@ public class ControllerAdvice {
       problemDetail.setProperty("email", e.getEmail());
     }
 
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(problemDetail);
+    return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(problemDetail);
   }
 
   @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<ProblemDetail> handleGenericException(Exception e, WebRequest request) {
     LOGGER.error("Unexpected error occurred: path={}, message={}",
             request.getDescription(false), e.getMessage(), e);
@@ -240,6 +261,8 @@ public class ControllerAdvice {
     problemDetail.setProperty(TIMESTAMP, Instant.now());
     problemDetail.setProperty(ERROR_CODE, errorCode);
 
-    return ResponseEntity.status(status).body(problemDetail);
+    return ResponseEntity
+            .status(status)
+            .body(problemDetail);
   }
 }

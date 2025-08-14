@@ -1,13 +1,13 @@
 package com.example.fx.subscription.service.dto.subscription;
 
-import java.util.UUID;
-
 public record SubscriptionDeleteResponse(
-        UUID subscriptionId,
+        String userId,
+        String subscriptionId,
         String message
 ) {
-  public static SubscriptionDeleteResponse fromSubscriptionId(UUID subscriptionId) {
+  public static SubscriptionDeleteResponse fromSubscriptionAndUserId(String userId, String subscriptionId) {
     return new SubscriptionDeleteResponse(
+            userId,
             subscriptionId,
             "Subscription deleted successfully"
     );

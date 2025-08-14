@@ -118,7 +118,7 @@ public class AuthController {
 
   private ResponseEntity<AuthSignupResponse> buildSignupResponse(FxUser user, boolean isAdmin) {
     String message = isAdmin ? "Admin registered successfully" : "User registered successfully";
-    AuthSignupResponse response = new AuthSignupResponse(user.getId(), message);
+    AuthSignupResponse response = new AuthSignupResponse(user.getId().toString(), message);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 }

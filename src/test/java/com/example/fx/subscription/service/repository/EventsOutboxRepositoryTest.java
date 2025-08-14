@@ -2,7 +2,7 @@ package com.example.fx.subscription.service.repository;
 
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
+import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.model.EventsOutbox;
 import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
@@ -23,7 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import(PostgresTestContainersConfig.class)
+@Import(PostgresTestContainerConfig.class)
 class EventsOutboxRepositoryTest {
 
   @MockitoBean
@@ -39,6 +39,7 @@ class EventsOutboxRepositoryTest {
   void setUp() {
     // Create test subscription
     testSubscription = new Subscription();
+    testSubscription.setId(UUID.randomUUID());
     testSubscription.setCurrencyPair("GBP/USD");
     testSubscription.setThreshold(BigDecimal.valueOf(1.25));
     testSubscription.setDirection(ThresholdDirection.ABOVE);

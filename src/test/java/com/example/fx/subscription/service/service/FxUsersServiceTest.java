@@ -261,10 +261,10 @@ class FxUsersServiceTest {
 
     // Then
     assertNotNull(result);
-    assertEquals(testUserId, result.userId());
+    assertEquals(testUserId.toString(), result.userId());
     assertEquals(1, result.subscriptions().size());
     assertEquals(1, result.totalCount());
-    assertEquals(testSubscription.getId(), result.subscriptions().get(0).id());
+    assertEquals(testSubscription.getId().toString(), result.subscriptions().getFirst().id());
   }
 
   @Test
@@ -289,7 +289,7 @@ class FxUsersServiceTest {
 
     // Then
     assertNotNull(result);
-    assertEquals(testUserId, result.userId());
+    assertEquals(testUserId.toString(), result.userId());
     assertEquals(0, result.subscriptions().size());
     assertEquals(0, result.totalCount());
   }

@@ -8,10 +8,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 public record SubscriptionResponse(
-        UUID id,
+        String id,
         UserSummaryResponse user,
         String currencyPair,
         BigDecimal threshold,
@@ -23,7 +22,7 @@ public record SubscriptionResponse(
 ) implements Serializable {
   public static SubscriptionResponse fromSubscription(com.example.fx.subscription.service.model.Subscription subscription) {
     return new SubscriptionResponse(
-            subscription.getId(),
+            subscription.getId().toString(),
             subscription.getUser() != null ? UserSummaryResponse.fromFxUser(subscription.getUser()) : null,
             subscription.getCurrencyPair(),
             subscription.getThreshold(),

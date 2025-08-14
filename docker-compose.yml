@@ -14,12 +14,16 @@ services:
       FX_KEYSTORE_PASSWORD: ${FX_KEYSTORE_PASSWORD}
       FX_JWT_SECRET_KEY: ${FX_JWT_SECRET_KEY}
       FX_KAFKA_HOST: kafka:29092
+      FX_REDIS_HOST: redis
+      FX_REDIS_PORT: 6379
       FX_ZIPKIN_HOST: http://zipkin:9411
+      FX_LOKI_HOST: http://loki:3100
     ports:
       - "8443:8443"
     depends_on:
       - postgres
       - kafka
+      - redis
 
   postgres:
     image: postgres:17.5

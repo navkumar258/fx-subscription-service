@@ -102,7 +102,7 @@ public class FxUsersService {
                     .toList();
 
     return new UserSubscriptionsResponse(
-            user.getId(),
+            user.getId().toString(),
             subscriptionResponses,
             subscriptions.size()
     );

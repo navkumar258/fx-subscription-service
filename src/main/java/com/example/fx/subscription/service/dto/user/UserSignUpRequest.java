@@ -17,8 +17,4 @@ public record UserSignUpRequest(
         @NotBlank(message = "Mobile is required")
         String mobile,
 
-        boolean admin) {
-  public UserSignUpRequest(String email, String password, String mobile) {
-    this(email, password, mobile, false);
-  }
-}
+        boolean admin) {}

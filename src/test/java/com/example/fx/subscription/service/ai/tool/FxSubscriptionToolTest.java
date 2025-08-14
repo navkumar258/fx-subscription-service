@@ -1,7 +1,10 @@
 package com.example.fx.subscription.service.ai.tool;
 
+import com.example.fx.subscription.service.dto.subscription.SubscriptionDeleteResponse;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionListResponse;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.model.Subscription;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
 import com.example.fx.subscription.service.model.ThresholdDirection;
 import com.example.fx.subscription.service.service.SubscriptionsService;
@@ -12,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,9 +50,20 @@ class FxSubscriptionToolTest {
     double thresholdValue = 1.25;
     String direction = "ABOVE";
 
-    Subscription createdSubscription = createTestSubscription();
+    SubscriptionResponse createdSubscriptionResponse = new SubscriptionResponse(
+            SUBSCRIPTION_ID,
+            null,
+            GBP_USD,
+            BigDecimal.valueOf(1.25),
+            ThresholdDirection.ABOVE,
+            List.of(EMAIL, SMS),
+            SubscriptionStatus.ACTIVE,
+            null,
+            null
+    );
+
     when(subscriptionService.createSubscription(any(), eq(UUID.fromString(USER_ID))))
-            .thenReturn(createdSubscription);
+            .thenReturn(createdSubscriptionResponse);
 
     // When
     String result = fxSubscriptionTool.createSubscriptionTool(USER_ID, GBP_USD, thresholdValue, direction, EMAIL);
@@ -57,7 +71,7 @@ class FxSubscriptionToolTest {
     // Then
     assertThat(result)
             .contains("Subscription for GBP/USD at threshold 1.25 with direction ABOVE created successfully")
-            .contains("Your subscription ID is: " + createdSubscription.getId())
+            .contains("Your subscription ID is: " + SUBSCRIPTION_ID)
             .contains("Notifications via [email, sms]");
 
     verify(subscriptionService).createSubscription(any(), eq(UUID.fromString(USER_ID)));
@@ -84,17 +98,29 @@ class FxSubscriptionToolTest {
     double newThresholdValue = 1.30;
     String direction = "BELOW";
 
-    Subscription existingSubscription = createTestSubscription();
-    Subscription updatedSubscription = createTestSubscription();
-    updatedSubscription.setThreshold(BigDecimal.valueOf(1.30));
-    updatedSubscription.setDirection(ThresholdDirection.BELOW);
-    updatedSubscription.setNotificationsChannels(List.of("sms"));
+    SubscriptionResponse updatedSubscriptionResponse = new SubscriptionResponse(
+            SUBSCRIPTION_ID,
+            null,
+            GBP_USD,
+            BigDecimal.valueOf(1.30),
+            ThresholdDirection.BELOW,
+            List.of(SMS),
+            SubscriptionStatus.ACTIVE,
+            null,
+            null
+    );
 
-    when(subscriptionService.findSubscriptionEntityById(SUBSCRIPTION_ID)).thenReturn(Optional.of(existingSubscription));
-    when(subscriptionService.updateSubscriptionById(any(), any())).thenReturn(updatedSubscription);
+    when(subscriptionService.updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class)))
+            .thenReturn(updatedSubscriptionResponse);
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(SUBSCRIPTION_ID, newThresholdValue, direction, SMS);
+    String result = fxSubscriptionTool.updateSubscriptionTool(
+            SUBSCRIPTION_ID,
+            GBP_USD,
+            newThresholdValue,
+            direction,
+            SubscriptionStatus.ACTIVE.name(),
+            List.of(SMS));
 
     // Then
     assertThat(result)
@@ -103,8 +129,7 @@ class FxSubscriptionToolTest {
             .contains("New direction: BELOW")
             .contains("New notification methods: [sms]");
 
-    verify(subscriptionService).findSubscriptionEntityById(SUBSCRIPTION_ID);
-    verify(subscriptionService).updateSubscriptionById(any(), any());
+    verify(subscriptionService).updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class));
   }
 
   @Test
@@ -113,15 +138,30 @@ class FxSubscriptionToolTest {
     double newThresholdValue = 1.30;
     // direction and notificationMethod are null
 
-    Subscription existingSubscription = createTestSubscription();
-    Subscription updatedSubscription = createTestSubscription();
-    updatedSubscription.setThreshold(BigDecimal.valueOf(1.30));
+    SubscriptionResponse updatedSubscriptionResponse = new SubscriptionResponse(
+            SUBSCRIPTION_ID,
+            null,
+            GBP_USD,
+            BigDecimal.valueOf(1.30),
+            ThresholdDirection.ABOVE,
+            List.of(EMAIL, SMS),
+            SubscriptionStatus.ACTIVE,
+            null,
+            null
+    );
 
-    when(subscriptionService.findSubscriptionEntityById(SUBSCRIPTION_ID)).thenReturn(Optional.of(existingSubscription));
-    when(subscriptionService.updateSubscriptionById(any(), any())).thenReturn(updatedSubscription);
+    when(subscriptionService.updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class)))
+            .thenReturn(updatedSubscriptionResponse);
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(SUBSCRIPTION_ID, newThresholdValue, null, null);
+    String result = fxSubscriptionTool.updateSubscriptionTool(
+            SUBSCRIPTION_ID,
+            GBP_USD,
+            newThresholdValue,
+            null,
+            null,
+            List.of(EMAIL, SMS)
+    );
 
     // Then
     assertThat(result)
@@ -130,8 +170,7 @@ class FxSubscriptionToolTest {
             .contains("New direction: ABOVE")
             .contains("New notification methods: [email, sms]");
 
-    verify(subscriptionService).findSubscriptionEntityById(SUBSCRIPTION_ID);
-    verify(subscriptionService).updateSubscriptionById(any(), any());
+    verify(subscriptionService).updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class));
   }
 
   @Test
@@ -140,21 +179,34 @@ class FxSubscriptionToolTest {
     double newThresholdValue = 1.30;
     String direction = "BELOW";
 
-    when(subscriptionService.findSubscriptionEntityById(SUBSCRIPTION_ID)).thenReturn(Optional.empty());
+    when(subscriptionService.updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class)))
+            .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + SUBSCRIPTION_ID, SUBSCRIPTION_ID));
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(SUBSCRIPTION_ID, newThresholdValue, direction, SMS);
+    String result = fxSubscriptionTool.updateSubscriptionTool(
+            SUBSCRIPTION_ID,
+            GBP_USD,
+            newThresholdValue,
+            direction,
+            SubscriptionStatus.ACTIVE.name(),
+            List.of(SMS));
 
     // Then
     assertThat(result).isEqualTo("Subscription " + SUBSCRIPTION_ID + " not found or no valid updates provided.");
 
-    verify(subscriptionService).findSubscriptionEntityById(SUBSCRIPTION_ID);
-    verify(subscriptionService, never()).updateSubscriptionById(any(), any());
+    verify(subscriptionService).updateSubscriptionById(eq(SUBSCRIPTION_ID), any(SubscriptionUpdateRequest.class));
   }
 
   @Test
   void deleteSubscriptionTool_WithValidSubscriptionId_ShouldDeleteSubscription() {
-    doNothing().when(subscriptionService).deleteSubscriptionById(SUBSCRIPTION_ID);
+    // Given
+    SubscriptionDeleteResponse deleteResponse = new SubscriptionDeleteResponse(
+            USER_ID,
+            SUBSCRIPTION_ID,
+            "Subscription deleted successfully"
+    );
+
+    when(subscriptionService.deleteSubscriptionById(SUBSCRIPTION_ID)).thenReturn(deleteResponse);
 
     // When
     String result = fxSubscriptionTool.deleteSubscriptionTool(SUBSCRIPTION_ID);
@@ -166,10 +218,25 @@ class FxSubscriptionToolTest {
   }
 
   @Test
+  void deleteSubscriptionTool_WithNonExistentSubscription_ShouldReturnNotFoundMessage() {
+    // Given
+    when(subscriptionService.deleteSubscriptionById(SUBSCRIPTION_ID))
+            .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + SUBSCRIPTION_ID, SUBSCRIPTION_ID));
+
+    // When
+    String result = fxSubscriptionTool.deleteSubscriptionTool(SUBSCRIPTION_ID);
+
+    // Then
+    assertThat(result).isEqualTo("Subscription " + SUBSCRIPTION_ID + " not found.");
+
+    verify(subscriptionService).deleteSubscriptionById(SUBSCRIPTION_ID);
+  }
+
+  @Test
   void getFxSubscriptionsForUserTool_WithSubscriptions_ShouldReturnFormattedList() {
     List<SubscriptionResponse> subscriptions = List.of(
             new SubscriptionResponse(
-                    UUID.fromString("6f0ad90b-8b07-4342-a918-6866ce3b72d3"),
+                    "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
                     null,
                     GBP_USD,
                     BigDecimal.valueOf(1.25),
@@ -179,7 +246,7 @@ class FxSubscriptionToolTest {
                     null,
                     null),
             new SubscriptionResponse(
-                    UUID.fromString("af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2"),
+                    "af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2",
                     null,
                     "EUR/USD",
                     BigDecimal.valueOf(1.10),
@@ -189,8 +256,9 @@ class FxSubscriptionToolTest {
                     null,
                     null)
     );
+    SubscriptionListResponse subscriptionListResponse = new SubscriptionListResponse(subscriptions, subscriptions.size());
 
-    when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(subscriptions);
+    when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(subscriptionListResponse);
 
     // When
     String result = fxSubscriptionTool.getFxSubscriptionsForUserTool(USER_ID);
@@ -205,7 +273,8 @@ class FxSubscriptionToolTest {
 
   @Test
   void getFxSubscriptionsForUserTool_WithNoSubscriptions_ShouldReturnEmptyMessage() {
-    when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(List.of());
+    when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(
+            new SubscriptionListResponse(new ArrayList<>(), 0));
 
     // When
     String result = fxSubscriptionTool.getFxSubscriptionsForUserTool(USER_ID);
@@ -214,17 +283,5 @@ class FxSubscriptionToolTest {
     assertThat(result).isEqualTo("No active subscriptions found for the user " + USER_ID + ".");
 
     verify(subscriptionService).findSubscriptionResponsesByUserId(USER_ID);
-  }
-
-  // Helper method
-  private Subscription createTestSubscription() {
-    Subscription subscription = new Subscription();
-    subscription.setId(UUID.fromString(SUBSCRIPTION_ID));
-    subscription.setCurrencyPair(GBP_USD);
-    subscription.setThreshold(BigDecimal.valueOf(1.25));
-    subscription.setDirection(ThresholdDirection.ABOVE);
-    subscription.setNotificationsChannels(List.of(EMAIL, SMS));
-    subscription.setStatus(SubscriptionStatus.ACTIVE);
-    return subscription;
   }
 } 

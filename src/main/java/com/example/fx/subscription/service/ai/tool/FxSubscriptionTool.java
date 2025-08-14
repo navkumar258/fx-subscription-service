@@ -1,16 +1,16 @@
 package com.example.fx.subscription.service.ai.tool;
 
-import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
-import com.example.fx.subscription.service.model.Subscription;
+import com.example.fx.subscription.service.dto.subscription.*;
+import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -44,12 +44,12 @@ public class FxSubscriptionTool {
             Collections.singletonList(notificationMethod)
     );
 
-    Subscription savedSubscription = subscriptionService.createSubscription(newSubscription, UUID.fromString(userId));
-    return "Subscription for " + savedSubscription.getCurrencyPair() +
-            " at threshold " + savedSubscription.getThreshold() +
-            " with direction " + savedSubscription.getDirection() +
-            " created successfully. Your subscription ID is: " + savedSubscription.getId() +
-            ". Notifications via " + savedSubscription.getNotificationsChannels() + ".";
+    SubscriptionResponse savedSubscription = subscriptionService.createSubscription(newSubscription, UUID.fromString(userId));
+    return "Subscription for " + savedSubscription.currencyPair() +
+            " at threshold " + savedSubscription.threshold() +
+            " with direction " + savedSubscription.direction() +
+            " created successfully. Your subscription ID is: " + savedSubscription.id() +
+            ". Notifications via " + savedSubscription.notificationsChannels() + ".";
   }
 
   /**
@@ -63,31 +63,31 @@ public class FxSubscriptionTool {
                   """
   )
   public String updateSubscriptionTool(@ToolParam(description = "Existing subscription id") String subscriptionId,
+                                       @ToolParam(description = "New currency pair") String currencyPair,
                                        @ToolParam(description = "New threshold value") double newThresholdValue,
                                        @ToolParam(description = "New direction i.e. above or below", required = false) String direction,
-                                       @ToolParam(description = "New notification methods", required = false) String newNotificationMethod) {
-    Optional<Subscription> oldSubscription = subscriptionService.findSubscriptionEntityById(subscriptionId);
-
-    if (oldSubscription.isPresent()) {
+                                       @ToolParam(description = "New status") String status,
+                                       @ToolParam(description = "New notification methods", required = false) List<String> newNotificationMethod) {
+    try {
       SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest(
-              oldSubscription.get().getCurrencyPair(),
+              currencyPair,
               BigDecimal.valueOf(newThresholdValue),
-              Objects.nonNull(direction) ? direction : oldSubscription.get().getDirection().name(),
-              oldSubscription.get().getStatus().name(),
-              Objects.nonNull(newNotificationMethod) ? Collections.singletonList(newNotificationMethod) : null
+              direction,
+              status,
+              newNotificationMethod
       );
 
-      Subscription updatedSub = subscriptionService.updateSubscriptionById(oldSubscription.get(), newSubscription);
+      SubscriptionResponse updatedSub = subscriptionService.updateSubscriptionById(subscriptionId, newSubscription);
       return "Subscription: " + subscriptionId
               + " updated successfully. New threshold: "
-              + updatedSub.getThreshold()
+              + updatedSub.threshold()
               + ", New direction: "
-              + updatedSub.getDirection().name()
+              + updatedSub.direction().name()
               + ", New notification methods: "
-              + updatedSub.getNotificationsChannels() + ".";
+              + updatedSub.notificationsChannels() + ".";
+    } catch (SubscriptionNotFoundException e) {
+      return "Subscription " + subscriptionId + " not found or no valid updates provided.";
     }
-
-    return "Subscription " + subscriptionId + " not found or no valid updates provided.";
   }
 
   /**
@@ -98,9 +98,12 @@ public class FxSubscriptionTool {
           description = "Deletes an existing FX rate subscription using its ID."
   )
   public String deleteSubscriptionTool(@ToolParam(description = "Subscription id to delete") String subscriptionId) {
-    subscriptionService.deleteSubscriptionById(subscriptionId);
-
-    return "Subscription " + subscriptionId + " deleted successfully.";
+    try {
+      SubscriptionDeleteResponse response = subscriptionService.deleteSubscriptionById(subscriptionId);
+      return "Subscription " + subscriptionId + " deleted successfully.";
+    } catch (SubscriptionNotFoundException e) {
+      return "Subscription " + subscriptionId + " not found.";
+    }
   }
 
   /**
@@ -114,13 +117,14 @@ public class FxSubscriptionTool {
                   """
   )
   public String getFxSubscriptionsForUserTool(@ToolParam(description = "User id to get all subscriptions") String userId) {
-    List<SubscriptionResponse> subscriptions = subscriptionService.findSubscriptionResponsesByUserId(userId);
+    SubscriptionListResponse subscriptionListResponse = subscriptionService.findSubscriptionResponsesByUserId(userId);
 
-    if (subscriptions.isEmpty()) {
+    if (subscriptionListResponse.totalCount() == 0) {
       return "No active subscriptions found for the user " + userId + ".";
     }
 
-    return subscriptions.stream()
+    return subscriptionListResponse.subscriptions()
+            .stream()
             .map(sub -> String.format("ID: %s, Pair: %s, Threshold: %.2f, Notify via: %s",
                     sub.id(), sub.currencyPair(), sub.threshold(), sub.notificationsChannels()))
             .collect(Collectors.joining("\n"));

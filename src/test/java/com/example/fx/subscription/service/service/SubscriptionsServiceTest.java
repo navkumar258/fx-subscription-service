@@ -1,8 +1,6 @@
 package com.example.fx.subscription.service.service;
 
-import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.dto.subscription.*;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.*;
@@ -12,6 +10,8 @@ import com.example.fx.subscription.service.repository.SubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -80,7 +80,7 @@ class SubscriptionsServiceTest {
 
     // Then
     assertTrue(result.isPresent());
-    assertEquals(testSubscriptionId, result.get().id());
+    assertEquals(testSubscriptionId.toString(), result.get().id());
     assertEquals("GBP/USD", result.get().currencyPair());
     assertEquals(BigDecimal.valueOf(1.25), result.get().threshold());
     assertEquals(ThresholdDirection.ABOVE, result.get().direction());
@@ -98,6 +98,39 @@ class SubscriptionsServiceTest {
 
     // Then
     assertFalse(result.isPresent());
+  }
+
+  @Test
+  void findSubscriptionById_WhenSubscriptionExistsWithNullUser_ShouldReturnSubscriptionResponse() {
+    // Given
+    testSubscription.setUser(null);
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+
+    // When
+    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+
+    // Then
+    assertTrue(result.isPresent());
+    assertEquals(testSubscriptionId.toString(), result.get().id());
+    assertNull(result.get().user());
+    assertEquals("GBP/USD", result.get().currencyPair());
+  }
+
+  @Test
+  void findSubscriptionById_WhenSubscriptionExistsWithNullNotifications_ShouldReturnSubscriptionResponse() {
+    // Given
+    testSubscription.setNotificationsChannels(null);
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+
+    // When
+    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+
+    // Then
+    assertTrue(result.isPresent());
+    assertEquals(testSubscriptionId.toString(), result.get().id());
+    assertEquals(List.of(), result.get().notificationsChannels());
   }
 
   @Test
@@ -137,12 +170,46 @@ class SubscriptionsServiceTest {
             .thenReturn(subscriptions);
 
     // When
-    List<SubscriptionResponse> result = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
+    SubscriptionListResponse result = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
 
     // Then
-    assertEquals(1, result.size());
-    assertEquals(testSubscriptionId, result.getFirst().id());
-    assertEquals("GBP/USD", result.getFirst().currencyPair());
+    assertNotNull(result);
+    assertEquals(1, result.subscriptions().size());
+    assertEquals(1, result.totalCount());
+    assertEquals(testSubscriptionId.toString(), result.subscriptions().getFirst().id());
+    assertEquals("GBP/USD", result.subscriptions().getFirst().currencyPair());
+  }
+
+  @Test
+  void findSubscriptionResponsesByUserId_WhenSubscriptionHasNullNotifications_ShouldReturnSubscriptionResponses() {
+    // Given
+    testSubscription.setNotificationsChannels(null);
+    List<Subscription> subscriptions = List.of(testSubscription);
+    when(subscriptionRepository.findAllByUserId(testUserId))
+            .thenReturn(subscriptions);
+
+    // When
+    SubscriptionListResponse result = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
+
+    // Then
+    assertNotNull(result);
+    assertEquals(1, result.subscriptions().size());
+    assertEquals(1, result.totalCount());
+    assertEquals(testSubscriptionId.toString(), result.subscriptions().getFirst().id());
+    assertEquals("GBP/USD", result.subscriptions().getFirst().currencyPair());
+    assertEquals(List.of(), result.subscriptions().getFirst().notificationsChannels());
+  }
+
+  @Test
+  void findSubscriptionResponsesByUserId_WhenNoSubscriptionsFound_ShouldThrowSubscriptionNotFoundException() {
+    // Given
+    when(subscriptionRepository.findAllByUserId(testUserId))
+            .thenReturn(List.of());
+
+    // When & Then
+    SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
+            () -> subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString()));
+    assertTrue(exception.getMessage().contains("No subscriptions found for the given user id: " + testUserId));
   }
 
   @Test
@@ -157,14 +224,14 @@ class SubscriptionsServiceTest {
 
     // Then
     assertEquals(1, result.size());
-    assertEquals(testSubscriptionId, result.getFirst().id());
+    assertEquals(testSubscriptionId.toString(), result.getFirst().id());
   }
 
   @Test
   void isSubscriptionOwner_WhenUserIsOwner_ShouldReturnTrue() {
     // Given
-    when(subscriptionRepository.findById(testSubscriptionId))
-            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.existsByIdAndUserId(any(UUID.class), any(UUID.class)))
+            .thenReturn(true);
 
     // When
     boolean result = subscriptionsService.isSubscriptionOwner(testSubscriptionId.toString(), testUserId);
@@ -176,24 +243,11 @@ class SubscriptionsServiceTest {
   @Test
   void isSubscriptionOwner_WhenUserIsNotOwner_ShouldReturnFalse() {
     // Given
-    when(subscriptionRepository.findById(testSubscriptionId))
-            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.existsByIdAndUserId(any(UUID.class), any(UUID.class)))
+            .thenReturn(false);
 
     // When
     boolean result = subscriptionsService.isSubscriptionOwner(testSubscriptionId.toString(), UUID.randomUUID());
-
-    // Then
-    assertFalse(result);
-  }
-
-  @Test
-  void isSubscriptionOwner_WhenSubscriptionDoesNotExist_ShouldReturnFalse() {
-    // Given
-    when(subscriptionRepository.findById(testSubscriptionId))
-            .thenReturn(Optional.empty());
-
-    // When
-    boolean result = subscriptionsService.isSubscriptionOwner(testSubscriptionId.toString(), testUserId);
 
     // Then
     assertFalse(result);
@@ -217,11 +271,11 @@ class SubscriptionsServiceTest {
             .thenReturn(new EventsOutbox());
 
     // When
-    Subscription result = subscriptionsService.createSubscription(createRequest, testUserId);
+    SubscriptionResponse result = subscriptionsService.createSubscription(createRequest, testUserId);
 
     // Then
     assertNotNull(result);
-    assertEquals(testSubscriptionId, result.getId());
+    assertEquals(testSubscriptionId.toString(), result.id());
     verify(subscriptionRepository).saveAndFlush(any(Subscription.class));
     verify(eventsOutboxRepository).save(any(EventsOutbox.class));
   }
@@ -256,16 +310,20 @@ class SubscriptionsServiceTest {
             List.of("sms")
     );
 
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
     when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
             .thenReturn(testSubscription);
     when(eventsOutboxRepository.save(any(EventsOutbox.class)))
             .thenReturn(new EventsOutbox());
 
     // When
-    Subscription result = subscriptionsService.updateSubscriptionById(testSubscription, updateRequest);
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
 
     // Then
     assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
     verify(subscriptionRepository).saveAndFlush(testSubscription);
     verify(eventsOutboxRepository).save(any(EventsOutbox.class));
   }
@@ -274,23 +332,105 @@ class SubscriptionsServiceTest {
   void updateSubscriptionById_WithNullValues_ShouldOnlyUpdateProvidedFields() {
     // Given
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
-            testUserId.toString(),
+            "EUR/USD",
             BigDecimal.valueOf(1.15),
             null,
             null,
             null
     );
 
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
     when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
             .thenReturn(testSubscription);
     when(eventsOutboxRepository.save(any(EventsOutbox.class)))
             .thenReturn(new EventsOutbox());
 
     // When
-    Subscription result = subscriptionsService.updateSubscriptionById(testSubscription, updateRequest);
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
 
     // Then
     assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
+    verify(subscriptionRepository).saveAndFlush(testSubscription);
+    verify(eventsOutboxRepository).save(any(EventsOutbox.class));
+  }
+
+  @Test
+  void updateSubscriptionById_WhenSubscriptionDoesNotExist_ShouldThrowSubscriptionNotFoundException() {
+    // Given
+    SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+            "EUR/USD",
+            BigDecimal.valueOf(1.15),
+            "BELOW",
+            "ACTIVE",
+            List.of("sms")
+    );
+
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.empty());
+
+    // When & Then
+    SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
+            () -> subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest));
+    assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
+  }
+
+  @Test
+  void updateSubscriptionById_WithOnlyThreshold_ShouldUpdateOnlyThreshold() {
+    // Given
+    SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+            null,
+            BigDecimal.valueOf(1.50),
+            null,
+            null,
+            null
+    );
+
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
+            .thenReturn(testSubscription);
+    when(eventsOutboxRepository.save(any(EventsOutbox.class)))
+            .thenReturn(new EventsOutbox());
+
+    // When
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
+    verify(subscriptionRepository).saveAndFlush(testSubscription);
+    verify(eventsOutboxRepository).save(any(EventsOutbox.class));
+  }
+
+  @Test
+  void updateSubscriptionById_WithOnlyNotificationChannels_ShouldUpdateOnlyNotificationChannels() {
+    // Given
+    SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+            null,
+            null,
+            null,
+            null,
+            List.of("email")
+    );
+
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
+            .thenReturn(testSubscription);
+    when(eventsOutboxRepository.save(any(EventsOutbox.class)))
+            .thenReturn(new EventsOutbox());
+
+    // When
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
     verify(subscriptionRepository).saveAndFlush(testSubscription);
     verify(eventsOutboxRepository).save(any(EventsOutbox.class));
   }
@@ -304,9 +444,13 @@ class SubscriptionsServiceTest {
             .thenReturn(new EventsOutbox());
 
     // When
-    subscriptionsService.deleteSubscriptionById(testSubscriptionId.toString());
+    SubscriptionDeleteResponse result = subscriptionsService.deleteSubscriptionById(testSubscriptionId.toString());
 
     // Then
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.subscriptionId());
+    assertEquals("Subscription deleted successfully", result.message());
+    verify(subscriptionRepository).findById(testSubscriptionId);
     verify(subscriptionRepository).deleteById(testSubscriptionId);
     verify(eventsOutboxRepository).save(any(EventsOutbox.class));
   }
@@ -320,6 +464,86 @@ class SubscriptionsServiceTest {
     // When & Then
     SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
             () -> subscriptionsService.deleteSubscriptionById(testSubscriptionId.toString()));
-    assertTrue(exception.getMessage().contains("Subscription not found with ID: " + testSubscriptionId));
+    assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
+  }
+
+  @ParameterizedTest
+  @CsvSource(value = {
+          "EUR/USD,,,,",
+          ",, BELOW,,",
+          ",,, INACTIVE,"
+  })
+  void updateSubscriptionById_ShouldUpdateOnlyThatArg(
+          String currency,
+          BigDecimal threshold,
+          String direction,
+          String status,
+          List<String> notificationChannels) {
+    // Given
+    SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+            currency,
+            threshold,
+            direction,
+            status,
+            notificationChannels
+    );
+
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
+            .thenReturn(testSubscription);
+    when(eventsOutboxRepository.save(any(EventsOutbox.class)))
+            .thenReturn(new EventsOutbox());
+
+    // When
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
+    verify(subscriptionRepository).saveAndFlush(testSubscription);
+    verify(eventsOutboxRepository).save(any(EventsOutbox.class));
+  }
+
+  @ParameterizedTest
+  @CsvSource(value = {
+          "null,1.15,BELOW,ACTIVE,sms",
+          "EUR/USD,null,BELOW,ACTIVE,sms",
+          "EUR/USD,1.15,null,ACTIVE,sms",
+          "EUR/USD,1.15,BELOW,null,sms",
+          "EUR/USD,1.15,BELOW,ACTIVE,null"
+  }, nullValues = "null")
+  void updateSubscriptionById_WithNullValues_ShouldNotUpdateNullFields(
+          String currencyPair,
+          BigDecimal threshold,
+          String direction,
+          String status,
+          String notificationChannels) {
+    // Given
+    SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+            currencyPair,
+            threshold,
+            direction,
+            status,
+            notificationChannels != null ? List.of(notificationChannels) : null
+    );
+
+    when(subscriptionRepository.findById(testSubscriptionId))
+            .thenReturn(Optional.of(testSubscription));
+    when(subscriptionRepository.saveAndFlush(any(Subscription.class)))
+            .thenReturn(testSubscription);
+    when(eventsOutboxRepository.save(any(EventsOutbox.class)))
+            .thenReturn(new EventsOutbox());
+
+    // When
+    SubscriptionResponse result = subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    verify(subscriptionRepository).findById(testSubscriptionId);
+    verify(subscriptionRepository).saveAndFlush(testSubscription);
+    verify(eventsOutboxRepository).save(any(EventsOutbox.class));
   }
 } 

@@ -2,9 +2,9 @@ package com.example.fx.subscription.service.controller;
 
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.config.JwtTokenProvider;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
+import com.example.fx.subscription.service.dto.subscription.*;
+import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
+import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.helper.WithMockFxUser;
 import com.example.fx.subscription.service.model.Subscription;
@@ -62,7 +62,7 @@ class SubscriptionsControllerTest {
   void whenValidUserId_shouldListAllUserSubscriptions() {
     List<SubscriptionResponse> subscriptions = List.of(
             new SubscriptionResponse(
-                    UUID.fromString("6f0ad90b-8b07-4342-a918-6866ce3b72d3"),
+                    "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
                     null,
                     "GBP/USD",
                     BigDecimal.valueOf(1.20),
@@ -72,7 +72,7 @@ class SubscriptionsControllerTest {
                     null,
                     null),
             new SubscriptionResponse(
-                    UUID.fromString("af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2"),
+                    "af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2",
                     null,
                     "GBP/INR",
                     BigDecimal.valueOf(110),
@@ -82,9 +82,10 @@ class SubscriptionsControllerTest {
                     null,
                     null)
     );
+    SubscriptionListResponse subscriptionListResponse = new SubscriptionListResponse(subscriptions, subscriptions.size());
 
     when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
-            .thenReturn(subscriptions);
+            .thenReturn(subscriptionListResponse);
 
     assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
             .hasStatusOk()
@@ -97,28 +98,26 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockFxUser()
-  void whenValidUserId_WithEmptySubscriptions_shouldReturn404() {
+  void whenValidUserId_WithEmptySubscriptions_shouldReturn200() {
     when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
-            .thenReturn(new ArrayList<>());
+            .thenReturn(new SubscriptionListResponse(new ArrayList<>(), 0));
 
     assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
-            .hasStatus(HttpStatus.NOT_FOUND)
+            .hasStatusOk()
             .bodyJson()
-            .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for the user ID: 7ca3517a-1930-4e18-916e-cae40f5dcfbe, please try with a different user!");
+            .isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
   }
 
   @Test
   @WithMockUser(roles = "ADMIN")
-  void whenInvalidUserId_shouldReturn404() {
+  void whenInvalidUserId_shouldReturn200() {
     when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
-            .thenReturn(List.of());
+            .thenReturn(new SubscriptionListResponse(new ArrayList<>(), 0));
 
     assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=test_user_id"))
-            .hasStatus(HttpStatus.NOT_FOUND)
+            .hasStatusOk()
             .bodyJson()
-            .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for the user ID: test_user_id, please try with a different user!");
+            .isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
   }
 
   @Test
@@ -127,7 +126,7 @@ class SubscriptionsControllerTest {
     // Given
     String subscriptionId = "6f0ad90b-8b07-4342-a918-6866ce3b72d3";
     SubscriptionResponse subscriptionResponse = new SubscriptionResponse(
-            UUID.fromString(subscriptionId),
+            subscriptionId,
             null,
             "GBP/USD",
             BigDecimal.valueOf(1.25),
@@ -170,12 +169,30 @@ class SubscriptionsControllerTest {
   }
 
   @Test
+  @WithMockUser(roles = "ADMIN")
+  void getSubscriptionsByUserId_WhenNoSubscriptionsFound_ShouldReturn404() {
+    // Given
+    String userId = "test-user-id";
+    when(subscriptionsService.findSubscriptionResponsesByUserId(userId))
+            .thenThrow(new SubscriptionNotFoundException("No subscriptions found for the given user id: " + userId));
+
+    // When & Then
+    assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=" + userId))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("No subscriptions found for the given user id: " + userId);
+
+    verify(subscriptionsService).findSubscriptionResponsesByUserId(userId);
+  }
+
+  @Test
   @WithMockFxUser(email = "alice@example.com")
   void getMySubscriptions_WithValidUser_ShouldReturnSubscriptions() {
     // Given
     List<SubscriptionResponse> subscriptions = List.of(
             new SubscriptionResponse(
-                    UUID.fromString("6f0ad90b-8b07-4342-a918-6866ce3b72d3"),
+                    "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
                     null,
                     "GBP/USD",
                     BigDecimal.valueOf(1.25),
@@ -185,8 +202,9 @@ class SubscriptionsControllerTest {
                     null,
                     null)
     );
+    SubscriptionListResponse subscriptionListResponse = new SubscriptionListResponse(subscriptions, subscriptions.size());
 
-    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(subscriptions);
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(subscriptionListResponse);
 
     // When & Then
     assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
@@ -200,16 +218,34 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockFxUser(email = "jon@example.com")
-  void getMySubscriptions_WithEmptyList_ShouldReturn404() {
+  void getMySubscriptions_WithEmptyList_ShouldReturn200() {
     // Given
-    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(new ArrayList<>());
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString())).thenReturn(
+            new SubscriptionListResponse(new ArrayList<>(), 0)
+    );
+
+    // When & Then
+    assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
+            .hasStatusOk()
+            .bodyJson()
+            .isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
+
+    verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
+  }
+
+  @Test
+  @WithMockFxUser(email = "test@example.com")
+  void getMySubscriptions_WhenNoSubscriptionsFound_ShouldReturn404() {
+    // Given
+    when(subscriptionsService.findSubscriptionResponsesByUserId(anyString()))
+            .thenThrow(new SubscriptionNotFoundException("No subscriptions found for the given user id: test-user-id"));
 
     // When & Then
     assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
             .hasStatus(HttpStatus.NOT_FOUND)
             .bodyJson()
             .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for your account");
+            .isEqualTo("No subscriptions found for the given user id: test-user-id");
 
     verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
   }
@@ -227,7 +263,7 @@ class SubscriptionsControllerTest {
     Subscription createdSubscription = createTestSubscription();
 
     when(subscriptionsService.createSubscription(any(SubscriptionCreateRequest.class), any(UUID.class)))
-            .thenReturn(createdSubscription);
+            .thenReturn(SubscriptionResponse.fromSubscription(createdSubscription));
 
     // When & Then
     assertThat(mockMvc.post().uri("/api/v1/subscriptions")
@@ -259,6 +295,31 @@ class SubscriptionsControllerTest {
   }
 
   @Test
+  @WithMockFxUser(email = "test@example.com")
+  void createSubscription_WhenUserNotFound_ShouldReturn404() throws Exception {
+    // Given
+    SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
+            "GBP/USD",
+            BigDecimal.valueOf(1.25),
+            ThresholdDirection.ABOVE.name(),
+            List.of("email", "sms"));
+
+    when(subscriptionsService.createSubscription(any(SubscriptionCreateRequest.class), any(UUID.class)))
+            .thenThrow(new UserNotFoundException("User not found with ID: test-user-id"));
+
+    // When & Then
+    assertThat(mockMvc.post().uri("/api/v1/subscriptions")
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .content(objectMapper.writeValueAsString(createRequest)))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("User not found with ID: test-user-id");
+
+    verify(subscriptionsService).createSubscription(any(SubscriptionCreateRequest.class), any(UUID.class));
+  }
+
+  @Test
   @WithMockUser(roles = "ADMIN")
   void updateSubscriptionById_WithValidId_ShouldUpdateSubscription() throws Exception {
     // Given
@@ -270,13 +331,20 @@ class SubscriptionsControllerTest {
             SubscriptionStatus.ACTIVE.name(),
             List.of("email"));
 
-    Subscription existingSubscription = createTestSubscription();
-    Subscription updatedSubscription = createTestSubscription();
+    SubscriptionResponse updatedSubscriptionResponse = new SubscriptionResponse(
+            subscriptionId,
+            null,
+            "EUR/USD",
+            BigDecimal.valueOf(1.10),
+            ThresholdDirection.BELOW,
+            List.of("email"),
+            SubscriptionStatus.ACTIVE,
+            null,
+            null
+    );
 
-    when(subscriptionsService.findSubscriptionEntityById(subscriptionId))
-            .thenReturn(Optional.of(existingSubscription));
-    when(subscriptionsService.updateSubscriptionById(any(Subscription.class), any(SubscriptionUpdateRequest.class)))
-            .thenReturn(updatedSubscription);
+    when(subscriptionsService.updateSubscriptionById(subscriptionId, updateRequest))
+            .thenReturn(updatedSubscriptionResponse);
 
     // When & Then
     assertThat(mockMvc.put().uri("/api/v1/subscriptions/" + subscriptionId)
@@ -285,8 +353,8 @@ class SubscriptionsControllerTest {
             .hasStatusOk()
             .hasContentType(MediaType.APPLICATION_JSON_VALUE);
 
-    verify(subscriptionsService).findSubscriptionEntityById(subscriptionId);
-    verify(subscriptionsService).updateSubscriptionById(any(Subscription.class), any(SubscriptionUpdateRequest.class));
+    verify(subscriptionsService).updateSubscriptionById(subscriptionId, updateRequest);
+    verify(subscriptionsService, never()).findSubscriptionEntityById(any());
   }
 
   @Test
@@ -301,7 +369,8 @@ class SubscriptionsControllerTest {
             SubscriptionStatus.ACTIVE.name(),
             List.of("email"));
 
-    when(subscriptionsService.findSubscriptionEntityById(subscriptionId)).thenReturn(Optional.empty());
+    when(subscriptionsService.updateSubscriptionById(subscriptionId, updateRequest))
+            .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + subscriptionId, subscriptionId));
 
     // When & Then
     assertThat(mockMvc.put().uri("/api/v1/subscriptions/" + subscriptionId)
@@ -310,10 +379,10 @@ class SubscriptionsControllerTest {
             .hasStatus(HttpStatus.NOT_FOUND)
             .bodyJson()
             .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for the ID: " + subscriptionId + ", please try with a different id!");
+            .isEqualTo("Subscription not found with ID: " + subscriptionId);
 
-    verify(subscriptionsService).findSubscriptionEntityById(subscriptionId);
-    verify(subscriptionsService, never()).updateSubscriptionById(any(), any());
+    verify(subscriptionsService).updateSubscriptionById(subscriptionId, updateRequest);
+    verify(subscriptionsService, never()).findSubscriptionEntityById(any());
   }
 
   @Test
@@ -343,12 +412,39 @@ class SubscriptionsControllerTest {
   void deleteSubscriptionById_WithValidId_ShouldDeleteSubscription() {
     // Given
     String subscriptionId = "6f0ad90b-8b07-4342-a918-6866ce3b72d3";
+    SubscriptionDeleteResponse deleteResponse = new SubscriptionDeleteResponse(
+            subscriptionId,
+            subscriptionId,
+            "Subscription deleted successfully"
+    );
 
-    doNothing().when(subscriptionsService).deleteSubscriptionById(subscriptionId);
+    when(subscriptionsService.deleteSubscriptionById(any(String.class)))
+            .thenReturn(deleteResponse);
 
     // When & Then
     assertThat(mockMvc.delete().uri("/api/v1/subscriptions/" + subscriptionId))
-            .hasStatus(HttpStatus.NO_CONTENT);
+            .hasStatus(HttpStatus.OK)
+            .bodyJson()
+            .extractingPath("$.subscriptionId").isEqualTo(subscriptionId);
+
+    verify(subscriptionsService).deleteSubscriptionById(subscriptionId);
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  void deleteSubscriptionById_WithInvalidId_ShouldReturn404() {
+    // Given
+    String subscriptionId = "invalid-id";
+
+    when(subscriptionsService.deleteSubscriptionById(subscriptionId))
+            .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + subscriptionId, subscriptionId));
+
+    // When & Then
+    assertThat(mockMvc.delete().uri("/api/v1/subscriptions/" + subscriptionId))
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail")
+            .isEqualTo("Subscription not found with ID: " + subscriptionId);
 
     verify(subscriptionsService).deleteSubscriptionById(subscriptionId);
   }
@@ -359,7 +455,7 @@ class SubscriptionsControllerTest {
     // Given
     List<SubscriptionResponse> allSubscriptions = List.of(
             new SubscriptionResponse(
-                    UUID.fromString("6f0ad90b-8b07-4342-a918-6866ce3b72d3"),
+                    "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
                     null,
                     "GBP/USD",
                     BigDecimal.valueOf(1.25),
@@ -369,7 +465,7 @@ class SubscriptionsControllerTest {
                     null,
                     null),
             new SubscriptionResponse(
-                    UUID.fromString("af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2"),
+                    "af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2",
                     null,
                     "EUR/USD",
                     BigDecimal.valueOf(1.10),

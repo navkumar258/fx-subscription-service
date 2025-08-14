@@ -1,7 +1,7 @@
 package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.helper.PostgresTestContainersConfig;
+import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.service.SubscriptionChangePublisher;
@@ -32,7 +32,7 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@Import(PostgresTestContainersConfig.class)
+@Import(PostgresTestContainerConfig.class)
 class SubscriptionChangePublisherIT {
 
   @Value(value = "${spring.kafka.topic.subscription-changes}")

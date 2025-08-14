@@ -3,10 +3,9 @@ package com.example.fx.subscription.service.dto.user;
 import com.example.fx.subscription.service.model.FxUser;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public record UserSummaryResponse(
-        UUID id,
+        String id,
         String email,
         String mobile,
         boolean enabled,
@@ -15,7 +14,7 @@ public record UserSummaryResponse(
 ) {
   public static UserSummaryResponse fromFxUser(FxUser fxUser) {
     return new UserSummaryResponse(
-            fxUser.getId(),
+            fxUser.getId().toString(),
             fxUser.getEmail(),
             fxUser.getMobile(),
             fxUser.isEnabled(),
