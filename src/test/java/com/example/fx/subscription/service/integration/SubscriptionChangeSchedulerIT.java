@@ -1,129 +1,159 @@
 package com.example.fx.subscription.service.integration;
 
-import com.example.fx.subscription.service.dto.auth.AuthLoginResponse;
-import com.example.fx.subscription.service.dto.auth.AuthRequest;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
-import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
-import com.example.fx.subscription.service.model.FxUser;
+import com.example.fx.subscription.service.model.EventsOutbox;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
-import com.example.fx.subscription.service.model.UserRole;
-import com.example.fx.subscription.service.repository.FxUserRepository;
-import com.example.fx.subscription.service.repository.SubscriptionRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.fx.subscription.service.model.SubscriptionStatus;
+import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.repository.EventsOutboxRepository;
+import com.example.fx.subscription.service.service.EventsOutboxService;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.context.annotation.Primary;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@AutoConfigureMockMvc
-@Import({PostgresTestContainerConfig.class, WebSecurityTestConfig.class})
+@ActiveProfiles("kafka-test")
+@Testcontainers
+@Import(PostgresTestContainerConfig.class)
 class SubscriptionChangeSchedulerIT {
 
-  @Autowired
-  private MockMvc mockMvc;
+  @Container
+  static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
+
+  @DynamicPropertySource
+  static void overrideProps(DynamicPropertyRegistry registry) {
+    registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+  }
+
+  @TestConfiguration
+  static class TestKafkaProducerConfig {
+    @Bean
+    @Primary
+    public ProducerFactory<String, SubscriptionChangeEvent> testProducerFactory(KafkaProperties properties) {
+      Map<String, Object> configProps = new HashMap<>(properties.buildProducerProperties());
+      configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000);
+      configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 1000);
+      configProps.put(ProducerConfig.METADATA_MAX_AGE_CONFIG, 1000);
+      configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 1000);
+      configProps.put(ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, 1000);
+
+      configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+      configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+      configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+
+      return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    @Primary
+    public KafkaTemplate<String, SubscriptionChangeEvent> testKafkaTemplate(
+            ProducerFactory<String, SubscriptionChangeEvent> pf) {
+      return new KafkaTemplate<>(pf);
+    }
+
+    @Bean
+    public NewTopic subscriptionChangeEvents() {
+      return new NewTopic("subscription-change-events", 1, (short) 1);
+    }
+  }
 
   @Autowired
-  private ObjectMapper objectMapper;
+  private EventsOutboxRepository eventsOutboxRepository;
 
   @Autowired
-  private FxUserRepository fxUserRepository;
+  private EventsOutboxService eventsOutboxService;
 
   @Autowired
-  private SubscriptionRepository subscriptionRepository;
+  private KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
-  @Autowired
-  private PasswordEncoder passwordEncoder;
-
-  // Mock external dependencies to speed up tests
-  @MockitoBean
-  KafkaAdmin kafkaAdmin;
-
-  @MockitoBean
-  KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
-
-  private String userToken;
-
-  @BeforeEach
-  void setUp() throws Exception {
-    fxUserRepository.deleteAll();
-    subscriptionRepository.deleteAll();
-    createTestUser();
-    userToken = loginUser("user@example.com", "password123");
+  @AfterEach
+  void clear() {
+    eventsOutboxRepository.deleteAll();
   }
 
   @Test
-  void scheduledSubscriptionProcessing_ShouldWorkEndToEnd() throws Exception {
-    // 1. Create multiple subscriptions
-    createSubscription("GBP/USD", BigDecimal.valueOf(1.25), "ABOVE");
-    createSubscription("EUR/USD", BigDecimal.valueOf(1.10), "BELOW");
-    createSubscription("USD/JPY", BigDecimal.valueOf(150.0), "ABOVE");
+  void givenPendingJob_whenKafkaSuccess_thenStatusIsSent() {
+    EventsOutbox eventsOutbox = new EventsOutbox();
+    eventsOutbox.setTimestamp(System.currentTimeMillis());
+    eventsOutbox.setEventType("SubscriptionCreated");
+    eventsOutbox.setStatus("PENDING");
+    eventsOutbox.setPayload(new SubscriptionResponse(
+            UUID.randomUUID().toString(),
+            null,
+            "GBP/USD",
+            BigDecimal.ONE,
+            ThresholdDirection.ABOVE,
+            null,
+            SubscriptionStatus.ACTIVE,
+            Instant.now(),
+            null
+    ));
+    eventsOutboxRepository.save(eventsOutbox);
 
-    // 2. Verify subscriptions exist
-    assertThat(subscriptionRepository.findAll()).hasSize(3);
-
-    // 3. Trigger scheduled task manually (or wait for it to run)
-    // This would depend on your scheduler implementation
-    // You might need to expose an endpoint to trigger the task for testing
-
-    // 4. Verify scheduled task processed subscriptions
-    // Check if any expected side effects occurred (e.g., events published, status changes)
+    await()
+            .atMost(Duration.ofSeconds(1))
+            .pollInterval(Duration.ofMillis(200))
+            .untilAsserted(() -> {
+              EventsOutbox eventsOutbox1 = eventsOutboxRepository.findById(eventsOutbox.getId()).orElseThrow();
+              assertEquals("SENT", eventsOutbox1.getStatus());
+            });
   }
 
-  private void createSubscription(String currencyPair, BigDecimal threshold, String direction) throws Exception {
-    SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
-            currencyPair, threshold, direction, List.of("email"));
+  @Test
+  void givenPendingJob_whenKafkaFails_thenStatusIsFailed() {
+    EventsOutbox eventsOutbox = new EventsOutbox();
+    eventsOutbox.setTimestamp(System.currentTimeMillis());
+    eventsOutbox.setEventType("SubscriptionCreated");
+    eventsOutbox.setStatus("PENDING");
+    eventsOutbox.setPayload(new SubscriptionResponse(
+            UUID.randomUUID().toString(),
+            null,
+            "A".repeat(1_100_000),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+    ));
+    eventsOutboxRepository.save(eventsOutbox);
 
-    mockMvc.perform(post("/api/v1/subscriptions")
-                    .header("Authorization", "Bearer " + userToken)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(createRequest)))
-            .andExpect(status().isCreated());
-  }
-
-  private void createTestUser() {
-    FxUser user = new FxUser();
-    user.setEmail("user@example.com");
-    user.setPassword(passwordEncoder.encode("password123"));
-    user.setMobile("+1234567890");
-    user.setRole(UserRole.USER);
-    user.setEnabled(true);
-    fxUserRepository.save(user);
-  }
-
-  private String loginUser(String email, String password) throws Exception {
-    AuthRequest authRequest = new AuthRequest(email, password);
-
-    MockHttpServletResponse response = mockMvc.perform(post("/api/v1/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(authRequest)))
-            .andExpect(status().isOk())
-            .andReturn().getResponse();
-
-    return extractTokenFromResponse(response.getContentAsString());
-  }
-
-  private String extractTokenFromResponse(String response)
-          throws JsonProcessingException {
-    return objectMapper.readValue(response, AuthLoginResponse.class)
-            .token();
+    await()
+            .atMost(Duration.ofSeconds(1))
+            .pollInterval(Duration.ofMillis(200))
+            .untilAsserted(() -> {
+              EventsOutbox eventsOutbox1 = eventsOutboxRepository.findById(eventsOutbox.getId()).orElseThrow();
+              assertEquals("FAILED", eventsOutbox1.getStatus());
+            });
   }
 } 

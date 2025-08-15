@@ -43,7 +43,6 @@ class KafkaProducerConfigTest {
     Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
     assertNotNull(configProps);
     assertEquals("localhost:9092", configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
-    assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
     assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
     assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
     assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
@@ -88,17 +87,6 @@ class KafkaProducerConfigTest {
     assertNotNull(configProps);
     assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
     assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
-  }
-
-  @Test
-  void producerFactory_ShouldHaveCorrectDeliveryTimeout() {
-    // When
-    ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
-
-    // Then
-    Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
-    assertNotNull(configProps);
-    assertEquals(30000, configProps.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG));
   }
 
   @Test

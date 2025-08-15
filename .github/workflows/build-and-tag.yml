@@ -223,3 +223,45 @@ jobs:
           # Push the new tag to the remote repository.
           git push origin $TAG_NAME
           echo "Successfully pushed tag $TAG_NAME"
+          
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Authenticate GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo $GITHUB_TOKEN | gh auth login --with-token
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          # Get previous tag (if exists)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -A 1 "^$TAG_NAME$" | tail -n 1)
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --oneline "${PREV_TAG}..${TAG_NAME}")
+          else
+            CHANGELOG=$(git log --oneline "${TAG_NAME}")
+          fi
+          # Export changelog for later step
+          echo "changelog<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release with Asset
+        run: |
+          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          ASSET_PATH="build/libs/${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.jar"
+          RELEASE_NOTES="## Changelog
+
+          ${{ env.changelog }}"
+          if [ -f "$ASSET_PATH" ]; then
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES" "$ASSET_PATH"
+            echo "Created release for $TAG_NAME with asset: $ASSET_PATH"
+          else
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES"
+            echo "Created release for $TAG_NAME (no asset attached)."
+          fi

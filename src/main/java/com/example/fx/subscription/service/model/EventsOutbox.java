@@ -101,6 +101,10 @@ public class EventsOutbox implements Serializable {
     this.status = status;
   }
 
+  public EventsOutbox(String status) {
+    this.status = status;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof EventsOutbox that)) return false;

@@ -27,7 +27,10 @@ public class SubscriptionChangeScheduler {
     this.subscriptionChangePublisher = subscriptionChangePublisher;
   }
 
-  @Scheduled(initialDelay = 30000, fixedRateString = "${outbox.subscriptions.check.rate:30000}")
+  @Scheduled(
+          initialDelayString = "${outbox.subscriptions.check.initial-delay}",
+          fixedRateString = "${outbox.subscriptions.check.rate}"
+  )
   @Async
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void checkForOutboxSubscriptions() {

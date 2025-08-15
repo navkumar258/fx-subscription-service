@@ -8,7 +8,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
-@TestConfiguration
+@TestConfiguration(proxyBeanMethods = false)
 public class RedisTestContainerConfig {
 
   @Bean
