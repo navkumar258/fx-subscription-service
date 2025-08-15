@@ -241,22 +241,19 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Create GitHub Release with Assets
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
           JAR_FILES="build/libs/*.jar"
-          JACOCO_HTML_DIR="build/reports/jacoco/test/html"
           DOCKER_TAR="${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar"
           RELEASE_NOTES="## Changelog
 
           ${{ env.changelog }}"
             ASSETS=""
-            
             for f in $JAR_FILES; do
               [ -f "$f" ] && ASSETS="$ASSETS $f"
             done
-    
-            [ -d "$JACOCO_HTML_DIR" ] && ASSETS="$ASSETS $JACOCO_HTML_DIR"
           
             [ -f "$DOCKER_TAR" ] && ASSETS="$ASSETS $DOCKER_TAR"
-            
             gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES" $ASSETS
