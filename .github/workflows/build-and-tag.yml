@@ -23,8 +23,10 @@ on:
 
 # Permissions required for the workflow.
 # 'contents: write' is necessary to create commits and push tags.
+# 'packages: write' is needed for pushing to ghcr.io
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -172,21 +174,19 @@ jobs:
           echo "--- Building the Application ---"
           ./gradlew clean build -x test -x generateOpenApiDocs
 
-      - name: Build Docker Image
+      - name: Build and Push Docker Image to GHCR
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: ${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.project-name.outputs.PROJECT_NAME }}:latest
+          platforms: linux/amd64,linux/arm64
           secrets: |
             "keystore_p12=${{ secrets.KEYSTORE_P12_BASE64 }}"
           build-args: |
             JAR_FILE_NAME=${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.jar
-
-      - name: Save Docker Image to tar file
-        run: |
-          # Use `docker save` to export the local image to a tar archive
-          docker save ${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }} -o ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -195,7 +195,6 @@ jobs:
           path: |
             build/libs/*.jar
             build/reports/jacoco/test/html/
-            ${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar
 
       - name: Commit and push version update
         if: steps.version_check.outputs.skip_update == 'false'
@@ -228,7 +227,6 @@ jobs:
         id: changelog
         run: |
           TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
-          # Get previous tag (if exists)
           PREV_TAG=$(git tag --sort=-creatordate | grep -A 1 "^$TAG_NAME$" | tail -n 1)
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log --oneline "${PREV_TAG}..${TAG_NAME}")
@@ -240,20 +238,39 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Create GitHub Release with Assets
+      - name: Create GitHub Release with Assets and Changelog
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
-          JAR_FILES="build/libs/*.jar"
-          DOCKER_TAR="${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.tar"
+          JAR_FILE=$(find build/libs -type f -name "*.jar" ! -name "*-plain.jar" | head -n 1)
+          REPO_URL="https://github.com/${{ github.repository }}"
+          PREV_TAG=$(git tag --sort=-creatordate | grep -A 1 "^$TAG_NAME$" | tail -n 1)
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git tag --sort=creatordate | grep -B 1 "^$TAG_NAME$" | head -n 1)
+          fi
+          # Get last 5 commits for this release
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG_LAST5=$(git log --oneline "${PREV_TAG}..${TAG_NAME}" | head -5)
+            FULL_CHANGELOG_URL="$REPO_URL/compare/$PREV_TAG...$TAG_NAME"
+          else
+            CHANGELOG_LAST5=$(git log --oneline "$TAG_NAME" | head -5)
+            FULL_CHANGELOG_URL="$REPO_URL/releases/tag/$TAG_NAME"
+          fi
+      
           RELEASE_NOTES="## Changelog
 
-          ${{ env.changelog }}"
-            ASSETS=""
-            for f in $JAR_FILES; do
-              [ -f "$f" ] && ASSETS="$ASSETS $f"
-            done
-          
-            [ -f "$DOCKER_TAR" ] && ASSETS="$ASSETS $DOCKER_TAR"
-            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES" $ASSETS
+          \`\`\`
+          $CHANGELOG_LAST5
+          \`\`\`
+
+          **Full Changelog**: [$PREV_TAG...$TAG_NAME]($FULL_CHANGELOG_URL)
+          "
+      
+          if [ -f "$JAR_FILE" ]; then
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES" "$JAR_FILE"
+            echo "Release created for $TAG_NAME with asset: $JAR_FILE"
+          else
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "$RELEASE_NOTES"
+            echo "Release created for $TAG_NAME (no JAR asset found)."
+          fi
