@@ -1,4 +1,4 @@
-name: Build and Create a Tag
+name: Build, Create a Tag & Release
 
 on:
   push:
@@ -29,7 +29,7 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -224,6 +224,10 @@ jobs:
           # Push the commit to the main branch.
           git push
 
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Create and push Git tag
         if: steps.version_check.outputs.skip_update == 'false'
         run: |
@@ -236,6 +240,10 @@ jobs:
           git push origin $TAG_NAME
           echo "Successfully pushed tag $TAG_NAME"
 
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Generate Changelog
         id: changelog
         run: |
@@ -273,9 +281,7 @@ jobs:
       
           RELEASE_NOTES="## Changelog
 
-          \`\`\`
           $CHANGELOG_LAST5
-          \`\`\`
 
           **Full Changelog**: [$PREV_TAG...$TAG_NAME]($FULL_CHANGELOG_URL)
           "
