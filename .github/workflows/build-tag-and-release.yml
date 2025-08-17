@@ -54,7 +54,7 @@ jobs:
       - name: Run Unit Tests
         run: |
           echo "--- Running Unit Tests ---"
-          ./gradlew test
+          ./gradlew clean test
 
       - name: Run Code Quality Checks
         run: |

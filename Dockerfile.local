@@ -21,9 +21,6 @@ WORKDIR /app
 
 EXPOSE 8443
 
-ARG KEYSTORE_PATH
-COPY $KEYSTORE_PATH /app/keystore.p12
-
 COPY --from=build /app/build/libs/*.jar ./app.jar
 
 RUN addgroup -S user && \

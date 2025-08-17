@@ -4,8 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.local
-      args:
-        KEYSTORE_PATH: ${FX_KEYSTORE_LOCATION}
     environment:
       FX_POSTGRES_HOST: postgres:5432
       FX_POSTGRES_DB: fx_subscription_db
