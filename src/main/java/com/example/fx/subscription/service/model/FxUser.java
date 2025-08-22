@@ -33,6 +33,7 @@ public class FxUser implements Serializable, UserDetails {
   private String mobile;
 
   @Column(nullable = false)
+  @JsonIgnore
   private String password;
 
   @Column(nullable = false)
@@ -134,21 +135,6 @@ public class FxUser implements Serializable, UserDetails {
   @Override
   public String getUsername() {
     return email;
-  }
-
-  @Override
-  public boolean isAccountNonExpired() {
-    return true;
-  }
-
-  @Override
-  public boolean isAccountNonLocked() {
-    return true;
-  }
-
-  @Override
-  public boolean isCredentialsNonExpired() {
-    return true;
   }
 
   public void setPassword(String password) {

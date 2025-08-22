@@ -1,4 +1,4 @@
-name: Build, Create a Tag & Release
+name: Build, Tag & Release
 
 on:
   push:
@@ -29,18 +29,13 @@ permissions:
   packages: write
 
 jobs:
-  build-tag-and-release:
+  test-and-quality-checks:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Fetch all history for latest tag detection and proper git operations.
           fetch-depth: 0
-
-      - name: Fetch all tags
-        run: git fetch --tags origin
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -66,6 +61,28 @@ jobs:
           echo "--- Running JaCoCo Coverage/Line Verification ---"
           # Executes your specific JaCoCo task for coverage and line verification.
           ./gradlew jacocoTestCoverageVerification
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/jacoco/test/html/
+
+  build-and-version:
+    runs-on: ubuntu-latest
+    needs: [test-and-quality]
+    outputs:
+      NEW_VERSION: ${{ steps.versioning.outputs.NEW_VERSION }}
+      PROJECT_NAME: ${{ steps.project-name.outputs.PROJECT_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags origin
 
       - name: Determine current version and new version
         id: versioning
@@ -174,6 +191,27 @@ jobs:
           echo "--- Building the Application ---"
           ./gradlew clean build -x test -x generateOpenApiDocs
 
+      - name: Upload JAR Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/*.jar
+
+  docker-and-release:
+    runs-on: ubuntu-latest
+    needs: [build-and-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -193,24 +231,16 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.project-name.outputs.PROJECT_NAME }}:${{ steps.versioning.outputs.NEW_VERSION }}
-            ghcr.io/${{ github.repository_owner }}/${{ steps.project-name.outputs.PROJECT_NAME }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ needs.build-and-version.outputs.PROJECT_NAME }}:${{ needs.build-and-version.outputs.NEW_VERSION }}
+            ghcr.io/${{ github.repository_owner }}/${{ needs.build-and-version.outputs.PROJECT_NAME }}:latest
           platforms: linux/amd64,linux/arm64
           secrets: |
             "keystore_p12=${{ secrets.KEYSTORE_P12_BASE64 }}"
           build-args: |
-            JAR_FILE_NAME=${{ steps.project-name.outputs.PROJECT_NAME }}-${{ steps.versioning.outputs.NEW_VERSION }}.jar
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            build/libs/*.jar
-            build/reports/jacoco/test/html/
+            JAR_FILE_NAME=${{ needs.build-and-version.outputs.PROJECT_NAME }}-${{ needs.build-and-version.outputs.NEW_VERSION }}.jar
 
       - name: Commit and push version update
-        if: steps.version_check.outputs.skip_update == 'false'
+        if: ${{ needs.build-and-version.outputs.NEW_VERSION != '' }}
         run: |
           echo "--- Committing and Pushing Version Update ---"
           # Configure Git user for the commit.
@@ -219,16 +249,14 @@ jobs:
 
           # Add the modified build.gradle file.
           git add build.gradle
-          # Commit the changes. '|| true' prevents the workflow from failing if no changes were made (e.g., sed didn't find anything).
-          git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit for version bump."
-          # Push the commit to the main branch.
+          git commit -m "chore: Bump version to ${{ needs.build-and-version.outputs.NEW_VERSION }}" || echo "No changes to commit."
           git push
 
       - name: Create and push Git tag
-        if: steps.version_check.outputs.skip_update == 'false'
+        if: ${{ needs.build-and-version.outputs.NEW_VERSION != '' }}
         run: |
           echo "--- Creating and Pushing Git Tag ---"
-          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          TAG_NAME="v${{ needs.build-and-version.outputs.NEW_VERSION }}"
           echo "Creating tag: $TAG_NAME"
           # Create the Git tag.
           git tag $TAG_NAME
@@ -239,14 +267,14 @@ jobs:
       - name: Generate Changelog
         id: changelog
         run: |
-          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          TAG_NAME="v${{ needs.build-and-version.outputs.NEW_VERSION }}"
           PREV_TAG=$(git tag --sort=-creatordate | grep -A 1 "^$TAG_NAME$" | tail -n 1)
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log --oneline "${PREV_TAG}..${TAG_NAME}")
           else
             CHANGELOG=$(git log --oneline "${TAG_NAME}")
           fi
-          # Export changelog for later step
+          # Export changelog for later steps
           echo "changelog<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -255,7 +283,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG_NAME="v${{ steps.versioning.outputs.NEW_VERSION }}"
+          TAG_NAME="v${{ needs.build-and-version.outputs.NEW_VERSION }}"
           JAR_FILE=$(find build/libs -type f -name "*.jar" ! -name "*-plain.jar" | head -n 1)
           REPO_URL="https://github.com/${{ github.repository }}"
           PREV_TAG=$(git tag --sort=-creatordate | grep -A 1 "^$TAG_NAME$" | tail -n 1)

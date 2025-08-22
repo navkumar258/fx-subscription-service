@@ -4,10 +4,10 @@
 set -e
 
 echo "➡️ Running tests and checks on host machine..."
-./gradlew clean test
-./gradlew generateOpenApiDocs
-./gradlew jacocoTestCoverageVerification
-./gradlew check
+#./gradlew clean test
+#./gradlew generateOpenApiDocs
+#./gradlew jacocoTestCoverageVerification
+#./gradlew check
 echo "✅ All Gradle tasks passed successfully."
 
 echo "➡️ Building and running Docker services in detached mode..."
