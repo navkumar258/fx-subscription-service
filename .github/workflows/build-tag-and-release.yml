@@ -73,6 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-and-quality-checks]
     outputs:
+      CURRENT_VERSION: ${{ steps.versioning.outputs.CURRENT_VERSION }}
       NEW_VERSION: ${{ steps.versioning.outputs.NEW_VERSION }}
       PROJECT_NAME: ${{ steps.project-name.outputs.PROJECT_NAME }}
     steps:
@@ -166,15 +167,6 @@ jobs:
             echo "skip_update=false" >> "$GITHUB_OUTPUT" # Set output to proceed
           fi
 
-      - name: Update version in build.gradle
-        if: steps.version_check.outputs.skip_update == 'false'
-        run: |
-          echo "--- Updating build.gradle ---"
-          # Use sed to replace the old version string with the new one in build.gradle.
-          # The regex handles both single and double quotes around the version number.
-          sed -i "s/version\s*=\s*['|\"]${{ steps.versioning.outputs.CURRENT_VERSION }}['|\"]/version = '${{ steps.versioning.outputs.NEW_VERSION }}'/g" build.gradle
-          echo "Updated build.gradle to version ${{ steps.versioning.outputs.NEW_VERSION }}"
-
       - name: Determine project name
         id: project-name
         run: |
@@ -238,6 +230,15 @@ jobs:
             "keystore_p12=${{ secrets.KEYSTORE_P12_BASE64 }}"
           build-args: |
             JAR_FILE_NAME=${{ needs.build-and-version.outputs.PROJECT_NAME }}-${{ needs.build-and-version.outputs.NEW_VERSION }}.jar
+
+      - name: Update version in build.gradle
+        if: ${{ needs.build-and-version.outputs.NEW_VERSION != '' }}
+        run: |
+          echo "--- Updating build.gradle ---"
+          # Use sed to replace the old version string with the new one in build.gradle.
+          # The regex handles both single and double quotes around the version number.
+          sed -i "s/version\s*=\s*['|\"]${{ needs.build-and-version.outputs.CURRENT_VERSION }}['|\"]/version = '${{ needs.build-and-version.outputs.NEW_VERSION }}'/g" build.gradle
+          echo "Updated build.gradle to version ${{ needs.build-and-version.outputs.NEW_VERSION }}"
 
       - name: Commit and push version update
         if: ${{ needs.build-and-version.outputs.NEW_VERSION != '' }}

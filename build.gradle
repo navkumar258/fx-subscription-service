@@ -1,13 +1,13 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.4'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version "${vSpringBootPlugin}"
+    id 'io.spring.dependency-management' version "${vSpringDependencyManagementPlugin}"
     id 'jacoco'
-    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+    id 'org.springdoc.openapi-gradle-plugin' version "${vSpringdocOpenApiPlugin}"
 }
 
 group = 'com.example'
-version = '3.0.1'
+version = '3.0.2'
 
 java {
     toolchain {
@@ -20,7 +20,6 @@ repositories {
 }
 
 ext {
-    set('springAiVersion', "1.0.1")
     withoutCommonsLang3 = {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
@@ -34,23 +33,23 @@ dependencies {
     // for redis as cache
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.10.3'
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation "io.hypersistence:hypersistence-utils-hibernate-63:${vHypersistenceUtilsHibernate63}"
+    implementation "io.jsonwebtoken:jjwt-api:${vJjwtApi}"
     implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
     // for micrometer observation, metrics & logging
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation "org.springframework.boot:spring-boot-starter-aop"
-    implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
+    implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
     // for openapi spec generation
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.9', withoutCommonsLang3
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringdocWbMvcApi}", withoutCommonsLang3
+    implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
     runtimeOnly 'com.h2database:h2'
 
     runtimeOnly 'org.postgresql:postgresql'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${vJjwtImpl}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${vJjwtJackson}"
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -67,12 +66,12 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+        mavenBom "org.springframework.ai:spring-ai-bom:${vSpringAi}"
     }
 }
 
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = "${vJacocoTool}"
 }
 
 jacocoTestReport {
