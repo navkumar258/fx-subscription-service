@@ -30,9 +30,7 @@ class CacheConfigTest {
 
   @BeforeEach
   void setUp() {
-    cacheConfig = new CacheConfig();
-    // Set the cache TTL value that would normally come from @Value
-    ReflectionTestUtils.setField(cacheConfig, "cacheTtlSeconds", 3);
+    cacheConfig = new CacheConfig(3);
   }
 
   @Test

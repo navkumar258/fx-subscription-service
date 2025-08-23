@@ -3,16 +3,17 @@ FROM eclipse-temurin:21-alpine AS build
 
 WORKDIR /app
 
-# Copy the Gradle wrapper files and the project files
-COPY gradlew .
+# Copy the Gradle settings, wrapper and the project files
+COPY gradlew \
+     build.gradle \
+     gradle.properties \
+     settings.gradle \
+     .
 COPY gradle ./gradle
-COPY build.gradle .
-COPY settings.gradle .
 COPY src ./src
 
-RUN chmod +x ./gradlew
-
-RUN ./gradlew clean build -x test -x generateOpenApiDocs
+RUN chmod +x ./gradlew && \
+    ./gradlew clean build -x test -x generateOpenApiDocs
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
@@ -26,6 +27,7 @@ COPY --from=build /app/build/libs/*.jar ./app.jar
 RUN addgroup -S user && \
     adduser -S user -G user && \
     chown -R user:user /app
+
 USER user:user
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

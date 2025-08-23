@@ -16,8 +16,13 @@ import java.time.Duration;
 @Configuration
 public class CacheConfig {
 
-  @Value(value = "${spring.cache.redis.time-to-live-seconds}")
-  private int cacheTtlSeconds;
+  private final int cacheTtlSeconds;
+
+  public CacheConfig(
+          @Value(value = "${spring.cache.redis.time-to-live-seconds}") int cacheTtlSeconds
+  ) {
+    this.cacheTtlSeconds = cacheTtlSeconds;
+  }
 
   @Bean
   public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(

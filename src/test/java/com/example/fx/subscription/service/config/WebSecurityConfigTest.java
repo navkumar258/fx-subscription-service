@@ -54,7 +54,6 @@ class WebSecurityConfigTest {
     when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
     when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
     when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
-    when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
     doReturn(securityFilterChain).when(httpSecurity).build();
 
     // When
@@ -71,7 +70,6 @@ class WebSecurityConfigTest {
     verify(httpSecurity).exceptionHandling(any());
     verify(httpSecurity).authorizeHttpRequests(any());
     verify(httpSecurity).addFilterBefore(any(JwtTokenFilter.class), eq(UsernamePasswordAuthenticationFilter.class));
-    verify(httpSecurity).redirectToHttps(any());
     verify(httpSecurity).build();
   }
 
@@ -174,7 +172,6 @@ class WebSecurityConfigTest {
     when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
     when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
     when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
-    when(httpSecurity.redirectToHttps(any())).thenReturn(httpSecurity);
     doReturn(securityFilterChain).when(httpSecurity).build();
 
     // When
