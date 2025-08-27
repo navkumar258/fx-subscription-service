@@ -3,7 +3,7 @@ plugins {
     id 'org.springframework.boot' version "${vSpringBootPlugin}"
     id 'io.spring.dependency-management' version "${vSpringDependencyManagementPlugin}"
     id 'jacoco'
-    id 'org.springdoc.openapi-gradle-plugin' version "${vSpringdocOpenApiPlugin}"
+    id 'org.springdoc.openapi-gradle-plugin' version "${vSpringDocOpenApiPlugin}"
 }
 
 group = 'com.example'
@@ -43,7 +43,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
     // for openapi spec generation
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringdocWbMvcApi}", withoutCommonsLang3
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringDocWebMvcApi}", withoutCommonsLang3
     implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
     runtimeOnly 'com.h2database:h2'
 
