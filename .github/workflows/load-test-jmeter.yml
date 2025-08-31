@@ -1,0 +1,51 @@
+name: JMeter Load Test
+
+on: workflow_dispatch
+
+jobs:
+  perf-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build app with Gradle
+        run: ./gradlew build --no-daemon
+
+      - name: Run Spring Boot App
+        run: nohup ./gradlew bootRun --no-daemon &
+
+      - name: Wait for Spring Boot to be UP
+        run: |
+          for i in {1..30}; do
+            if curl -f https://localhost:8443/actuator/health; then
+              echo "App is up!"
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Run JMeter Performance Test
+        uses: QAInsights/PerfAction@v5.6.3
+        with:
+          test-plan-path: ./jmeter/test_plan.jmx
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-results
+          path: result.jtl
+
+      - name: Upload HTML Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-html-report
+          path: reports
