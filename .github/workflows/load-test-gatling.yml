@@ -25,6 +25,7 @@ jobs:
           FX_KEYSTORE_P12_BASE64: ${{ secrets.KEYSTORE_P12_BASE64 }}
         run: |
           mkdir .secrets
+          echo FX_KEYSTORE_P12_BASE64
           echo FX_KEYSTORE_P12_BASE64 | base64 --decode > .secrets/keystore.p12
 
       - name: Run Spring Boot app
