@@ -43,9 +43,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build Spring Boot app with Gradle
-        run: ./gradlew clean build -x test -x generateOpenApiDocs --no-daemon
-
       - name: Write Keystore to file
         env:
           FX_KEYSTORE_P12_BASE64: ${{ secrets.KEYSTORE_P12_BASE64 }}
@@ -53,11 +50,12 @@ jobs:
           mkdir .secrets
           echo "$FX_KEYSTORE_P12_BASE64" | base64 --decode > .secrets/keystore.p12
 
-      - name: Run Spring Boot app
+      - name: Build & Run Spring Boot app
         run: ./gradlew bootRun
         env:
           FX_KEYSTORE_LOCATION: ${{ github.workspace }}/.secrets/keystore.p12
           FX_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          FX_JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
 
       - name: Wait for Spring Boot to be up
         run: |
