@@ -5,6 +5,32 @@ on: workflow_dispatch
 jobs:
   load-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.5
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: fx_subscription_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+      kafka:
+        image: apache/kafka:3.9.1
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+          KAFKA_PROCESS_ROLES: 'broker,controller'
+          KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+          KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:9092'
+          KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      redis:
+        image: redis:8.2.0-alpine
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,21 +43,19 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build Spring Boot app with Gradle
-        run: ./gradlew clean build -x test -x generateOpenApiDocs --no-daemon
-
       - name: Write Keystore to file
         env:
           FX_KEYSTORE_P12_BASE64: ${{ secrets.KEYSTORE_P12_BASE64 }}
         run: |
           mkdir .secrets
-          echo FX_KEYSTORE_P12_BASE64 | base64 --decode > .secrets/keystore.p12
+          echo "$FX_KEYSTORE_P12_BASE64" | base64 --decode > .secrets/keystore.p12
 
-      - name: Run Spring Boot app
+      - name: Build & Run Spring Boot app
         run: nohup ./gradlew bootRun --no-daemon &
         env:
           FX_KEYSTORE_LOCATION: ${{ github.workspace }}/.secrets/keystore.p12
           FX_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          FX_JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
 
       - name: Wait for Spring Boot to be up
         run: |
