@@ -28,7 +28,7 @@ jobs:
           echo "$FX_KEYSTORE_P12_BASE64" | base64 --decode > .secrets/keystore.p12
 
       - name: Run Spring Boot app
-        run: nohup ./gradlew bootRun --no-daemon &
+        run: ./gradlew bootRun
         env:
           FX_KEYSTORE_LOCATION: ${{ github.workspace }}/.secrets/keystore.p12
           FX_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
