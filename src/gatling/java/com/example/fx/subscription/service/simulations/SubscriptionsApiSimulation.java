@@ -86,10 +86,10 @@ public class SubscriptionsApiSimulation extends Simulation {
                     .feed(userFeeder)
                     .exec(userFlow)
                     .injectOpen(
-                            rampUsers(100).during(60),        // Ramp up to 100 users over 1 minute
-                            nothingFor(20),                    // Hold for 20 seconds
-                            constantUsersPerSec(20).during(300), // Maintain 20 new users per second for 5 minutes
-                            rampUsersPerSec(20).to(50).during(120) // Ramp up from 20 to 50 users per second over 2 minutes
+                            rampUsers(100).during(60)        // Ramp up to 100 users over 1 minute
+//                            nothingFor(20),                    // Hold for 20 seconds
+//                            constantUsersPerSec(20).during(300), // Maintain 20 new users per second for 5 minutes
+//                            rampUsersPerSec(20).to(50).during(120) // Ramp up from 20 to 50 users per second over 2 minutes
                     )
     ).protocols(httpProtocol);
   }
