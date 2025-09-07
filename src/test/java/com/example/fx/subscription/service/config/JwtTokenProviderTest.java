@@ -13,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,9 +40,7 @@ class JwtTokenProviderTest {
 
   @BeforeEach
   void setUp() {
-    jwtTokenProvider = new JwtTokenProvider(fxUserDetailsService);
-    ReflectionTestUtils.setField(jwtTokenProvider, "secret", SECRET_KEY);
-    ReflectionTestUtils.setField(jwtTokenProvider, "validityInMilliseconds", VALIDITY_IN_MILLISECONDS);
+    jwtTokenProvider = new JwtTokenProvider(fxUserDetailsService, SECRET_KEY, VALIDITY_IN_MILLISECONDS);
     jwtTokenProvider.init();
   }
 
@@ -196,9 +193,7 @@ class JwtTokenProviderTest {
   @Test
   void validateToken_WithExpiredToken_ShouldReturnFalse() {
     // Given - Create a token with very short validity
-    JwtTokenProvider shortLivedProvider = new JwtTokenProvider(fxUserDetailsService);
-    ReflectionTestUtils.setField(shortLivedProvider, "secret", SECRET_KEY);
-    ReflectionTestUtils.setField(shortLivedProvider, "validityInMilliseconds", 1L); // 1 millisecond
+    JwtTokenProvider shortLivedProvider = new JwtTokenProvider(fxUserDetailsService, SECRET_KEY, 1L);
     shortLivedProvider.init();
 
     Set<String> roles = Set.of(USER);

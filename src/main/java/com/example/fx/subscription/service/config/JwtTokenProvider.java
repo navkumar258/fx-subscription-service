@@ -23,18 +23,18 @@ import java.util.Set;
 public class JwtTokenProvider {
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-  @Value("${security.jwt.token.secret-key}")
-  private String secret;
-
-  @Value("${security.jwt.token.expire-length}")
-  private long validityInMilliseconds;
-
   private SecretKey secretKey;
 
   private final FxUserDetailsService fxUserDetailsService;
+  private final String secret;
+  private final long validityInMilliseconds;
 
-  public JwtTokenProvider(FxUserDetailsService fxUserDetailsService) {
+  public JwtTokenProvider(FxUserDetailsService fxUserDetailsService,
+                          @Value("${security.jwt.token.secret-key}") String secret,
+                          @Value("${security.jwt.token.expire-length}") long validityInMilliseconds) {
     this.fxUserDetailsService = fxUserDetailsService;
+    this.secret = secret;
+    this.validityInMilliseconds = validityInMilliseconds;
   }
 
   @PostConstruct

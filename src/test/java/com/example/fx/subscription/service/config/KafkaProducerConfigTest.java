@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class KafkaProducerConfigTest {
 
   private static final String CONFIGS = "configs";
+  private static final String BOOTSTRAP_ADDRESS = "localhost:9092";
 
   private KafkaProducerConfig kafkaProducerConfig;
 
   @BeforeEach
   void setUp() {
-    kafkaProducerConfig = new KafkaProducerConfig();
-    ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", "localhost:9092");
+    kafkaProducerConfig = new KafkaProducerConfig(BOOTSTRAP_ADDRESS);
   }
 
   @Test
@@ -66,7 +66,7 @@ class KafkaProducerConfigTest {
   void producerFactory_WithDifferentBootstrapAddress_ShouldUseCorrectAddress() {
     // Given
     String customBootstrapAddress = "kafka-server:9093";
-    ReflectionTestUtils.setField(kafkaProducerConfig, "bootstrapAddress", customBootstrapAddress);
+    kafkaProducerConfig = new KafkaProducerConfig(customBootstrapAddress);
 
     // When
     ProducerFactory<String, SubscriptionChangeEvent> producerFactory = kafkaProducerConfig.producerFactory();
