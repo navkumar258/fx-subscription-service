@@ -1,1 +1,2 @@
 rootProject.name = 'fx-subscription-service'
+include ':fx-subscription-service-gatling'

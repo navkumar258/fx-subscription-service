@@ -1,7 +1,7 @@
-package com.example.fx.subscription.service.simulations;
+package com.example.fx.subscription.service.gatling.simulations;
 
-import com.example.fx.subscription.service.feeders.RandomSubscriptionFeeder;
-import com.example.fx.subscription.service.feeders.RandomUserFeeder;
+import com.example.fx.subscription.service.gatling.feeders.RandomSubscriptionFeeder;
+import com.example.fx.subscription.service.gatling.feeders.RandomUserFeeder;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.gatling.javaapi.core.ChainBuilder;

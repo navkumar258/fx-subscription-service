@@ -11,6 +11,7 @@ COPY gradlew \
      .
 COPY gradle ./gradle
 COPY src ./src
+COPY fx-subscription-service-gatling ./fx-subscription-service-gatling
 
 RUN chmod +x ./gradlew && \
     ./gradlew clean build -x test -x generateOpenApiDocs

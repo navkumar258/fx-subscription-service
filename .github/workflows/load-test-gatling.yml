@@ -69,10 +69,10 @@ jobs:
 
       - name: Run Gatling Simulation
         run: |
-          ./gradlew gatlingRun
+          ./gradlew :fx-subscription-service-gatling:gatlingRun
 
       - name: Upload Gatling report
         uses: actions/upload-artifact@v4
         with:
           name: gatling-report
-          path: build/reports/gatling
+          path: fx-subscription-service-gatling/build/reports/gatling

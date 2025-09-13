@@ -1,4 +1,4 @@
-package com.example.fx.subscription.service.feeders;
+package com.example.fx.subscription.service.gatling.feeders;
 
 import java.util.Iterator;
 import java.util.Map;

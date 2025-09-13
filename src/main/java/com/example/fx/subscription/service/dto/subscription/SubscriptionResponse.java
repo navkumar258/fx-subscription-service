@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.dto.subscription;
 
 import com.example.fx.subscription.service.dto.user.UserSummaryResponse;
+import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
 import com.example.fx.subscription.service.model.ThresholdDirection;
 
@@ -20,7 +21,7 @@ public record SubscriptionResponse(
         Instant createdAt,
         Instant updatedAt
 ) implements Serializable {
-  public static SubscriptionResponse fromSubscription(com.example.fx.subscription.service.model.Subscription subscription) {
+  public static SubscriptionResponse fromSubscription(Subscription subscription) {
     return new SubscriptionResponse(
             subscription.getId().toString(),
             subscription.getUser() != null ? UserSummaryResponse.fromFxUser(subscription.getUser()) : null,
