@@ -2,6 +2,9 @@ name: Gatling Load Tests
 
 on: workflow_dispatch
 
+permissions:
+  contents: read
+
 jobs:
   load-test:
     runs-on: ubuntu-latest

@@ -2,6 +2,9 @@ name: JMeter Load Tests
 
 on: workflow_dispatch
 
+permissions:
+  contents: read
+
 jobs:
   perf-test:
     runs-on: ubuntu-latest
@@ -34,7 +37,7 @@ jobs:
           done
 
       - name: Run JMeter Performance Test
-        uses: QAInsights/PerfAction@v5.6.3
+        uses: QAInsights/PerfAction@d16221318a6d261b1546b9dec9c0bb1739e3d480
         with:
           test-plan-path: ./jmeter/test_plan.jmx
 
