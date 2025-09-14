@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForLog;
+
 @RestControllerAdvice
 public class ControllerAdvice {
 
@@ -40,7 +42,7 @@ public class ControllerAdvice {
           SubscriptionNotFoundException e,
           WebRequest request) {
     LOGGER.warn("Subscription not found: subscriptionId={}, path={}, message={}",
-            e.getSubscriptionId(), request.getDescription(false), e.getMessage());
+            e.getSubscriptionId(), sanitizeForLog(request.getDescription(false)), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
@@ -64,7 +66,7 @@ public class ControllerAdvice {
           UserNotFoundException e,
           WebRequest request) {
     LOGGER.warn("User not found: userId={}, path={}, message={}",
-            e.getUserId(), request.getDescription(false), e.getMessage());
+            e.getUserId(), sanitizeForLog(request.getDescription(false)), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND,
@@ -112,7 +114,7 @@ public class ControllerAdvice {
             fieldErrors.put(error.getField(), error.getDefaultMessage()));
 
     LOGGER.warn("Validation failed: path={}, fieldErrors={}",
-            request.getDescription(false), fieldErrors);
+            sanitizeForLog(request.getDescription(false)), fieldErrors);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.BAD_REQUEST,
@@ -217,7 +219,7 @@ public class ControllerAdvice {
           UserAlreadyExistsException e,
           WebRequest request) {
     LOGGER.warn("User already exists: email={}, path={}, message={}",
-            e.getEmail(), request.getDescription(false), e.getMessage());
+            e.getEmail(), sanitizeForLog(request.getDescription(false)), e.getMessage());
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
             HttpStatus.CONFLICT,
@@ -240,7 +242,7 @@ public class ControllerAdvice {
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<ProblemDetail> handleGenericException(Exception e, WebRequest request) {
     LOGGER.error("Unexpected error occurred: path={}, message={}",
-            request.getDescription(false), e.getMessage(), e);
+            sanitizeForLog(request.getDescription(false)), e.getMessage(), e);
 
     return createProblemDetail(
             HttpStatus.INTERNAL_SERVER_ERROR,
@@ -250,7 +252,7 @@ public class ControllerAdvice {
   }
 
   private void logException(String message, Exception e, WebRequest request) {
-    LOGGER.warn("{}: path={}, message={}", message, request.getDescription(false), e.getMessage());
+    LOGGER.warn("{}: path={}, message={}", message, sanitizeForLog(request.getDescription(false)), e.getMessage());
   }
 
   private ResponseEntity<ProblemDetail> createProblemDetail(

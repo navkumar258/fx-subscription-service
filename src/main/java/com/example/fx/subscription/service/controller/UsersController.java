@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 
+import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForLog;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @Observed(name = "users.controller")
@@ -60,7 +62,7 @@ public class UsersController {
     FxUser fxUser = fxUsersService.findUserById(id)
             .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
-    LOGGER.info("Retrieved user: userId={}", id);
+    LOGGER.info("Retrieved user: userId={}", sanitizeForLog(id));
 
     UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
     return ResponseEntity.ok(response);
@@ -87,7 +89,7 @@ public class UsersController {
     );
 
     LOGGER.info("Search results: {} users found with email={}, mobile={}, enabled={}",
-            usersPage.getTotalElements(), email, mobile, enabled);
+            usersPage.getTotalElements(), sanitizeForLog(email), sanitizeForLog(mobile), enabled);
 
     return ResponseEntity.ok(response);
   }
@@ -100,7 +102,7 @@ public class UsersController {
     FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
     UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
 
-    LOGGER.info("User updated successfully: userId={}", id);
+    LOGGER.info("User updated successfully: userId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }
@@ -109,7 +111,7 @@ public class UsersController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteUser(@PathVariable String id) {
     fxUsersService.deleteUser(id);
-    LOGGER.info("User deleted successfully: userId={}", id);
+    LOGGER.info("User deleted successfully: userId={}", sanitizeForLog(id));
 
     return ResponseEntity.noContent().build();
   }
@@ -119,7 +121,7 @@ public class UsersController {
   public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
     UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
 
-    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", id, response.totalCount());
+    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
 
     return ResponseEntity.ok(response);
   }

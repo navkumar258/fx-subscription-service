@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 
+import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForLog;
+
 @RestController
 @RequestMapping("/api/v1/subscriptions")
 @Observed(name = "subscriptions.controller")
@@ -37,7 +39,7 @@ public class SubscriptionsController {
     SubscriptionResponse response = subscriptionsService.findSubscriptionById(id)
             .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id));
 
-    LOGGER.info("Retrieved subscription: subscriptionId={}", id);
+    LOGGER.info("Retrieved subscription: subscriptionId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }
@@ -48,7 +50,7 @@ public class SubscriptionsController {
     SubscriptionListResponse subscriptionListResponse = subscriptionsService.findSubscriptionResponsesByUserId(userId);
 
     LOGGER.info("Retrieved {} subscriptions for user: userId={}",
-            subscriptionListResponse.totalCount(), userId);
+            subscriptionListResponse.totalCount(), sanitizeForLog(userId));
 
     return ResponseEntity.ok(subscriptionListResponse);
   }
@@ -88,7 +90,7 @@ public class SubscriptionsController {
     SubscriptionResponse updatedSubscription = subscriptionsService.updateSubscriptionById(id, subscriptionUpdateRequest);
 
     LOGGER.info("Updated subscription: subscriptionId={}, currencyPair={}",
-            id, subscriptionUpdateRequest.currencyPair());
+            sanitizeForLog(id), subscriptionUpdateRequest.currencyPair());
 
     return ResponseEntity.ok(new SubscriptionUpdateResponse(
             updatedSubscription.id(),
@@ -101,7 +103,7 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionDeleteResponse> deleteSubscriptionById(@PathVariable String id) {
     SubscriptionDeleteResponse response = subscriptionsService.deleteSubscriptionById(id);
 
-    LOGGER.info("Deleted subscription: subscriptionId={}", id);
+    LOGGER.info("Deleted subscription: subscriptionId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }
