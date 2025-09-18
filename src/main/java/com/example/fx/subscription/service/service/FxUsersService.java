@@ -81,7 +81,7 @@ public class FxUsersService {
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
     // Check if user has active subscriptions
-    List<Subscription> activeSubscriptions = subscriptionRepository.findAllByUserId(user.getId());
+    List<Subscription> activeSubscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
     if (!activeSubscriptions.isEmpty()) {
       throw new IllegalStateException("Cannot delete user with active subscriptions. Please delete subscriptions first.");
     }
@@ -94,7 +94,7 @@ public class FxUsersService {
     FxUser user = fxUserRepository.findById(UUID.fromString(userId))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + userId, userId));
 
-    List<Subscription> subscriptions = subscriptionRepository.findAllByUserId(user.getId());
+    List<Subscription> subscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
 
     List<SubscriptionResponse> subscriptionResponses =
             subscriptions.stream()

@@ -218,7 +218,7 @@ class FxUsersServiceTest {
   void deleteUser_WhenUserExistsAndNoActiveSubscriptions_ShouldDeleteSuccessfully() {
     // Given
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId)).thenReturn(List.of());
 
     // When
     fxUsersService.deleteUser(testUserId.toString());
@@ -231,7 +231,7 @@ class FxUsersServiceTest {
   void deleteUser_WhenUserExistsButHasActiveSubscriptions_ShouldThrowIllegalStateException() {
     // Given
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId)).thenReturn(List.of(testSubscription));
 
     // When & Then
     IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -254,7 +254,7 @@ class FxUsersServiceTest {
   void getUserSubscriptions_WhenUserExists_ShouldReturnUserSubscriptionsResponse() {
     // Given
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of(testSubscription));
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId)).thenReturn(List.of(testSubscription));
 
     // When
     UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());
@@ -282,7 +282,7 @@ class FxUsersServiceTest {
   void getUserSubscriptions_WhenUserHasNoSubscriptions_ShouldReturnEmptyList() {
     // Given
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-    when(subscriptionRepository.findAllByUserId(testUserId)).thenReturn(List.of());
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId)).thenReturn(List.of());
 
     // When
     UserSubscriptionsResponse result = fxUsersService.getUserSubscriptions(testUserId.toString());

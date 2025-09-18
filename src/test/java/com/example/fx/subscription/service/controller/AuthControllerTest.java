@@ -14,6 +14,7 @@ import com.example.fx.subscription.service.service.FxUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -158,7 +159,6 @@ class AuthControllerTest {
     savedUser.setEmail("test@example.com");
     savedUser.setRole(UserRole.USER);
 
-    when(fxUserRepository.existsByEmail("test@example.com")).thenReturn(false);
     when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
     when(fxUserRepository.save(any(FxUser.class))).thenReturn(savedUser);
 
@@ -172,7 +172,6 @@ class AuthControllerTest {
     assertEquals(savedUser.getId().toString(), response.getBody().userId());
     assertEquals("User registered successfully", response.getBody().message());
 
-    verify(fxUserRepository).existsByEmail("test@example.com");
     verify(passwordEncoder).encode("password123");
     verify(fxUserRepository).save(any(FxUser.class));
   }
@@ -213,18 +212,14 @@ class AuthControllerTest {
     UserSignUpRequest signUpRequest = new UserSignUpRequest(
             "existing@example.com", "password123", "+1234567890", false);
 
-    when(fxUserRepository.existsByEmail("existing@example.com")).thenReturn(true);
+    when(fxUserRepository.save(any(FxUser.class)))
+            .thenThrow(new DataIntegrityViolationException("Unique constraint failed"));
 
-    // When & Then
-    UserAlreadyExistsException exception = assertThrows(UserAlreadyExistsException.class, () ->
-            authController.signup(signUpRequest));
+    UserAlreadyExistsException exception = assertThrows(UserAlreadyExistsException.class,
+            () -> authController.signup(signUpRequest));
 
     assertEquals("Email is already registered", exception.getMessage());
     assertEquals("existing@example.com", exception.getEmail());
-
-    verify(fxUserRepository).existsByEmail("existing@example.com");
-    verify(passwordEncoder, never()).encode(anyString());
-    verify(fxUserRepository, never()).save(any(FxUser.class));
   }
 
   @Test

@@ -12,6 +12,7 @@ import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.service.FxUserDetailsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.io.Serial;
 import java.util.stream.Collectors;
 
 @RestController
@@ -80,6 +82,9 @@ public class AuthController {
 
       // Let the ControllerAdvice handle this exception
       throw new AuthenticationException("Invalid username/password") {
+        @Serial
+        private static final long serialVersionUID = -4224865560755387326L;
+
         @Override
         public String getMessage() {
           return "Invalid username/password";
@@ -90,19 +95,14 @@ public class AuthController {
 
   @PostMapping("/signup")
   public ResponseEntity<AuthSignupResponse> signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
-    validateEmailNotExists(userSignUpRequest.email());
-
     FxUser user = createUserFromRequest(userSignUpRequest);
-    FxUser savedUser = fxUserRepository.save(user);
+    try {
+      FxUser savedUser = fxUserRepository.save(user);
+      LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
 
-    LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
-
-    return buildSignupResponse(savedUser, userSignUpRequest.admin());
-  }
-
-  private void validateEmailNotExists(String email) {
-    if (fxUserRepository.existsByEmail(email)) {
-      throw new UserAlreadyExistsException("Email is already registered", email);
+      return buildSignupResponse(savedUser, userSignUpRequest.admin());
+    } catch (DataIntegrityViolationException e) {
+      throw new UserAlreadyExistsException("Email is already registered", userSignUpRequest.email());
     }
   }
 

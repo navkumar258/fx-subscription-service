@@ -186,6 +186,15 @@ jobs:
           sed -i "s/version\s*=\s*['|\"]${{ steps.versioning.outputs.CURRENT_VERSION }}['|\"]/version = '${{ steps.versioning.outputs.NEW_VERSION }}'/g" build.gradle
           echo "Updated build.gradle to version ${{ steps.versioning.outputs.NEW_VERSION }}"
 
+      - name: Update version in OpenAPI docs
+        if: ${{ steps.version_check.outputs.skip_update == 'false' }}
+        run: |
+          echo "--- Updating OpenAPI docs version ---"
+          VERSION=${{ steps.versioning.outputs.NEW_VERSION }}
+          jq --arg v "$VERSION" '.info.version = $v' api-docs/fx-subscription-service.json > api-docs/fx-subscription-service.json.tmp
+          mv api-docs/fx-subscription-service.json.tmp api-docs/fx-subscription-service.json
+          echo "Updated api-docs/fx-subscription-service.json to version ${{ steps.versioning.outputs.NEW_VERSION }}"
+
       - name: Commit and push version update
         if: ${{ steps.version_check.outputs.skip_update == 'false' }}
         run: |
@@ -196,6 +205,7 @@ jobs:
 
           # Add the modified build.gradle file.
           git add build.gradle
+          git add api-docs/fx-subscription-service.json
           git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit."
           git push
 

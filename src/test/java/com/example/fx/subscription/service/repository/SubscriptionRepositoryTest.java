@@ -150,15 +150,15 @@ class SubscriptionRepositoryTest {
   }
 
   @Test
-  void findAllByUserId_ShouldReturnUserSubscriptions() {
+  void findSubscriptionsByUserId_ShouldReturnUserSubscriptions() {
     // Given
     subscriptionRepository.save(testSubscription1);
     subscriptionRepository.save(testSubscription2);
     subscriptionRepository.save(testSubscription3);
 
     // When
-    List<Subscription> user1Subscriptions = subscriptionRepository.findAllByUserId(testUser1.getId());
-    List<Subscription> user2Subscriptions = subscriptionRepository.findAllByUserId(testUser2.getId());
+    List<Subscription> user1Subscriptions = subscriptionRepository.findSubscriptionsByUserId(testUser1.getId());
+    List<Subscription> user2Subscriptions = subscriptionRepository.findSubscriptionsByUserId(testUser2.getId());
 
     // Then
     assertEquals(2, user1Subscriptions.size());
@@ -180,7 +180,7 @@ class SubscriptionRepositoryTest {
   }
 
   @Test
-  void findAllByUserId_WhenUserHasNoSubscriptions_ShouldReturnEmptyList() {
+  void findSubscriptionsByUserId_WhenUserHasNoSubscriptions_ShouldReturnEmptyList() {
     // Given
     FxUser newUser = new FxUser();
     newUser.setEmail("newuser@example.com");
@@ -191,7 +191,7 @@ class SubscriptionRepositoryTest {
     newUser = fxUserRepository.save(newUser);
 
     // When
-    List<Subscription> userSubscriptions = subscriptionRepository.findAllByUserId(newUser.getId());
+    List<Subscription> userSubscriptions = subscriptionRepository.findSubscriptionsByUserId(newUser.getId());
 
     // Then
     assertTrue(userSubscriptions.isEmpty());

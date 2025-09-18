@@ -246,6 +246,8 @@ After successful setup, the following services will be available:
    ./build_and_run.sh
    ```
 
+4. **Load Testing** (Optional): Run load tests with `./gradlew :fx-subscription-service-gatling:gatlingRun`
+
 ### Debugging
 
 ```bash
@@ -376,6 +378,11 @@ Content-Type: application/json
 }
 ```
 
+**Password Requirements:**
+- Must contain at least one word character (a-z, A-Z, 0-9, _)
+- Must be at least 8 characters long
+- Example valid passwords: `password123`, `MyPass_123`, `SecurePass1`
+
 #### Login
 
 ```http
@@ -419,6 +426,13 @@ GET /api/v1/subscriptions?userId={userId}
 Authorization: Bearer <jwt_token>
 ```
 
+#### Get My Subscriptions
+
+```http
+GET /api/v1/subscriptions/my
+Authorization: Bearer <jwt_token>
+```
+
 #### Update Subscription
 
 ```http
@@ -430,9 +444,12 @@ Content-Type: application/json
   "currencyPair": "EUR/USD",
   "threshold": 1.15,
   "direction": "BELOW",
+  "status": "ACTIVE",
   "notificationChannels": ["email"]
 }
 ```
+
+**Note:** The `status` field is optional and can be "ACTIVE", "INACTIVE", or "EXPIRED".
 
 #### Delete Subscription
 
@@ -480,9 +497,12 @@ Content-Type: application/json
 
 {
   "email": "newemail@example.com",
-  "mobile": "+9876543210"
+  "mobile": "+9876543210",
+  "pushDeviceToken": "optional_push_device_token"
 }
 ```
+
+**Note:** All fields are optional. The `mobile` field must follow international format (+1234567890).
 
 ### MCP Server Endpoints
 
@@ -745,8 +765,18 @@ docker compose up -d
 │       ├── java/                           # Test classes
 │       └── resources/
 │           └── application.properties
+├── fx-subscription-service-gatling/        # Gatling load testing subproject
+│   ├── src/gatling/java/                   # Gatling simulation classes
+│   │   └── com/example/fx/subscription/service/gatling/
+│   │       ├── feeders/                    # Data feeders for test data
+│   │       └── simulations/                # Load test simulation scenarios
+│   ├── src/gatling/resources/
+│   │   └── gatling.conf                    # Gatling configuration (API endpoints, etc.)
+│   └── build.gradle                        # Gatling-specific build configuration
 ├── api-docs/                               # Generated OpenAPI documentation
 ├── build_and_run.sh                        # Automated setup script
+├── create_github_release_backfill.sh       # GitHub release automation script
+├── delete-old-ghcr-images.sh              # Container registry cleanup script
 ├── docker-compose.yml                      # Core services (app, DB, Kafka)
 ├── docker-compose.observability.yml        # Monitoring stack
 ├── Dockerfile                              # Production container image
@@ -761,6 +791,142 @@ docker compose up -d
 - Code formatting with Checkstyle
 - 95% plus code and line coverage with JaCoCo
 - Automated quality checks in build pipeline
+
+## 🚀 Load Testing
+
+### Gatling Load Tests
+
+The project includes comprehensive load testing using Gatling, now organized as a separate subproject for better maintainability.
+
+#### Running Load Tests
+
+```bash
+# Run Gatling load tests
+./gradlew :fx-subscription-service-gatling:gatlingRun
+
+# Run specific simulation
+./gradlew :fx-subscription-service-gatling:gatlingRun -Dgatling.simulationClass=com.example.fx.subscription.service.gatling.simulations.SubscriptionsApiSimulation
+
+# Generate load test reports
+./gradlew :fx-subscription-service-gatling:gatlingReport
+```
+
+#### Load Test Scenarios
+
+The Gatling tests include:
+- **User Registration**: Simulates user signup with various data patterns
+- **Authentication**: Tests login performance under load
+- **Subscription Management**: Creates, updates, and deletes subscriptions
+- **API Performance**: Measures response times and throughput
+
+#### Load Test Reports
+
+After running tests, reports are generated in:
+- `fx-subscription-service-gatling/build/reports/gatling/`
+- Open `index.html` in a web browser to view detailed performance metrics
+
+### CI/CD Load Testing
+
+Load tests are automatically executed via GitHub Actions:
+- **Manual Trigger**: Use the "Gatling Load Tests" workflow
+- **Automated Reports**: Test results are uploaded as artifacts
+- **Performance Monitoring**: Track performance regressions over time
+
+#### Gatling Configuration
+
+The `fx-subscription-service-gatling/src/gatling/resources/gatling.conf` file contains:
+
+```hocon
+api {
+  local {
+    baseUrl = "https://localhost:8443"
+    signupEndpoint = "/api/v1/auth/signup"
+    loginEndpoint = "/api/v1/auth/login"
+    subscriptionsEndpoint = "/api/v1/subscriptions"
+    mySubscriptionsEndpoint = "/api/v1/subscriptions/my"
+    contentType = "application/json"
+    acceptType = "application/json"
+  }
+}
+```
+
+**Configuration Options:**
+- **baseUrl**: Target application URL for load testing
+- **Endpoints**: API endpoint paths for different operations
+- **Content Types**: Request/response content type configuration
+
+**Environment-Specific Configuration:**
+You can add additional environments (e.g., `staging`, `production`) by extending the configuration:
+
+```hocon
+api {
+  local {
+    baseUrl = "https://localhost:8443"
+    # ... other local config
+  }
+  staging {
+    baseUrl = "https://staging.example.com"
+    # ... staging-specific config
+  }
+  production {
+    baseUrl = "https://api.example.com"
+    # ... production-specific config
+  }
+}
+```
+
+Then run tests against specific environments:
+```bash
+./gradlew :fx-subscription-service-gatling:gatlingRun -Dgatling.env=staging
+```
+
+## 🛠️ Utility Scripts
+
+### Development Setup
+
+#### Automated Build and Run
+```bash
+# Complete local development setup
+chmod +x build_and_run.sh
+./build_and_run.sh
+```
+
+**What this script does:**
+- ✅ Runs all tests on the host machine
+- ✅ Generates OpenAPI documentation
+- ✅ Runs JaCoCo coverage verification
+- ✅ Performs code quality checks
+- ✅ Builds and starts all Docker services including:
+  - FX Subscription Service (main application)
+  - PostgreSQL database
+  - Apache Kafka (message broker)
+  - Observability stack (Grafana, Prometheus, Loki, Zipkin)
+
+### Container Registry Management
+
+#### Delete Old GHCR Images
+```bash
+# Clean up old container images (keeps last 4 versions)
+export FX_GITHUB_TOKEN=your_github_token
+./delete-old-ghcr-images.sh
+```
+
+**Purpose**: Automatically removes old container image versions from GitHub Container Registry to manage storage costs.
+
+#### Create GitHub Release Backfill
+```bash
+# Create GitHub releases for existing Git tags
+./create_github_release_backfill.sh
+```
+
+**Purpose**: Creates GitHub releases for existing Git tags that don't have corresponding releases.
+
+### Script Configuration
+
+All scripts require appropriate permissions:
+- **build_and_run.sh**: No special requirements
+- **delete-old-ghcr-images.sh**: Requires `FX_GITHUB_TOKEN` environment variable
+- **create_github_release_backfill.sh**: Requires GitHub CLI (`gh`) authentication
 
 ## 🤝 Contributing
 
@@ -792,6 +958,9 @@ For support and questions:
 - **v2.0.0** - Refactored to MCP server architecture, moved AI chat to separate client
 - **v2.0.3** - Added Redis caching, enhanced TestContainers integration, and improved DTOs
 - **v2.1.0** - Enhanced Docker setup with automated build script and comprehensive local development environment
+- **v3.0.0** - Moved Gatling load testing to separate subproject for better maintainability
+- **v3.1.0** - Added utility scripts for container registry management and release automation
+- **v3.2.0** - Current version with enhanced load testing capabilities and improved CI/CD workflows
 
 ---
 

@@ -119,7 +119,7 @@ class SubscriptionsServiceCacheTest {
   void findSubscriptionResponsesByUserId_ShouldCacheResult() {
     // Given
     List<Subscription> subscriptions = List.of(testSubscription);
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(subscriptions);
 
     // When - First call should hit repository
@@ -128,7 +128,7 @@ class SubscriptionsServiceCacheTest {
     // Then
     assertNotNull(result1);
     assertEquals(1, result1.totalCount());
-    verify(subscriptionRepository, times(1)).findAllByUserId(testUserId);
+    verify(subscriptionRepository, times(1)).findSubscriptionsByUserId(testUserId);
 
     // Assert cache contents
     SubscriptionListResponse cached = Objects.requireNonNull(cacheManager
@@ -144,13 +144,13 @@ class SubscriptionsServiceCacheTest {
     // Then
     assertNotNull(result2);
     assertEquals(1, result2.totalCount());
-    verify(subscriptionRepository, times(1)).findAllByUserId(testUserId);
+    verify(subscriptionRepository, times(1)).findSubscriptionsByUserId(testUserId);
   }
 
   @Test
   void findSubscriptionResponsesByUserId_WithEmptyResult_ShouldNotCache() {
     // Given
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(List.of());
 
     // When & Then - Should throw exception and not cache

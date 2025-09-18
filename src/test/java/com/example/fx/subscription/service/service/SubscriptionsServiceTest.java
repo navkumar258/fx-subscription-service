@@ -151,7 +151,7 @@ class SubscriptionsServiceTest {
   void findSubscriptionsByUserId_ShouldReturnUserSubscriptions() {
     // Given
     List<Subscription> subscriptions = List.of(testSubscription);
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(subscriptions);
 
     // When
@@ -166,7 +166,7 @@ class SubscriptionsServiceTest {
   void findSubscriptionResponsesByUserId_ShouldReturnSubscriptionResponses() {
     // Given
     List<Subscription> subscriptions = List.of(testSubscription);
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(subscriptions);
 
     // When
@@ -185,7 +185,7 @@ class SubscriptionsServiceTest {
     // Given
     testSubscription.setNotificationsChannels(null);
     List<Subscription> subscriptions = List.of(testSubscription);
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(subscriptions);
 
     // When
@@ -203,7 +203,7 @@ class SubscriptionsServiceTest {
   @Test
   void findSubscriptionResponsesByUserId_WhenNoSubscriptionsFound_ShouldThrowSubscriptionNotFoundException() {
     // Given
-    when(subscriptionRepository.findAllByUserId(testUserId))
+    when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(List.of());
 
     // When & Then

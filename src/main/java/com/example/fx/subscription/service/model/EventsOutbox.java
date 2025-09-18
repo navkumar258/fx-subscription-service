@@ -13,7 +13,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "events_outbox")
+@Table(
+        name = "events_outbox",
+        indexes = {
+                @Index(name = "idx_events_outbox_status", columnList = "status")
+        }
+)
 public class EventsOutbox implements Serializable {
 
   @Serial

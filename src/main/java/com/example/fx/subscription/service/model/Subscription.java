@@ -15,7 +15,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "subscriptions")
+@Table(
+        name = "subscriptions",
+        indexes = {
+                @Index(name = "idx_subscriptions_user_id", columnList = "user_id"),
+                @Index(name = "idx_subscriptions_id_user_id", columnList = "id, user_id")
+        }
+)
 public class Subscription implements Serializable {
 
   @Serial

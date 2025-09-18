@@ -47,13 +47,13 @@ public class SubscriptionsService {
 
   @Transactional(readOnly = true)
   public List<Subscription> findSubscriptionsByUserId(String userId) {
-    return subscriptionRepository.findAllByUserId(UUID.fromString(userId));
+    return subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId));
   }
 
   @Transactional(readOnly = true)
   @Cacheable(cacheNames = "subscriptionsByUser", key = "#userId", unless = "#result.totalCount() == 0")
   public SubscriptionListResponse findSubscriptionResponsesByUserId(String userId) {
-    List<SubscriptionResponse> subscriptions = subscriptionRepository.findAllByUserId(UUID.fromString(userId))
+    List<SubscriptionResponse> subscriptions = subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId))
             .stream()
             .map(SubscriptionResponse::fromSubscription)
             .toList();
