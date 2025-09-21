@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "FX Subscription Service",
-    "description": "This api manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities",
+    "description": "This API manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities.",
     "contact": {
       "name": "API Support",
       "url": "https://navkumar258.github.io",
@@ -18,6 +18,11 @@
     {
       "url": "https://localhost:8443",
       "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
     }
   ],
   "paths": {
@@ -1343,7 +1348,7 @@
           "password": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^(?=.*\\w).{8,}$"
+            "pattern": "^(?\u003d.*\\w).{8,}$"
           },
           "mobile": {
             "type": "string",

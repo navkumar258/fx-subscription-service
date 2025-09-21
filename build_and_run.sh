@@ -3,11 +3,9 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-echo "➡️ Running tests and checks on host machine..."
-./gradlew clean test
-./gradlew generateOpenApiDocs
-./gradlew jacocoTestCoverageVerification
+echo "➡️ Running tests, coverage and checks on host machine..."
 ./gradlew check
+./gradlew generateOpenApiDocs
 echo "✅ All Gradle tasks passed successfully."
 
 echo "➡️ Building and running Docker services in detached mode..."

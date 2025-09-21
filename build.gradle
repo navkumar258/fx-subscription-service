@@ -70,6 +70,10 @@ dependencyManagement {
     }
 }
 
+springBoot {
+    buildInfo()
+}
+
 jacoco {
     toolVersion = "${vJacocoTool}"
 }
@@ -143,7 +147,6 @@ jacocoTestCoverageVerification {
 
 tasks.named('test') {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport
     doFirst {
         if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
             jvmArgs = [
@@ -182,4 +185,8 @@ openApi {
 
 tasks.named("build") {
     finalizedBy("generateOpenApiDocs")
+}
+
+tasks.named('check') {
+    dependsOn jacocoTestReport, jacocoTestCoverageVerification
 }

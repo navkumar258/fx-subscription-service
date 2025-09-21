@@ -1,51 +1,88 @@
 package com.example.fx.subscription.service.config;
 
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OpenApiConfigTest {
 
-  @Test
-  void openApiConfig_ShouldHaveOpenAPIDefinitionAnnotation() {
-    // When
-    OpenAPIDefinition annotation = OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
+  private OpenApiConfig openApiConfig;
+  private static final String MOCK_VERSION = "1.2.3-TEST";
 
-    // Then
-    assertNotNull(annotation, "OpenApiConfig should have @OpenAPIDefinition annotation");
+  @Mock
+  private BuildProperties buildProperties;
+
+  @BeforeEach
+  void setUp() {
+    when(buildProperties.getVersion()).thenReturn(MOCK_VERSION);
+    openApiConfig = new OpenApiConfig(buildProperties);
   }
 
   @Test
-  void openApiConfig_ShouldHaveCorrectSecuritySchemeConfiguration() {
+  void testOpenApiBeanCreation() {
     // When
-    SecurityScheme annotation = OpenApiConfig.class.getAnnotation(SecurityScheme.class);
+    OpenAPI openAPI = openApiConfig.openAPI();
 
     // Then
-    assertNotNull(annotation, "OpenApiConfig should have @SecurityScheme annotation");
-    assertEquals("bearerAuth", annotation.name());
-    assertEquals(SecuritySchemeType.HTTP, annotation.type());
-    assertEquals("bearer", annotation.scheme());
-    assertEquals("JWT", annotation.bearerFormat());
+    assertNotNull(openAPI);
   }
 
   @Test
-  void openApiConfig_ShouldHaveBasicApiInformation() {
+  void testOpenApiInfoDetails() {
     // When
-    OpenAPIDefinition openApiDef = OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
+    OpenAPI openAPI = openApiConfig.openAPI();
+    Info info = openAPI.getInfo();
 
     // Then
-    assertNotNull(openApiDef);
-    assertEquals("FX Subscription Service", openApiDef.info().title());
-    assertEquals("1.0.0", openApiDef.info().version());
-    assertNotNull(openApiDef.info().description());
-    assertNotNull(openApiDef.info().license());
-    assertNotNull(openApiDef.info().contact());
+    assertNotNull(info);
+    assertEquals("FX Subscription Service", info.getTitle());
+    assertEquals(MOCK_VERSION, info.getVersion());
+    assertEquals("This API manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities.", info.getDescription());
+    assertEquals("API Support", info.getContact().getName());
+    assertEquals("support@navkumar258.com", info.getContact().getEmail());
+    assertEquals("https://navkumar258.github.io", info.getContact().getUrl());
+    assertEquals("MIT License", info.getLicense().getName());
+    assertEquals("https://mit-license.org/", info.getLicense().getUrl());
+  }
+
+  @Test
+  void testOpenApiSecurityConfiguration() {
+    // When
+    OpenAPI openAPI = openApiConfig.openAPI();
+    Components components = openAPI.getComponents();
+
+    // Then
+    assertNotNull(components);
+    SecurityScheme securityScheme = components.getSecuritySchemes().get("bearerAuth");
+    assertNotNull(securityScheme);
+    assertEquals(SecurityScheme.Type.HTTP, securityScheme.getType());
+    assertEquals("bearer", securityScheme.getScheme());
+    assertEquals("JWT", securityScheme.getBearerFormat());
+  }
+
+  @Test
+  void testOpenApiGlobalSecurityRequirement() {
+    // When
+    OpenAPI openAPI = openApiConfig.openAPI();
+
+    // Then
+    assertNotNull(openAPI.getSecurity());
+    assertEquals(1, openAPI.getSecurity().size());
+
+    SecurityRequirement securityRequirement = openAPI.getSecurity().get(0);
+
+    assertTrue(securityRequirement.containsKey("bearerAuth"));
   }
 }

@@ -46,21 +46,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
 
-      - name: Run Unit Tests
+      - name: Run Quality Checks
         run: |
-          echo "--- Running Unit Tests ---"
-          ./gradlew clean test
-
-      - name: Run Code Quality Checks
-        run: |
-          echo "--- Running Code Quality Checks ---"
+          echo "--- Running tests, coverage and checks ---"
           ./gradlew check
-
-      - name: Run JaCoCo Test Coverage Verification
-        run: |
-          echo "--- Running JaCoCo Coverage/Line Verification ---"
-          # Executes your specific JaCoCo task for coverage and line verification.
-          ./gradlew jacocoTestCoverageVerification
 
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
