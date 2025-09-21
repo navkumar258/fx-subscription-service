@@ -54,7 +54,6 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'net.bytebuddy:byte-buddy-agent'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:kafka'
     testImplementation 'org.testcontainers:junit-jupiter'
@@ -147,13 +146,6 @@ jacocoTestCoverageVerification {
 
 tasks.named('test') {
     useJUnitPlatform()
-    doFirst {
-        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-            jvmArgs = [
-                    "-javaagent:${classpath.find { it.name.contains("byte-buddy-agent") }.absolutePath}"
-            ]
-        }
-    }
 }
 
 // Task to run tests with coverage verification

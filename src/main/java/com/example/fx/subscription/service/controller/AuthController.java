@@ -10,6 +10,7 @@ import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.UserRole;
 import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.service.FxUserDetailsService;
+import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Observed(name = "auth.controller")
 public class AuthController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
