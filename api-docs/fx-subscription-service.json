@@ -12,7 +12,7 @@
       "name": "MIT License",
       "url": "https://mit-license.org/"
     },
-    "version": "3.2.3"
+    "version": "3.2.4"
   },
   "servers": [
     {
@@ -1348,7 +1348,7 @@
           "password": {
             "type": "string",
             "minLength": 1,
-            "pattern": "^(?\u003d.*\\w).{8,}$"
+            "pattern": "^(?=.*\\w).{8,}$"
           },
           "mobile": {
             "type": "string",
