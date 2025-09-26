@@ -11,7 +11,7 @@ RUN --mount=type=secret,id=keystore_p12 \
 
 RUN addgroup --system user && \
     adduser --system --ingroup user user && \
-    chown -R user:user /app \
+    chown -R user:user /app
 
 USER user:user
 
