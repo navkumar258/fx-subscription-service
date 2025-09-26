@@ -24,7 +24,7 @@
             traceID = %X{traceId:-NONE}
         </labels>
         <message>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%-50.50class] >>> %msg %n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n</pattern>
         </message>
     </appender>
 

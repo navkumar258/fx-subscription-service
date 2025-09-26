@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-alpine AS build
+FROM eclipse-temurin:21-noble AS build
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN chmod +x ./gradlew && \
     ./gradlew clean build -x test -x generateOpenApiDocs
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-noble
 
 WORKDIR /app
 
@@ -25,8 +25,8 @@ EXPOSE 8443
 
 COPY --from=build /app/build/libs/*.jar ./app.jar
 
-RUN addgroup -S user && \
-    adduser -S user -G user && \
+RUN addgroup --system user && \
+    adduser --system --ingroup user user && \
     chown -R user:user /app
 
 USER user:user

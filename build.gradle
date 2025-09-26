@@ -40,8 +40,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation "org.springframework.boot:spring-boot-starter-aop"
     implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
-    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
-    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'
+    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.1.2'
     // for openapi spec generation
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringDocWebMvcApi}", withoutCommonsLang3
     implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
