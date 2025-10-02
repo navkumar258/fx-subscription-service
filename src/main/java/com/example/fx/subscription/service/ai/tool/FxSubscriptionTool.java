@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class FxSubscriptionTool {
-
+  private static final String SUBSCRIPTION = "Subscription ";
   private final SubscriptionsService subscriptionService;
 
   public FxSubscriptionTool(SubscriptionsService subscriptionService) {
@@ -86,7 +86,7 @@ public class FxSubscriptionTool {
               + ", New notification methods: "
               + updatedSub.notificationsChannels() + ".";
     } catch (SubscriptionNotFoundException e) {
-      return "Subscription " + subscriptionId + " not found or no valid updates provided.";
+      return SUBSCRIPTION + subscriptionId + " not found or no valid updates provided.";
     }
   }
 
@@ -99,10 +99,10 @@ public class FxSubscriptionTool {
   )
   public String deleteSubscriptionTool(@ToolParam(description = "Subscription id to delete") String subscriptionId) {
     try {
-      SubscriptionDeleteResponse response = subscriptionService.deleteSubscriptionById(subscriptionId);
-      return "Subscription " + subscriptionId + " deleted successfully.";
+      subscriptionService.deleteSubscriptionById(subscriptionId);
+      return SUBSCRIPTION + subscriptionId + " deleted successfully.";
     } catch (SubscriptionNotFoundException e) {
-      return "Subscription " + subscriptionId + " not found.";
+      return SUBSCRIPTION + subscriptionId + " not found.";
     }
   }
 

@@ -62,7 +62,7 @@ public class UsersController {
     FxUser fxUser = fxUsersService.findUserById(id)
             .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
-    LOGGER.info("Retrieved user: userId={}", sanitizeForLog(id));
+    LOGGER.atInfo().log("Retrieved user: userId={}", sanitizeForLog(id));
 
     UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
     return ResponseEntity.ok(response);
@@ -88,7 +88,7 @@ public class UsersController {
             usersPage.getSize()
     );
 
-    LOGGER.info("Search results: {} users found with email={}, mobile={}, enabled={}",
+    LOGGER.atInfo().log("Search results: {} users found with email={}, mobile={}, enabled={}",
             usersPage.getTotalElements(), sanitizeForLog(email), sanitizeForLog(mobile), enabled);
 
     return ResponseEntity.ok(response);
@@ -102,7 +102,7 @@ public class UsersController {
     FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
     UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
 
-    LOGGER.info("User updated successfully: userId={}", sanitizeForLog(id));
+    LOGGER.atInfo().log("User updated successfully: userId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }
@@ -111,7 +111,7 @@ public class UsersController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteUser(@PathVariable String id) {
     fxUsersService.deleteUser(id);
-    LOGGER.info("User deleted successfully: userId={}", sanitizeForLog(id));
+    LOGGER.atInfo().log("User deleted successfully: userId={}", sanitizeForLog(id));
 
     return ResponseEntity.noContent().build();
   }
@@ -121,7 +121,7 @@ public class UsersController {
   public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
     UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
 
-    LOGGER.info("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
+    LOGGER.atInfo().log("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
 
     return ResponseEntity.ok(response);
   }

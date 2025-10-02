@@ -39,7 +39,7 @@ public class SubscriptionsController {
     SubscriptionResponse response = subscriptionsService.findSubscriptionById(id)
             .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id));
 
-    LOGGER.info("Retrieved subscription: subscriptionId={}", sanitizeForLog(id));
+    LOGGER.atInfo().log("Retrieved subscription: subscriptionId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }
@@ -49,7 +49,7 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionListResponse> getSubscriptionsByUserId(@RequestParam String userId) {
     SubscriptionListResponse subscriptionListResponse = subscriptionsService.findSubscriptionResponsesByUserId(userId);
 
-    LOGGER.info("Retrieved {} subscriptions for user: userId={}",
+    LOGGER.atInfo().log("Retrieved {} subscriptions for user: userId={}",
             subscriptionListResponse.totalCount(), sanitizeForLog(userId));
 
     return ResponseEntity.ok(subscriptionListResponse);
@@ -89,7 +89,7 @@ public class SubscriptionsController {
                                                                            @Valid @RequestBody SubscriptionUpdateRequest subscriptionUpdateRequest) {
     SubscriptionResponse updatedSubscription = subscriptionsService.updateSubscriptionById(id, subscriptionUpdateRequest);
 
-    LOGGER.info("Updated subscription: subscriptionId={}, currencyPair={}",
+    LOGGER.atInfo().log("Updated subscription: subscriptionId={}, currencyPair={}",
             sanitizeForLog(id), subscriptionUpdateRequest.currencyPair());
 
     return ResponseEntity.ok(new SubscriptionUpdateResponse(
@@ -103,7 +103,7 @@ public class SubscriptionsController {
   public ResponseEntity<SubscriptionDeleteResponse> deleteSubscriptionById(@PathVariable String id) {
     SubscriptionDeleteResponse response = subscriptionsService.deleteSubscriptionById(id);
 
-    LOGGER.info("Deleted subscription: subscriptionId={}", sanitizeForLog(id));
+    LOGGER.atInfo().log("Deleted subscription: subscriptionId={}", sanitizeForLog(id));
 
     return ResponseEntity.ok(response);
   }

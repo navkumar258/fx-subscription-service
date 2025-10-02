@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -164,11 +166,9 @@ class JwtTokenFilterTest {
     String bearerToken = BEARER + expiredToken;
 
     // Wait for token to expire
-    try {
-      Thread.sleep(10);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+    Awaitility.await()
+            .pollDelay(Duration.ofMillis(2))
+            .until(() -> true);
 
     when(request.getHeader(AUTHORIZATION)).thenReturn(bearerToken);
 
@@ -193,13 +193,9 @@ class JwtTokenFilterTest {
     when(fxUserDetailsService.loadUserByUsername(username)).thenThrow(new RuntimeException("User not found"));
 
     // When & Then
-    assertThrows(RuntimeException.class, () -> {
-      try {
-        jwtTokenFilter.doFilterInternal(request, response, filterChain);
-      } catch (ServletException | IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    assertThrows(RuntimeException.class, () ->
+            jwtTokenFilter.doFilterInternal(request, response, filterChain)
+    );
 
     verify(fxUserDetailsService).loadUserByUsername(username);
     verify(securityContext, never()).setAuthentication(any());

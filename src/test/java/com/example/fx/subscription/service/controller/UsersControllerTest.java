@@ -79,7 +79,7 @@ class UsersControllerTest {
     // Then
     assertNotNull(response);
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(userId, response.getBody().id().toString());
+    assertEquals(userId, response.getBody().id());
     assertEquals("test@example.com", response.getBody().email());
 
     verify(fxUsersService).findUserById(userId);
@@ -144,7 +144,7 @@ class UsersControllerTest {
     // Then
     assertNotNull(response);
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(userId, response.getBody().userId().toString());
+    assertEquals(userId, response.getBody().userId());
     assertEquals("updated@example.com", response.getBody().user().email());
 
     verify(fxUsersService).updateUser(userId, updateRequest);

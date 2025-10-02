@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("java:S2272")
 public class RandomUserFeeder implements Iterator<Map<String, Object>> {
   private static final String EMAIL = "email";
   private static final String PASSWORD = "password";

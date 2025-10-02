@@ -203,12 +203,13 @@ class SubscriptionsServiceTest {
   @Test
   void findSubscriptionResponsesByUserId_WhenNoSubscriptionsFound_ShouldThrowSubscriptionNotFoundException() {
     // Given
+    String userId = testUserId.toString();
     when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(List.of());
 
     // When & Then
     SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
-            () -> subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString()));
+            () -> subscriptionsService.findSubscriptionResponsesByUserId(userId));
     assertTrue(exception.getMessage().contains("No subscriptions found for the given user id: " + testUserId));
   }
 
@@ -360,6 +361,7 @@ class SubscriptionsServiceTest {
   @Test
   void updateSubscriptionById_WhenSubscriptionDoesNotExist_ShouldThrowSubscriptionNotFoundException() {
     // Given
+    String subscriptionId = testSubscriptionId.toString();
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
             "EUR/USD",
             BigDecimal.valueOf(1.15),
@@ -373,7 +375,7 @@ class SubscriptionsServiceTest {
 
     // When & Then
     SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
-            () -> subscriptionsService.updateSubscriptionById(testSubscriptionId.toString(), updateRequest));
+            () -> subscriptionsService.updateSubscriptionById(subscriptionId, updateRequest));
     assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
   }
 
@@ -458,12 +460,13 @@ class SubscriptionsServiceTest {
   @Test
   void deleteSubscriptionById_WhenSubscriptionDoesNotExist_ShouldThrowSubscriptionNotFoundException() {
     // Given
+    String subscriptionId = testSubscriptionId.toString();
     when(subscriptionRepository.findById(testSubscriptionId))
             .thenReturn(Optional.empty());
 
     // When & Then
     SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
-            () -> subscriptionsService.deleteSubscriptionById(testSubscriptionId.toString()));
+            () -> subscriptionsService.deleteSubscriptionById(subscriptionId));
     assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
   }
 

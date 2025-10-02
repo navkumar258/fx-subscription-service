@@ -277,7 +277,7 @@ class SubscriptionsControllerIT {
     assertThat(createResponse.subscription().currencyPair()).isEqualTo("GBP/USD");
     assertThat(createResponse.subscription().threshold()).isEqualTo(threshold);
 
-    return createResponse.subscriptionId().toString();
+    return createResponse.subscriptionId();
   }
 
   private void verifySubscriptionExists(String jwt, String subscriptionId, String expectedCurrencyPair, BigDecimal expectedThreshold) {

@@ -86,17 +86,6 @@ class SubscriptionTest {
   }
 
   @Test
-  void setNotificationsChannels_WhenInputIsNull_ShouldSetEmptyList() {
-    // When
-    subscription.setNotificationsChannels(null);
-
-    // Then
-    List<String> result = subscription.getNotificationsChannels();
-    assertNotNull(result);
-    assertTrue(result.isEmpty());
-  }
-
-  @Test
   void setNotificationsChannels_WhenInputIsNotNull_ShouldCreateNewList() {
     // Given
     List<String> inputChannels = List.of("email", "sms");

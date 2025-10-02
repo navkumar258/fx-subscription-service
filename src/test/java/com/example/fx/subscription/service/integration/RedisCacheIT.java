@@ -7,11 +7,13 @@ import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRe
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.helper.RedisIntegrationTestBase;
 import com.example.fx.subscription.service.service.SubscriptionsService;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -103,7 +105,7 @@ class RedisCacheIT extends RedisIntegrationTestBase {
   }
 
   @Test
-  void shouldRespectCacheTTL() throws InterruptedException {
+  void shouldRespectCacheTTL() {
     String subscriptionId = testSubscriptionId.toString();
 
     // Clear caches first
@@ -117,7 +119,9 @@ class RedisCacheIT extends RedisIntegrationTestBase {
     assertCacheHas("subscription", subscriptionId);
 
     // Wait for TTL to expire (3 seconds from properties)
-    Thread.sleep(3500);
+    Awaitility.await()
+            .pollDelay(Duration.ofMillis(3100))
+            .until(() -> true);
 
     // Cache entry should be expired
     assertCacheMissing("subscription", subscriptionId);

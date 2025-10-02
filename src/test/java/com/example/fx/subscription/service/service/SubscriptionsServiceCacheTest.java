@@ -150,12 +150,13 @@ class SubscriptionsServiceCacheTest {
   @Test
   void findSubscriptionResponsesByUserId_WithEmptyResult_ShouldNotCache() {
     // Given
+    String userId = testUserId.toString();
     when(subscriptionRepository.findSubscriptionsByUserId(testUserId))
             .thenReturn(List.of());
 
     // When & Then - Should throw exception and not cache
     assertThrows(SubscriptionNotFoundException.class, () ->
-            subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString()));
+            subscriptionsService.findSubscriptionResponsesByUserId(userId));
 
     // Verify cache is empty (due to unless condition)
     assertNull(Objects.requireNonNull(cacheManager.getCache("subscriptionsByUser")).get(testUserId.toString()));

@@ -60,7 +60,7 @@ class SubscriptionChangePublisherTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id(), testEvent);
   }
 
   @Test
@@ -87,7 +87,7 @@ class SubscriptionChangePublisherTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id(), testEvent);
     // Exception should be handled in async callback
   }
 
@@ -110,7 +110,7 @@ class SubscriptionChangePublisherTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id(), testEvent);
     // The exception should be re-thrown in the async callback
     verify(eventsOutboxRepository, never()).findById(any(UUID.class));
   }
@@ -130,7 +130,7 @@ class SubscriptionChangePublisherTest {
     subscriptionChangePublisher.sendMessage(testEvent);
 
     // Then
-    verify(kafkaTemplate).send("test-topic", testEvent.payload().id().toString(), testEvent);
+    verify(kafkaTemplate).send("test-topic", testEvent.payload().id(), testEvent);
     // Should handle invalid UUID gracefully
     verify(eventsOutboxRepository, never()).findById(any(UUID.class));
   }

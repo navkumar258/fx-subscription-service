@@ -84,7 +84,7 @@ public class FxUser implements Serializable, UserDetails {
   }
 
   public String getEmail() {
-    return email;
+    return getUsername();
   }
 
   public void setEmail(String email) {

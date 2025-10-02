@@ -170,11 +170,10 @@ class UsersControllerIT {
   @Test
   void authorizationFlow_ShouldEnforceAccessControl() {
     // Create users
-    FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
     FxUser user1 = createTestUser("user1@example.com", UserRole.USER);
     FxUser user2 = createTestUser("user2@example.com", UserRole.USER);
 
-    String adminJwt = generateTestJwtToken("admin@example.com");
+    String adminJwt = prepareUserSearchData();
     String user1Jwt = generateTestJwtToken("user1@example.com");
     String user2Jwt = generateTestJwtToken("user2@example.com");
 
@@ -245,16 +244,9 @@ class UsersControllerIT {
   }
 
   @Test
-  void userSearch_ShouldWorkEndToEnd() {
-    // Create test users
-    FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
-    FxUser user1 = createTestUser("bob@example.com", UserRole.USER);
-    FxUser user2 = createTestUser("jane@example.com", UserRole.USER);
-    FxUser user3 = createTestUser("john@test.com", UserRole.USER);
+  void searchByEmail_ShouldReturnMatchingUser() {
+    String adminJwt = prepareUserSearchData();
 
-    String adminJwt = generateTestJwtToken("admin@example.com");
-
-    // 1. Search by email
     assertThat(mockMvc.get()
             .uri("/api/v1/users/search?email=john")
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
@@ -267,8 +259,12 @@ class UsersControllerIT {
                     totalAssert.assertThat().asNumber().isEqualTo(1))
             .hasPathSatisfying("$.users[0].email", emailAssert ->
                     emailAssert.assertThat().isEqualTo("john@test.com"));
+  }
 
-    // 2. Search by mobile
+  @Test
+  void searchByMobile_ShouldReturnAllUsers() {
+    String adminJwt = prepareUserSearchData();
+
     assertThat(mockMvc.get()
             .uri("/api/v1/users/search?mobile=+1234567890")
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
@@ -277,8 +273,12 @@ class UsersControllerIT {
             .bodyJson()
             .hasPathSatisfying("$.totalElements", totalAssert ->
                     totalAssert.assertThat().asNumber().isEqualTo(4));
+  }
 
-    // 3. Search with enabled filter
+  @Test
+  void searchByUserEnabled_ShouldReturnEnabledUsers() {
+    String adminJwt = prepareUserSearchData();
+
     assertThat(mockMvc.get()
             .uri("/api/v1/users/search?enabled=true")
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
@@ -287,8 +287,12 @@ class UsersControllerIT {
             .bodyJson()
             .hasPathSatisfying("$.totalElements", totalAssert ->
                     totalAssert.assertThat().asNumber().isEqualTo(4));
+  }
 
-    // 4. Search with pagination
+  @Test
+  void searchWithPagination_ShouldReturnPagedUsers() {
+    String adminJwt = prepareUserSearchData();
+
     assertThat(mockMvc.get()
             .uri("/api/v1/users/search?size=2&page=0")
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
@@ -301,8 +305,12 @@ class UsersControllerIT {
                     totalAssert.assertThat().asNumber().isEqualTo(4))
             .hasPathSatisfying("$.totalPages", pagesAssert ->
                     pagesAssert.assertThat().asNumber().isEqualTo(2));
+  }
 
-    // 5. Search with no results
+  @Test
+  void searchWithNoResults_ShouldReturnEmpty() {
+    String adminJwt = prepareUserSearchData();
+
     assertThat(mockMvc.get()
             .uri("/api/v1/users/search?email=nonexistent")
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
@@ -498,5 +506,13 @@ class UsersControllerIT {
             .expiration(new java.util.Date(System.currentTimeMillis() + 3600000)) // 1 hour
             .signWith(testSecretKey)
             .compact();
+  }
+
+  private String prepareUserSearchData() {
+    createTestUser("admin@example.com", UserRole.ADMIN);
+    createTestUser("bob@example.com", UserRole.USER);
+    createTestUser("jane@example.com", UserRole.USER);
+    createTestUser("john@test.com", UserRole.USER);
+    return generateTestJwtToken("admin@example.com");
   }
 }

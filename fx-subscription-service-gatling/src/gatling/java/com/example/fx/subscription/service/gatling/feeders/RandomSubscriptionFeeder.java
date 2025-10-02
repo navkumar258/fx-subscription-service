@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("java:S2272")
 public class RandomSubscriptionFeeder implements Iterator<Map<String, Object>> {
 
   private static final String[] CURRENCY_PAIRS = {"EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "NZD/CAD"};

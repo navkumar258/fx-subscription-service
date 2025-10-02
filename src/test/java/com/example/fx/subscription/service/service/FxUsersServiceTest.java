@@ -154,6 +154,7 @@ class FxUsersServiceTest {
   @Test
   void updateUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
     // Given
+    String userId = testUserId.toString();
     UserUpdateRequest updateRequest = new UserUpdateRequest(
             "updated@example.com",
             "+9876543210",
@@ -164,7 +165,7 @@ class FxUsersServiceTest {
 
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-            () -> fxUsersService.updateUser(testUserId.toString(), updateRequest));
+            () -> fxUsersService.updateUser(userId, updateRequest));
     assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
@@ -206,11 +207,12 @@ class FxUsersServiceTest {
   @Test
   void updateUserStatus_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
     // Given
+    String userId = testUserId.toString();
     when(fxUserRepository.findByIdWithSubscriptions(testUserId)).thenReturn(Optional.empty());
 
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-            () -> fxUsersService.updateUserStatus(testUserId.toString(), false));
+            () -> fxUsersService.updateUserStatus(userId, false));
     assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
@@ -230,23 +232,25 @@ class FxUsersServiceTest {
   @Test
   void deleteUser_WhenUserExistsButHasActiveSubscriptions_ShouldThrowIllegalStateException() {
     // Given
+    String userId = testUserId.toString();
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
     when(subscriptionRepository.findSubscriptionsByUserId(testUserId)).thenReturn(List.of(testSubscription));
 
     // When & Then
     IllegalStateException exception = assertThrows(IllegalStateException.class,
-            () -> fxUsersService.deleteUser(testUserId.toString()));
+            () -> fxUsersService.deleteUser(userId));
     assertTrue(exception.getMessage().contains("Cannot delete user with active subscriptions"));
   }
 
   @Test
   void deleteUser_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
     // Given
+    String userId = testUserId.toString();
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
 
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-            () -> fxUsersService.deleteUser(testUserId.toString()));
+            () -> fxUsersService.deleteUser(userId));
     assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 
@@ -270,11 +274,12 @@ class FxUsersServiceTest {
   @Test
   void getUserSubscriptions_WhenUserDoesNotExist_ShouldThrowUserNotFoundException() {
     // Given
+    String userId = testUserId.toString();
     when(fxUserRepository.findById(testUserId)).thenReturn(Optional.empty());
 
     // When & Then
     UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-            () -> fxUsersService.getUserSubscriptions(testUserId.toString()));
+            () -> fxUsersService.getUserSubscriptions(userId));
     assertTrue(exception.getMessage().contains(USER_NOT_FOUND + testUserId));
   }
 

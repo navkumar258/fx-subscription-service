@@ -3,6 +3,7 @@ package com.example.fx.subscription.service.config;
 import com.example.fx.subscription.service.service.FxUserDetailsService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -200,11 +202,9 @@ class JwtTokenProviderTest {
     String token = shortLivedProvider.createToken(TEST_USER, roles);
 
     // Wait for token to expire
-    try {
-      Thread.sleep(10);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+    Awaitility.await()
+            .pollDelay(Duration.ofMillis(2))
+            .until(() -> true);
 
     // When & Then
     assertFalse(jwtTokenProvider.validateToken(token));
