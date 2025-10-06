@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @EnableScheduling
 public class SubscriptionChangeScheduler {
@@ -37,8 +39,10 @@ public class SubscriptionChangeScheduler {
     LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
     int count = 0;
 
-    for (EventsOutbox eventsOutbox : eventsOutboxRepository.findByStatus("PENDING")) {
-      subscriptionChangePublisher.sendMessage(createSubscriptionChangeEvent(eventsOutbox));
+    List<EventsOutbox> pendingEvents = eventsOutboxRepository.findByStatus("PENDING");
+    for (EventsOutbox eventsOutbox : pendingEvents) {
+      SubscriptionChangeEvent event = createSubscriptionChangeEvent(eventsOutbox);
+      subscriptionChangePublisher.sendMessage(event);
       count++;
     }
 

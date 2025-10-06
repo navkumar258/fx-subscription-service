@@ -1,9 +1,9 @@
 import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { Trend, Rate, Counter } from 'k6/metrics';
-import { randomString, randomItem, randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
-export let options = {
+export const options = {
   insecureSkipTLSVerify: true,
   scenarios: {
     signup_login_and_subscription: {
@@ -46,7 +46,7 @@ const channelsPool = [
 function randomSubscriptionPayload() {
   return {
     currencyPair: randomItem(currencyPairs),
-    threshold: parseFloat((Math.random() * 2 + 0.5).toFixed(4)), // threshold between 0.5 and 2.5
+    threshold: Number.parseFloat((Math.random() * 2 + 0.5).toFixed(4)), // threshold between 0.5 and 2.5
     direction: randomItem(directions),
     notificationChannels: randomItem(channelsPool),
   };

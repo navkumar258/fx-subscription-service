@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service;
 
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,7 +23,7 @@ public class FxSubscriptionServiceApplication {
   }
 
   @Bean
-  MethodToolCallbackProvider methodToolCallbackProvider(FxSubscriptionTool fxSubscriptionTool) {
+  ToolCallbackProvider methodToolCallbackProvider(FxSubscriptionTool fxSubscriptionTool) {
     return MethodToolCallbackProvider
             .builder()
             .toolObjects(fxSubscriptionTool)

@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
 
-export let options = {
+export const options = {
   insecureSkipTLSVerify: true,
   scenarios: {
     ramping_api_load: {
@@ -38,7 +38,7 @@ const createSubStatus = new Counter('create_subscription_status_code');
 const getSubTrend = new Trend('get_my_subscriptions_duration', true);
 const getSubStatus = new Counter('get_my_subscriptions_status_code');
 
-export default function () {
+export default function userScenario() {
   // Generate test email
   const email = `user_${__VU}_${__ITER}_${Math.floor(Math.random() * 10000)}@example.com`;
 
