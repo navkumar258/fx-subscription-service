@@ -91,7 +91,7 @@ public class ControllerAdvice {
   })
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public ResponseEntity<ProblemDetail> handleNotFoundExceptions(
-          RuntimeException ex,
+          Exception ex,
           WebRequest request
   ) {
     logException(ex.getMessage(), ex, request);
