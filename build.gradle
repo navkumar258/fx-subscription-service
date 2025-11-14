@@ -42,7 +42,7 @@ dependencies {
     implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
     implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'
-    implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.1.2'
+    implementation "net.ttddyy.observation:datasource-micrometer-spring-boot:${vDatasourceMicrometer}"
     // for openapi spec generation
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringDocWebMvcApi}", withoutCommonsLang3
     implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
