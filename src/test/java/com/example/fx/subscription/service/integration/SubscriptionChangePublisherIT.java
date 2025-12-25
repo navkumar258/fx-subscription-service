@@ -40,7 +40,7 @@ class SubscriptionChangePublisherIT {
   private String subscriptionChangesTopic;
 
   @Container
-  static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.9.1");
+  static KafkaContainer kafka = new KafkaContainer("apache/kafka:4.1.1");
 
   @DynamicPropertySource
   static void kafkaProperties(DynamicPropertyRegistry registry) {

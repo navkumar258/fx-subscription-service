@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SubscriptionChangeSchedulerIT {
 
   @Container
-  static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
+  static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:4.1.1");
 
   @DynamicPropertySource
   static void overrideProps(DynamicPropertyRegistry registry) {

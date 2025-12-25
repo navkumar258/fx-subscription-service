@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-noble
+FROM eclipse-temurin:25-jre-noble
 
 ARG JAR_FILE_NAME
 LABEL version=${JAR_FILE_NAME}

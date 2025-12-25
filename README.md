@@ -75,11 +75,11 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 - Environment variables configured (see Configuration section)
 
 ### For Host-based Development
-- Java 21+
-- Gradle 8.0+
-- PostgreSQL 17.5+
-- Redis 8.2.0+
-- Apache Kafka 3.9.1+
+- Java 25+
+- Gradle 9.2.1+
+- PostgreSQL 18.1+
+- Redis 8.4.0+
+- Apache Kafka 4.1.1+
 - Docker Compose (for observability stack)
 - FX MCP Client (for AI interactions)
 

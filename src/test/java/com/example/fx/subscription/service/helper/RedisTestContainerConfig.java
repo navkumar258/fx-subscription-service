@@ -14,6 +14,6 @@ public class RedisTestContainerConfig {
   @Bean
   @ServiceConnection
   RedisContainer postgresContainer() {
-    return new RedisContainer(DockerImageName.parse("redis:8.2.1"));
+    return new RedisContainer(DockerImageName.parse("redis:8.4.0"));
   }
 }

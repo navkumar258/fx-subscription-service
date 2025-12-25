@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-noble AS build
+FROM eclipse-temurin:25-noble AS build
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN chmod +x ./gradlew && \
     ./gradlew clean build -x test -x generateOpenApiDocs
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-noble
+FROM eclipse-temurin:25-jre-noble
 
 WORKDIR /app
 
