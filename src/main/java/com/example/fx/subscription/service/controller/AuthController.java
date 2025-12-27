@@ -11,6 +11,7 @@ import com.example.fx.subscription.service.model.UserRole;
 import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.service.FxUserDetailsService;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
 import java.io.Serial;
 import java.util.stream.Collectors;
 
@@ -103,7 +103,7 @@ public class AuthController {
       LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
 
       return buildSignupResponse(savedUser, userSignUpRequest.admin());
-    } catch (DataIntegrityViolationException e) {
+    } catch (DataIntegrityViolationException _) {
       throw new UserAlreadyExistsException("Email is already registered", userSignUpRequest.email());
     }
   }

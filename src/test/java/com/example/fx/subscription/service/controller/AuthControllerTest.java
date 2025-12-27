@@ -13,7 +13,8 @@ import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.service.FxUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,9 @@ class AuthControllerTest {
 
   @MockitoBean
   private PasswordEncoder passwordEncoder;
+
+  @MockitoBean
+  private CacheManager cacheManager;
 
   private AuthController authController;
 

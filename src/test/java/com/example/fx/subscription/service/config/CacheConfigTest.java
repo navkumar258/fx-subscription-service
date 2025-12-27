@@ -1,6 +1,5 @@
 package com.example.fx.subscription.service.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,7 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.boot.cache.autoconfigure.RedisCacheManagerBuilderCustomizer;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -19,9 +18,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class CacheConfigTest {
-
-  @Mock
-  private ObjectMapper objectMapper;
 
   @Mock
   private RedisConnectionFactory redisConnectionFactory;
@@ -36,7 +32,7 @@ class CacheConfigTest {
   @Test
   void redisCacheManagerBuilderCustomizer_ShouldCreateCustomizer() {
     // When
-    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer(objectMapper);
+    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer();
 
     // Then
     assertNotNull(customizer);
@@ -51,7 +47,7 @@ class CacheConfigTest {
   })
   void redisCacheManagerBuilderCustomizer_ShouldConfigureCachesCorrectly(String testCase, String cacheName) {
     // Given
-    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer(objectMapper);
+    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer();
     RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(redisConnectionFactory);
 
     // When
@@ -69,7 +65,7 @@ class CacheConfigTest {
   @Test
   void redisCacheManagerBuilderCustomizer_ShouldBeReusable() {
     // Given
-    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer(objectMapper);
+    RedisCacheManagerBuilderCustomizer customizer = cacheConfig.redisCacheManagerBuilderCustomizer();
     RedisCacheManager.RedisCacheManagerBuilder builder1 = RedisCacheManager.builder(redisConnectionFactory);
     RedisCacheManager.RedisCacheManagerBuilder builder2 = RedisCacheManager.builder(redisConnectionFactory);
 
@@ -82,7 +78,6 @@ class CacheConfigTest {
     // Then
     assertNotNull(cacheManager1);
     assertNotNull(cacheManager2);
-    // Both cache managers should be created successfully
   }
 
   @Test
@@ -100,8 +95,8 @@ class CacheConfigTest {
   @Test
   void redisCacheManagerBuilderCustomizer_ShouldCreateDifferentInstances() {
     // Given
-    RedisCacheManagerBuilderCustomizer customizer1 = cacheConfig.redisCacheManagerBuilderCustomizer(objectMapper);
-    RedisCacheManagerBuilderCustomizer customizer2 = cacheConfig.redisCacheManagerBuilderCustomizer(objectMapper);
+    RedisCacheManagerBuilderCustomizer customizer1 = cacheConfig.redisCacheManagerBuilderCustomizer();
+    RedisCacheManagerBuilderCustomizer customizer2 = cacheConfig.redisCacheManagerBuilderCustomizer();
 
     // When & Then
     assertNotNull(customizer1);

@@ -5,6 +5,7 @@ import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.service.FxUsersService;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
 
 import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForLog;

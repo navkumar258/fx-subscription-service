@@ -27,7 +27,7 @@ public class WebSecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtTokenProvider);
     http
             .csrf(AbstractHttpConfigurer::disable)
@@ -43,15 +43,14 @@ public class WebSecurityConfig {
                     .requestMatchers("/sse", "/mcp/**").permitAll()
                     .requestMatchers("/v3/api-docs").permitAll()
                     .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
-                    .anyRequest().authenticated()
-            )
+                    .anyRequest().authenticated())
             .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
 
   @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) {
     return authConfig.getAuthenticationManager();
   }
 
@@ -62,7 +61,7 @@ public class WebSecurityConfig {
 
   @Bean
   public AuthenticationEntryPoint unauthorizedEntryPoint() {
-    return (request, response, authException) ->
+    return (_, response, _) ->
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
   }
 }

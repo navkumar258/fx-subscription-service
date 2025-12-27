@@ -10,13 +10,11 @@ import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,22 +25,28 @@ class RedisCacheIT extends RedisIntegrationTestBase {
   private SubscriptionsService subscriptionsService;
 
   private void assertCacheHas(String cacheName, String key) {
+    Awaitility.await()
+            .pollDelay(Duration.ofMillis(300))
+            .until(() -> true);
     assertNotNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
   }
 
   private void assertCacheMissing(String cacheName, String key) {
+    Awaitility.await()
+            .pollDelay(Duration.ofMillis(300))
+            .until(() -> true);
     assertNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
   }
 
   @Test
   void shouldCacheSubscriptionById() {
-    Optional<SubscriptionResponse> firstCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
-    assertTrue(firstCall.isPresent());
+    SubscriptionResponse firstCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    assertNotNull(firstCall);
 
     assertCacheHas("subscription", testSubscriptionId.toString());
 
-    Optional<SubscriptionResponse> secondCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
-    assertTrue(secondCall.isPresent());
+    SubscriptionResponse secondCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    assertNotNull(secondCall);
   }
 
   @Test
@@ -112,13 +116,13 @@ class RedisCacheIT extends RedisIntegrationTestBase {
     clearAllCaches();
 
     // First call to populate cache
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(subscriptionId);
-    assertTrue(result.isPresent());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
+    assertNotNull(result);
 
     // Verify cache entry exists
     assertCacheHas("subscription", subscriptionId);
 
-    // Wait for TTL to expire (3 seconds from properties)
+    // Wait for TTL (3s) to expire
     Awaitility.await()
             .pollDelay(Duration.ofMillis(3100))
             .until(() -> true);
@@ -128,38 +132,17 @@ class RedisCacheIT extends RedisIntegrationTestBase {
   }
 
   @Test
-  void shouldVerifyCacheExpiration() {
-    String subscriptionId = testSubscriptionId.toString();
-
-    // Clear caches first
-    clearAllCaches();
-
-    // First call to populate cache
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(subscriptionId);
-    assertTrue(result.isPresent());
-
-    // Verify cache entry exists
-    assertCacheHas("subscription", subscriptionId);
-  }
-
-  @Test
   void shouldVerifyCacheSerialization() {
     String subscriptionId = testSubscriptionId.toString();
 
-    // Clear caches first
-    clearAllCaches();
-
     // First call to populate cache
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(subscriptionId);
-    assertTrue(result.isPresent());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
+    assertNotNull(result);
 
     // Verify the cached object can be retrieved and deserialized
-    Cache subscriptionCache = cacheManager.getCache("subscription");
-    assertNotNull(subscriptionCache);
-    Cache.ValueWrapper cachedValue = subscriptionCache.get(subscriptionId);
-    assertNotNull(cachedValue);
+    assertCacheHas("subscription", subscriptionId);
 
-    SubscriptionResponse cachedResponse = (SubscriptionResponse) cachedValue.get();
+    SubscriptionResponse cachedResponse = (SubscriptionResponse) Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("subscription")).get(subscriptionId)).get();
     assertNotNull(cachedResponse);
     assertEquals(subscriptionId, cachedResponse.id());
     assertEquals("GBP/USD", cachedResponse.currencyPair());

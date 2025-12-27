@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @SpringBootTest
 @ActiveProfiles("redis-test")
-@Import({RedisTestContainerConfig.class, WebSecurityTestConfig.class})
+@Import(RedisTestContainerConfig.class)
 public abstract class RedisIntegrationTestBase {
 
   @Autowired

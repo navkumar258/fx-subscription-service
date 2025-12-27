@@ -1,11 +1,6 @@
 package com.example.fx.subscription.service.gatling.feeders;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("java:S2272")
@@ -47,7 +42,7 @@ public class RandomSubscriptionFeeder implements Iterator<Map<String, Object>> {
     // Return a map with the generated random data
     return Map.of(
             "currencyPair", currencyPair,
-            "threshold", String.format("%.2f", threshold),
+            "threshold", "%.2f".formatted(threshold),
             "direction", direction,
             "notificationChannels", jsonChannels
     );

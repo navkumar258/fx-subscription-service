@@ -46,7 +46,7 @@ class WebSecurityConfigTest {
   }
 
   @Test
-  void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
+  void securityFilterChain_ShouldConfigureSecurityCorrectly() {
     // Given
     when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
     when(httpSecurity.headers(any())).thenReturn(httpSecurity);
@@ -74,7 +74,7 @@ class WebSecurityConfigTest {
   }
 
   @Test
-  void authenticationManager_ShouldReturnAuthenticationManager() throws Exception {
+  void authenticationManager_ShouldReturnAuthenticationManager() {
     // Given
     when(authConfig.getAuthenticationManager()).thenReturn(authenticationManager);
 
@@ -164,7 +164,7 @@ class WebSecurityConfigTest {
   }
 
   @Test
-  void securityFilterChain_ShouldCreateJwtTokenFilter() throws Exception {
+  void securityFilterChain_ShouldCreateJwtTokenFilter() {
     // Given
     when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
     when(httpSecurity.headers(any())).thenReturn(httpSecurity);
@@ -202,10 +202,13 @@ class WebSecurityConfigTest {
     // Given
     PasswordEncoder passwordEncoder = webSecurityConfig.passwordEncoder();
 
-    // When & Then
-    assertThrows(IllegalArgumentException.class, () -> passwordEncoder.encode(null));
-    assertThrows(IllegalArgumentException.class, () -> passwordEncoder.matches(null, "encoded"));
-    assertFalse(passwordEncoder.matches("raw", null));
+    // When
+    String encodedPassword = passwordEncoder.encode(null);
+
+    // Then
+    assertNull(encodedPassword, "Encoded password should be null for null input");
+    boolean matches = passwordEncoder.matches(null, "some-hash");
+    assertFalse(matches, "Matches should return false if raw password is null");
   }
 
   @Test
@@ -220,25 +223,25 @@ class WebSecurityConfigTest {
 
     // Then
     assertNotNull(encodedPassword);
-    assertTrue(matches);
+    assertFalse(matches, "Matches should return false if raw password is empty");
   }
 
   @Test
-  void authenticationManager_ShouldThrowExceptionWhenAuthConfigFails() throws Exception {
+  void authenticationManager_ShouldThrowExceptionWhenAuthConfigFails() {
     // Given
     when(authConfig.getAuthenticationManager()).thenThrow(new RuntimeException("Auth config error"));
 
-    // When & Then
+    // Then
     assertThrows(RuntimeException.class, () -> webSecurityConfig.authenticationManager(authConfig));
     verify(authConfig).getAuthenticationManager();
   }
 
   @Test
-  void securityFilterChain_ShouldThrowExceptionWhenHttpSecurityFails() throws Exception {
+  void securityFilterChain_ShouldThrowExceptionWhenHttpSecurityFails() {
     // Given
     when(httpSecurity.csrf(any())).thenThrow(new RuntimeException("Security config error"));
 
-    // When & Then
+    // Then
     assertThrows(RuntimeException.class, () -> webSecurityConfig.securityFilterChain(httpSecurity));
     verify(httpSecurity).csrf(any());
   }

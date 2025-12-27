@@ -42,8 +42,8 @@ public class SubscriptionsApiSimulation extends Simulation {
           // 1. Signup
           http("Signup")
                   .post(signupEndpoint)
-                  .body(StringBody(session -> String.format(
-                          "{\"email\":\"%s\", \"password\":\"%s\", \"mobile\":\"%s\"}",
+                  .body(StringBody(session ->
+                                  "{\"email\":\"%s\", \"password\":\"%s\", \"mobile\":\"%s\"}".formatted(
                           session.getString(EMAIL), session.getString(PASSWORD), session.getString("mobile")
                   )))
                   .check(status().is(201))
@@ -52,8 +52,8 @@ public class SubscriptionsApiSimulation extends Simulation {
           .exec(
                   http("Login")
                           .post(loginEndpoint)
-                          .body(StringBody(session -> String.format(
-                                  "{\"username\":\"%s\", \"password\":\"%s\"}",
+                          .body(StringBody(session ->
+                                          "{\"username\":\"%s\", \"password\":\"%s\"}".formatted(
                                   session.getString(EMAIL), session.getString(PASSWORD)
                           )))
                           .check(status().is(200))

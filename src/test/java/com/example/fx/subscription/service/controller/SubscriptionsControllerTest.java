@@ -11,21 +11,20 @@ import com.example.fx.subscription.service.model.Subscription;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
 import com.example.fx.subscription.service.model.ThresholdDirection;
 import com.example.fx.subscription.service.service.SubscriptionsService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +35,7 @@ import static org.mockito.Mockito.*;
 @WebMvcTest(SubscriptionsController.class)
 @Import(WebSecurityTestConfig.class)
 class SubscriptionsControllerTest {
+  private static final String SUBSCRIPTION_NOT_FOUND = "Subscription not found with Id: %s";
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @MockitoBean
@@ -49,13 +49,6 @@ class SubscriptionsControllerTest {
 
   @MockitoBean
   private JwtTokenProvider jwtTokenProvider;
-
-  @Test
-  @WithMockUser(roles = "ADMIN")
-  void whenInvalidUri_shouldReturn404() {
-    assertThat(mockMvc.get().uri("/api/v1/subscriptions/123"))
-            .hasStatus(HttpStatus.NOT_FOUND);
-  }
 
   @Test
   @WithMockFxUser()
@@ -137,7 +130,7 @@ class SubscriptionsControllerTest {
             null
     );
 
-    when(subscriptionsService.findSubscriptionById(subscriptionId)).thenReturn(Optional.of(subscriptionResponse));
+    when(subscriptionsService.findSubscriptionById(subscriptionId)).thenReturn(subscriptionResponse);
 
 
     // When & Then
@@ -156,14 +149,14 @@ class SubscriptionsControllerTest {
     // Given
     String subscriptionId = "invalid-id";
 
-    when(subscriptionsService.findSubscriptionById(subscriptionId)).thenReturn(Optional.empty());
+    when(subscriptionsService.findSubscriptionById(subscriptionId)).thenThrow(new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(subscriptionId), subscriptionId));
 
     // When & Then
     assertThat(mockMvc.get().uri("/api/v1/subscriptions/" + subscriptionId))
             .hasStatus(HttpStatus.NOT_FOUND)
             .bodyJson()
             .extractingPath("$.detail")
-            .isEqualTo("No Subscriptions found for the ID: " + subscriptionId + ", please try with a different id!");
+            .isEqualTo("Subscription not found with Id: " + subscriptionId);
 
     verify(subscriptionsService).findSubscriptionById(subscriptionId);
   }
@@ -252,7 +245,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockFxUser(email = "amy@example.com")
-  void createSubscription_WithValidRequest_ShouldCreateSubscription() throws Exception {
+  void createSubscription_WithValidRequest_ShouldCreateSubscription() {
     // Given
     SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
             "GBP/USD",
@@ -277,7 +270,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockFxUser(email = "bob@example.com")
-  void createSubscription_WithInvalidRequest_ShouldReturn400() throws Exception {
+  void createSubscription_WithInvalidRequest_ShouldReturn400() {
     // Given
     SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
             "", // invalid currency pair
@@ -296,7 +289,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockFxUser(email = "test@example.com")
-  void createSubscription_WhenUserNotFound_ShouldReturn404() throws Exception {
+  void createSubscription_WhenUserNotFound_ShouldReturn404() {
     // Given
     SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
             "GBP/USD",
@@ -321,7 +314,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockUser(roles = "ADMIN")
-  void updateSubscriptionById_WithValidId_ShouldUpdateSubscription() throws Exception {
+  void updateSubscriptionById_WithValidId_ShouldUpdateSubscription() {
     // Given
     String subscriptionId = "6f0ad90b-8b07-4342-a918-6866ce3b72d3";
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
@@ -359,7 +352,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockUser(roles = "ADMIN")
-  void updateSubscriptionById_WithInvalidId_ShouldReturn404() throws Exception {
+  void updateSubscriptionById_WithInvalidId_ShouldReturn404() {
     // Given
     String subscriptionId = "invalid-id";
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
@@ -387,7 +380,7 @@ class SubscriptionsControllerTest {
 
   @Test
   @WithMockUser(roles = "ADMIN")
-  void updateSubscriptionById_WithInvalidRequest_ShouldReturn400() throws Exception {
+  void updateSubscriptionById_WithInvalidRequest_ShouldReturn400() {
     // Given
     String subscriptionId = "6f0ad90b-8b07-4342-a918-6866ce3b72d3";
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(

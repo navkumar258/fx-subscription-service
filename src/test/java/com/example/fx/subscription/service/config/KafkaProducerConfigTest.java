@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -44,8 +44,8 @@ class KafkaProducerConfigTest {
     assertNotNull(configProps);
     assertEquals("localhost:9092", configProps.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
     assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
-    assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
-    assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
+    assertEquals(JacksonJsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
+    assertEquals(false, configProps.get(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS));
   }
 
   @Test
@@ -86,7 +86,7 @@ class KafkaProducerConfigTest {
     Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
     assertNotNull(configProps);
     assertEquals(StringSerializer.class, configProps.get(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG));
-    assertEquals(JsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
+    assertEquals(JacksonJsonSerializer.class, configProps.get(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
   }
 
   @Test
@@ -97,6 +97,6 @@ class KafkaProducerConfigTest {
     // Then
     Map<String, Object> configProps = (Map<String, Object>) ReflectionTestUtils.getField(producerFactory, CONFIGS);
     assertNotNull(configProps);
-    assertEquals(false, configProps.get(JsonSerializer.ADD_TYPE_INFO_HEADERS));
+    assertEquals(false, configProps.get(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS));
   }
 } 

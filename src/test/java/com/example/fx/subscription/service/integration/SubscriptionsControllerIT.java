@@ -9,7 +9,6 @@ import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.model.UserRole;
 import com.example.fx.subscription.service.repository.FxUserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -17,8 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,6 +28,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
@@ -110,7 +110,7 @@ class SubscriptionsControllerIT {
   }
 
   @Test
-  void authenticationFlow_ShouldHandleInvalidTokens() throws Exception {
+  void authenticationFlow_ShouldHandleInvalidTokens() {
     // Test invalid JWT token
     SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
             "GBP/USD", BigDecimal.valueOf(1.20), "ABOVE", List.of("sms", "email"));
@@ -293,7 +293,7 @@ class SubscriptionsControllerIT {
                     thresholdAssert.assertThat().asNumber().isEqualTo(expectedThreshold.doubleValue()));
   }
 
-  private void updateSubscription(String jwt, String subscriptionId, BigDecimal threshold) throws Exception {
+  private void updateSubscription(String jwt, String subscriptionId, BigDecimal threshold) {
     SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
             "EUR/USD", threshold, "BELOW", "ACTIVE", List.of("email"));
 

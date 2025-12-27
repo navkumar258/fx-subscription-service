@@ -8,12 +8,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
-@TestConfiguration(proxyBeanMethods = false)
+@TestConfiguration
 public class RedisTestContainerConfig {
 
   @Bean
   @ServiceConnection
-  RedisContainer postgresContainer() {
+  RedisContainer redisContainer() {
     return new RedisContainer(DockerImageName.parse("redis:8.4.0"));
   }
 }

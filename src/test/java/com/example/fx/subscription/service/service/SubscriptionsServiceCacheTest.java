@@ -88,11 +88,11 @@ class SubscriptionsServiceCacheTest {
             .thenReturn(Optional.of(testSubscription));
 
     // First call - goes to DB
-    Optional<SubscriptionResponse> firstResult =
+    SubscriptionResponse firstResult =
             subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
-    assertTrue(firstResult.isPresent());
-    assertEquals(testSubscriptionId.toString(), firstResult.get().id());
+    assertNotNull(firstResult);
+    assertEquals(testSubscriptionId.toString(), firstResult.id());
 
     // Assert cache contents
     SubscriptionResponse cached = Objects.requireNonNull(cacheManager
@@ -105,11 +105,11 @@ class SubscriptionsServiceCacheTest {
     verify(subscriptionRepository, times(1)).findById(testSubscriptionId);
 
     // Second call - should return same from cache
-    Optional<SubscriptionResponse> secondResult =
+    SubscriptionResponse secondResult =
             subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
-    assertTrue(secondResult.isPresent());
-    assertEquals(testSubscriptionId.toString(), secondResult.get().id());
+    assertNotNull(secondResult);
+    assertEquals(testSubscriptionId.toString(), secondResult.id());
 
     // Repo call count stays the same
     verify(subscriptionRepository, times(1)).findById(testSubscriptionId);
@@ -281,12 +281,12 @@ class SubscriptionsServiceCacheTest {
             .thenReturn(Optional.of(testSubscription));
 
     // When
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
     // Then
-    assertTrue(result.isPresent());
-    assertNull(result.get().user());
-    assertEquals(List.of(), result.get().notificationsChannels());
+    assertNotNull(result);
+    assertNull(result.user());
+    assertEquals(List.of(), result.notificationsChannels());
   }
 
   @Test
@@ -318,9 +318,9 @@ class SubscriptionsServiceCacheTest {
     when(subscriptionRepository.findById(testSubscriptionId))
             .thenReturn(Optional.of(testSubscription));
 
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
-    assertTrue(result.isPresent());
-    assertEquals(3, result.get().notificationsChannels().size());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    assertNotNull(result);
+    assertEquals(3, result.notificationsChannels().size());
 
     // Verify complex object was cached correctly
     SubscriptionResponse cached = Objects.requireNonNull(cacheManager.getCache("subscription"))

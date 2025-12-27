@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class FxUsersService {
 
   private static final String USER_NOT_FOUND_MESSAGE = "User not found with ID: ";
@@ -46,7 +47,6 @@ public class FxUsersService {
     return fxUserRepository.searchUsers(email, mobile, enabled, pageable);
   }
 
-  @Transactional
   public FxUser updateUser(String id, UserUpdateRequest userUpdateRequest) {
     FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
@@ -66,7 +66,6 @@ public class FxUsersService {
     return fxUserRepository.save(user);
   }
 
-  @Transactional
   public FxUser updateUserStatus(String id, boolean enabled) {
     FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
@@ -75,7 +74,6 @@ public class FxUsersService {
     return fxUserRepository.save(user);
   }
 
-  @Transactional
   public void deleteUser(String id) {
     FxUser user = fxUserRepository.findById(UUID.fromString(id))
             .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));

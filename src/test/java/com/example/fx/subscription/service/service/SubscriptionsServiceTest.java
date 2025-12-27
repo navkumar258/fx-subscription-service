@@ -76,28 +76,28 @@ class SubscriptionsServiceTest {
             .thenReturn(Optional.of(testSubscription));
 
     // When
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
     // Then
-    assertTrue(result.isPresent());
-    assertEquals(testSubscriptionId.toString(), result.get().id());
-    assertEquals("GBP/USD", result.get().currencyPair());
-    assertEquals(BigDecimal.valueOf(1.25), result.get().threshold());
-    assertEquals(ThresholdDirection.ABOVE, result.get().direction());
-    assertEquals(SubscriptionStatus.ACTIVE, result.get().status());
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    assertEquals("GBP/USD", result.currencyPair());
+    assertEquals(BigDecimal.valueOf(1.25), result.threshold());
+    assertEquals(ThresholdDirection.ABOVE, result.direction());
+    assertEquals(SubscriptionStatus.ACTIVE, result.status());
   }
 
   @Test
-  void findSubscriptionById_WhenSubscriptionDoesNotExist_ShouldReturnEmpty() {
+  void findSubscriptionById_WhenSubscriptionDoesNotExist_ShouldThrowException() {
     // Given
+    String testSubscriptionIdString = testSubscriptionId.toString();
     when(subscriptionRepository.findById(any(UUID.class)))
             .thenReturn(Optional.empty());
 
-    // When
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(UUID.randomUUID().toString());
-
     // Then
-    assertFalse(result.isPresent());
+    SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
+            () -> subscriptionsService.findSubscriptionById(testSubscriptionIdString));
+    assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
   }
 
   @Test
@@ -108,13 +108,13 @@ class SubscriptionsServiceTest {
             .thenReturn(Optional.of(testSubscription));
 
     // When
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
     // Then
-    assertTrue(result.isPresent());
-    assertEquals(testSubscriptionId.toString(), result.get().id());
-    assertNull(result.get().user());
-    assertEquals("GBP/USD", result.get().currencyPair());
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    assertNull(result.user());
+    assertEquals("GBP/USD", result.currencyPair());
   }
 
   @Test
@@ -125,12 +125,12 @@ class SubscriptionsServiceTest {
             .thenReturn(Optional.of(testSubscription));
 
     // When
-    Optional<SubscriptionResponse> result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+    SubscriptionResponse result = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
 
     // Then
-    assertTrue(result.isPresent());
-    assertEquals(testSubscriptionId.toString(), result.get().id());
-    assertEquals(List.of(), result.get().notificationsChannels());
+    assertNotNull(result);
+    assertEquals(testSubscriptionId.toString(), result.id());
+    assertEquals(List.of(), result.notificationsChannels());
   }
 
   @Test
@@ -210,7 +210,7 @@ class SubscriptionsServiceTest {
     // When & Then
     SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
             () -> subscriptionsService.findSubscriptionResponsesByUserId(userId));
-    assertTrue(exception.getMessage().contains("No subscriptions found for the given user id: " + testUserId));
+    assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testUserId));
   }
 
   @Test

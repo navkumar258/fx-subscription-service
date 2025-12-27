@@ -1,10 +1,10 @@
 package com.example.fx.subscription.service.controller;
 
 import com.example.fx.subscription.service.dto.subscription.*;
-import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.model.FxUser;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
 
 import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForLog;
@@ -25,8 +24,7 @@ import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForL
 public class SubscriptionsController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionsController.class);
-  private static final String SUBSCRIPTION_NOT_FOUND_MESSAGE = "No Subscriptions found for the ID: %s, " +
-          "please try with a different id!";
+
   private final SubscriptionsService subscriptionsService;
 
   public SubscriptionsController(SubscriptionsService subscriptionsService) {
@@ -36,8 +34,7 @@ public class SubscriptionsController {
   @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   @PreAuthorize("hasRole('ADMIN') or @subscriptionsService.isSubscriptionOwner(#id, authentication.principal.id)")
   public ResponseEntity<SubscriptionResponse> getSubscriptionById(@PathVariable String id) {
-    SubscriptionResponse response = subscriptionsService.findSubscriptionById(id)
-            .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND_MESSAGE.formatted(id), id));
+    SubscriptionResponse response = subscriptionsService.findSubscriptionById(id);
 
     LOGGER.atInfo().log("Retrieved subscription: subscriptionId={}", sanitizeForLog(id));
 
@@ -52,7 +49,7 @@ public class SubscriptionsController {
     LOGGER.atInfo().log("Retrieved {} subscriptions for user: userId={}",
             subscriptionListResponse.totalCount(), sanitizeForLog(userId));
 
-    return ResponseEntity.ok(subscriptionListResponse);
+      return ResponseEntity.ok(subscriptionListResponse);
   }
 
   @GetMapping(path = "/my", produces = MediaType.APPLICATION_JSON_VALUE)

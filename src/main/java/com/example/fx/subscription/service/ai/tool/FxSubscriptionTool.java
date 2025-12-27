@@ -1,6 +1,9 @@
 package com.example.fx.subscription.service.ai.tool;
 
-import com.example.fx.subscription.service.dto.subscription.*;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionListResponse;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
+import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.service.SubscriptionsService;
 import org.springframework.ai.tool.annotation.Tool;
@@ -85,7 +88,7 @@ public class FxSubscriptionTool {
               + updatedSub.direction().name()
               + ", New notification methods: "
               + updatedSub.notificationsChannels() + ".";
-    } catch (SubscriptionNotFoundException e) {
+    } catch (SubscriptionNotFoundException _) {
       return SUBSCRIPTION + subscriptionId + " not found or no valid updates provided.";
     }
   }
@@ -101,7 +104,7 @@ public class FxSubscriptionTool {
     try {
       subscriptionService.deleteSubscriptionById(subscriptionId);
       return SUBSCRIPTION + subscriptionId + " deleted successfully.";
-    } catch (SubscriptionNotFoundException e) {
+    } catch (SubscriptionNotFoundException _) {
       return SUBSCRIPTION + subscriptionId + " not found.";
     }
   }
@@ -125,7 +128,7 @@ public class FxSubscriptionTool {
 
     return subscriptionListResponse.subscriptions()
             .stream()
-            .map(sub -> String.format("ID: %s, Pair: %s, Threshold: %.2f, Notify via: %s",
+            .map(sub -> "ID: %s, Pair: %s, Threshold: %.2f, Notify via: %s".formatted(
                     sub.id(), sub.currencyPair(), sub.threshold(), sub.notificationsChannels()))
             .collect(Collectors.joining("\n"));
   }

@@ -2,8 +2,8 @@ package com.example.fx.subscription.service.config;
 
 import org.apache.catalina.connector.Connector;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -17,9 +17,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Transactional
 @CacheConfig(cacheNames = "subscription")
 @Observed(name = "subscriptions.service")
 public class SubscriptionsService {
+
+  private static final String SUBSCRIPTION_NOT_FOUND = "Subscription not found with Id: %s";
 
   private final SubscriptionRepository subscriptionRepository;
   private final FxUserRepository fxUserRepository;
@@ -35,9 +38,10 @@ public class SubscriptionsService {
 
   @Transactional(readOnly = true)
   @Cacheable(key = "#id")
-  public Optional<SubscriptionResponse> findSubscriptionById(String id) {
+  public SubscriptionResponse findSubscriptionById(String id) {
     return subscriptionRepository.findById(UUID.fromString(id))
-            .map(SubscriptionResponse::fromSubscription);
+            .map(SubscriptionResponse::fromSubscription)
+            .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(id), id));
   }
 
   @Transactional(readOnly = true)
@@ -58,7 +62,7 @@ public class SubscriptionsService {
             .map(SubscriptionResponse::fromSubscription)
             .toList();
     if (subscriptions.isEmpty()) {
-      throw new SubscriptionNotFoundException("No subscriptions found for the given user id: %s".formatted(userId));
+      throw new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(userId));
     }
 
     return new SubscriptionListResponse(subscriptions, subscriptions.size());
@@ -78,10 +82,12 @@ public class SubscriptionsService {
             UUID.fromString(subscriptionId), userId);
   }
 
-  @Transactional
   @Caching(
-          put = {@CachePut(key = "#result.id")},
-          evict = {@CacheEvict(cacheNames = "subscriptionsByUser", key = "#userId.toString()")}
+          put = @CachePut(key = "#result.id"),
+          evict = @CacheEvict(
+                  cacheNames = "subscriptionsByUser",
+                  key = "#userId.toString()"
+          )
   )
   public SubscriptionResponse createSubscription(SubscriptionCreateRequest createRequest, UUID userId) {
     FxUser user = fxUserRepository.findById(userId)
@@ -95,15 +101,17 @@ public class SubscriptionsService {
     return SubscriptionResponse.fromSubscription(subscription);
   }
 
-  @Transactional
   @Caching(
-          put = {@CachePut(key = "#id")},
-          evict = {@CacheEvict(cacheNames = "subscriptionsByUser", key = "#result.user.id")}
+          put = @CachePut(key = "#id"),
+          evict = @CacheEvict(
+                  cacheNames = "subscriptionsByUser",
+                  key = "#result.user.id"
+          )
   )
   public SubscriptionResponse updateSubscriptionById(String id, SubscriptionUpdateRequest subscriptionUpdateRequest) {
     Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
             .orElseThrow(() -> new SubscriptionNotFoundException(
-                    "Subscription not found with Id: %s".formatted(id), id));
+                    SUBSCRIPTION_NOT_FOUND.formatted(id), id));
 
     Optional.ofNullable(subscriptionUpdateRequest.currencyPair())
             .ifPresent(subscription::setCurrencyPair);
@@ -128,17 +136,19 @@ public class SubscriptionsService {
     return SubscriptionResponse.fromSubscription(updatedSubscription);
   }
 
-  @Transactional
   @Caching(
           evict = {
-                  @CacheEvict(key = "#id"),
-                  @CacheEvict(cacheNames = "subscriptionsByUser", key = "#result.userId")
+                  @CacheEvict(key = "#id", beforeInvocation = true),
+                  @CacheEvict(
+                          cacheNames = "subscriptionsByUser",
+                          key = "#result.userId"
+                  )
           }
   )
   public SubscriptionDeleteResponse deleteSubscriptionById(String id) {
     Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
             .orElseThrow(() -> new SubscriptionNotFoundException(
-                    "Subscription not found with Id: %s".formatted(id), id));
+                    SUBSCRIPTION_NOT_FOUND.formatted(id), id));
 
     subscriptionRepository.deleteById(UUID.fromString(id));
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionDeleted"));

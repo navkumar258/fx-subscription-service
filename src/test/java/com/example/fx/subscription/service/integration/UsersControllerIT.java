@@ -9,7 +9,6 @@ import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.model.UserRole;
 import com.example.fx.subscription.service.repository.FxUserRepository;
 import com.example.fx.subscription.service.repository.SubscriptionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -17,8 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,9 +28,12 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,7 +81,7 @@ class UsersControllerIT {
   }
 
   @Test
-  void completeUserLifecycle_ShouldWorkEndToEnd() throws Exception {
+  void completeUserLifecycle_ShouldWorkEndToEnd() {
     // 1. Create admin user
     FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
     String adminJwt = generateTestJwtToken("admin@example.com");
@@ -324,7 +326,7 @@ class UsersControllerIT {
   }
 
   @Test
-  void userSubscriptions_ShouldReturnUserSubscriptions() throws Exception {
+  void userSubscriptions_ShouldReturnUserSubscriptions() {
     // Create users
     FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
     FxUser user = createTestUser("user@example.com", UserRole.USER);
@@ -395,7 +397,7 @@ class UsersControllerIT {
   }
 
   @Test
-  void errorHandling_ShouldHandleInvalidRequests() throws Exception {
+  void errorHandling_ShouldHandleInvalidRequests() {
     FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
     String adminJwt = generateTestJwtToken("admin@example.com");
 
@@ -449,7 +451,7 @@ class UsersControllerIT {
   }
 
   @Test
-  void dataPersistenceFlow_ShouldPersistToDatabase() throws Exception {
+  void dataPersistenceFlow_ShouldPersistToDatabase() {
     // Create admin user
     FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
     String adminJwt = generateTestJwtToken("admin@example.com");
@@ -502,8 +504,8 @@ class UsersControllerIT {
     return Jwts.builder()
             .subject(username)
             .claim("roles", List.of("ROLE_" + (username.contains("admin") ? "ADMIN" : "USER")))
-            .issuedAt(new java.util.Date())
-            .expiration(new java.util.Date(System.currentTimeMillis() + 3600000)) // 1 hour
+            .issuedAt(Date.from(Instant.now()))
+            .expiration(Date.from(Instant.now().plusMillis(3600000))) // Plus 1 hour
             .signWith(testSecretKey)
             .compact();
   }
