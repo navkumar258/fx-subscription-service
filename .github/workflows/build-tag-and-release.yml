@@ -175,11 +175,6 @@ jobs:
           echo "Project name found: $PROJECT_NAME"
           echo "PROJECT_NAME=$PROJECT_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Build with Gradle
-        run: |
-          echo "--- Building the Application ---"
-          ./gradlew clean build -x test -x generateOpenApiDocs
-
       - name: Update version in build.gradle
         if: ${{ steps.version_check.outputs.skip_update == 'false' }}
         run: |
@@ -223,6 +218,11 @@ jobs:
           # Push the new tag to the remote repository.
           git push origin $TAG_NAME
           echo "Successfully pushed tag $TAG_NAME"
+
+      - name: Build with Gradle
+        run: |
+          echo "--- Building the Application ---"
+          ./gradlew clean build -x test -x generateOpenApiDocs
 
       - name: Upload JAR Artifacts
         uses: actions/upload-artifact@v4
