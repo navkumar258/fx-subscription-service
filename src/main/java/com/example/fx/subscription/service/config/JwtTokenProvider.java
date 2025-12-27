@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
 
@@ -50,13 +51,13 @@ public class JwtTokenProvider {
   }
 
   public String createToken(String username, Set<String> roles) {
-    Date now = new Date();
-    Date expiry = new Date(now.getTime() + validityInMilliseconds);
+    Instant now = Instant.now();
+
     return Jwts.builder()
             .subject(username)
             .claim("roles", roles)
-            .issuedAt(now)
-            .expiration(expiry)
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(now.plusMillis(validityInMilliseconds)))
             .signWith(secretKey)
             .compact();
   }

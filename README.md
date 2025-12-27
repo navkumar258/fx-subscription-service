@@ -118,6 +118,28 @@ export FX_JWT_SECRET_KEY=your_jwt_secret_key_at_least_256_bits
 # export FX_REDIS_PORT=6379
 ```
 
+  Run below command to create a self-signed ssl cert locally:
+
+```bash
+keytool -genkeypair \
+  -alias fx-subscription-service \
+  -keyalg RSA \
+  -keysize 4096 \
+  -storetype PKCS12 \
+  -keystore keystore.p12 \
+  -validity 365 \
+  -dname "CN=localhost, OU=Dev, O=Local, L=Local, ST=Local, C=GB" \
+  -storepass changeit \
+  -keypass changeit \
+  -ext "SAN=dns:localhost,ip:127.0.0.1"
+```
+
+Also, create a strong JWT secret key (if needed):
+
+```bash
+openssl rand -base64 64
+```
+
 #### 3. Run the Complete Setup Script
 
 ```bash

@@ -31,7 +31,7 @@ public class WebSecurityTestConfig {
 
   @Bean
   @Primary
-  public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) {
     JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(testJwtTokenProvider);
 
     http

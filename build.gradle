@@ -43,7 +43,6 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-aspectj"
     implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-    implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'
     implementation "net.ttddyy.observation:datasource-micrometer-spring-boot:${vDatasourceMicrometer}"
     // for openapi spec generation
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringDocWebMvcApi}", withoutCommonsLang3
@@ -53,6 +52,7 @@ dependencies {
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${vJjwtImpl}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${vJjwtJackson}"
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly 'io.opentelemetry:opentelemetry-exporter-zipkin'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
