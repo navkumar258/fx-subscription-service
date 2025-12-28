@@ -1,0 +1,164 @@
+### =========================
+### Environment variables
+### =========================
+@baseUrl = https://localhost:8443
+@token = {{token}}   // will be auto-filled after login
+
+@userId = 123e4567-e89b-12d3-a456-426614174000
+@subscriptionId = sub-123e4567
+@page = 0
+@size = 10
+
+### =========================
+### Auth APIs
+### =========================
+
+### Signup
+POST {{baseUrl}}/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password@123",
+  "mobile": "+447700900123",
+  "admin": false
+}
+
+###
+
+### Login (auto-extract JWT)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user@example.com",
+  "password": "Password123"
+}
+
+> {%
+  // IntelliJ HTTP Client response handler
+  if (response.status === 200) {
+    const body = response.body;
+    client.global.set("token", body.token);
+    client.log("JWT token saved successfully");
+  } else {
+    client.log("Login failed, token not set");
+  }
+%}
+
+###
+
+### =========================
+### User APIs
+### =========================
+
+### Get all users (paginated)
+GET {{baseUrl}}/api/v1/users?page={{page}}&size={{size}}&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+###
+
+### Search users
+GET {{baseUrl}}/api/v1/users/search?email=user@example.com&enabled=true&page={{page}}&size={{size}}
+Authorization: Bearer {{token}}
+
+###
+
+### Get user by ID
+GET {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Update user
+PUT {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "updated.user@example.com",
+  "mobile": "+447700900999",
+  "pushDeviceToken": "fcm-device-token"
+}
+
+###
+
+### Delete user
+DELETE {{baseUrl}}/api/v1/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Get user subscriptions
+GET {{baseUrl}}/api/v1/users/{{userId}}/subscriptions
+Authorization: Bearer {{token}}
+
+###
+
+### =========================
+### Subscription APIs
+### =========================
+
+### Create subscription
+POST {{baseUrl}}/api/v1/subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currencyPair": "EUR/USD",
+  "threshold": 1.105,
+  "direction": "ABOVE",
+  "notificationChannels": [
+    "EMAIL",
+    "PUSH"
+  ]
+}
+
+###
+
+### Get subscriptions by userId
+GET {{baseUrl}}/api/v1/subscriptions?userId={{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Get my subscriptions
+GET {{baseUrl}}/api/v1/subscriptions/my
+Authorization: Bearer {{token}}
+
+###
+
+### Get all subscriptions (admin)
+GET {{baseUrl}}/api/v1/subscriptions/all
+Authorization: Bearer {{token}}
+
+###
+
+### Get subscription by ID
+GET {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Update subscription
+PUT {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currencyPair": "GBP/USD",
+  "threshold": 1.275,
+  "direction": "BELOW",
+  "status": "ACTIVE",
+  "notificationChannels": [
+    "EMAIL"
+  ]
+}
+
+###
+
+### Delete subscription
+DELETE {{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{token}}
+
+###

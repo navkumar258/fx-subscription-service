@@ -6,8 +6,8 @@ import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse
 import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.service.SubscriptionsService;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -29,17 +29,17 @@ public class FxSubscriptionTool {
    * AI Tool: Creates a new FX rate subscription.
    * Delegates to the core SubscriptionService after adapting parameters.
    */
-  @Tool(name = "createFxSubscription",
+  @McpTool(name = "createFxSubscription",
           description = """
-                  Creates a new FX rate subscription for a user with a given user id,\s
-                  specified currency pair, threshold, and preferred notification method.
+                  Creates a new FX rate subscription for a user with the given userId,\s
+                  specified currency pair, threshold, direction and preferred notification method.
                   """
   )
-  public String createSubscriptionTool(@ToolParam(description = "Given user id") String userId,
-                                       @ToolParam(description = "Given currency pair") String currencyPair,
-                                       @ToolParam(description = "Given threshold") double thresholdValue,
-                                       @ToolParam(description = "Given direction i.e. above or below") String direction,
-                                       @ToolParam(description = "Given notification methods") String notificationMethod) {
+  public String createSubscriptionTool(@McpToolParam(description = "Given user id") String userId,
+                                       @McpToolParam(description = "Given currency pair") String currencyPair,
+                                       @McpToolParam(description = "Given threshold") double thresholdValue,
+                                       @McpToolParam(description = "Given direction i.e. above or below") String direction,
+                                       @McpToolParam(description = "Given notification methods") String notificationMethod) {
     SubscriptionCreateRequest newSubscription = new SubscriptionCreateRequest(
             currencyPair,
             BigDecimal.valueOf(thresholdValue),
@@ -59,18 +59,18 @@ public class FxSubscriptionTool {
    * AI Tool: Updates an existing FX rate subscription.
    * Delegates to the core SubscriptionService after adapting parameters.
    */
-  @Tool(name = "updateFxSubscription",
+  @McpTool(name = "updateFxSubscription",
           description = """
-                  Updates the threshold and/or notification method of an existing FX rate subscription using its ID.
+                  Updates the threshold, direction and/or notification methods of an existing FX rate subscription for the given subscriptionId.
                   At least one of newThresholdValue or newNotificationMethod must be provided.
                   """
   )
-  public String updateSubscriptionTool(@ToolParam(description = "Existing subscription id") String subscriptionId,
-                                       @ToolParam(description = "New currency pair") String currencyPair,
-                                       @ToolParam(description = "New threshold value") double newThresholdValue,
-                                       @ToolParam(description = "New direction i.e. above or below", required = false) String direction,
-                                       @ToolParam(description = "New status") String status,
-                                       @ToolParam(description = "New notification methods", required = false) List<String> newNotificationMethod) {
+  public String updateSubscriptionTool(@McpToolParam(description = "Existing subscription id") String subscriptionId,
+                                       @McpToolParam(description = "New currency pair") String currencyPair,
+                                       @McpToolParam(description = "New threshold value") double newThresholdValue,
+                                       @McpToolParam(description = "New direction i.e. above or below", required = false) String direction,
+                                       @McpToolParam(description = "New status") String status,
+                                       @McpToolParam(description = "New notification methods", required = false) List<String> newNotificationMethod) {
     try {
       SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest(
               currencyPair,
@@ -97,10 +97,10 @@ public class FxSubscriptionTool {
    * AI Tool: Deletes an FX rate subscription.
    * Delegates to the core SubscriptionService.
    */
-  @Tool(name = "deleteFxSubscription",
-          description = "Deletes an existing FX rate subscription using its ID."
+  @McpTool(name = "deleteFxSubscription",
+          description = "Deletes an existing FX rate subscription for the given subscriptionId."
   )
-  public String deleteSubscriptionTool(@ToolParam(description = "Subscription id to delete") String subscriptionId) {
+  public String deleteSubscriptionTool(@McpToolParam(description = "Subscription id to delete") String subscriptionId) {
     try {
       subscriptionService.deleteSubscriptionById(subscriptionId);
       return SUBSCRIPTION + subscriptionId + " deleted successfully.";
@@ -113,13 +113,13 @@ public class FxSubscriptionTool {
    * AI Tool: Retrieves all active FX rate subscriptions for a given user.
    * Delegates to the core SubscriptionService and formats the output.
    */
-  @Tool(name = "getFxSubscriptionsForUser",
+  @McpTool(name = "getFxSubscriptionsForUser",
           description = """
-                  Retrieves a detailed list of all active FX rate subscriptions for a specific user\s
-                  including IDs, currency pairs, thresholds, and notification methods.
+                  Retrieves a detailed list of all active FX rate subscriptions for a specific userId\s
+                  including Ids, currency pairs, thresholds, and notification methods.
                   """
   )
-  public String getFxSubscriptionsForUserTool(@ToolParam(description = "User id to get all subscriptions") String userId) {
+  public String getFxSubscriptionsForUserTool(@McpToolParam(description = "User id to get all subscriptions") String userId) {
     SubscriptionListResponse subscriptionListResponse = subscriptionService.findSubscriptionResponsesByUserId(userId);
 
     if (subscriptionListResponse.totalCount() == 0) {
