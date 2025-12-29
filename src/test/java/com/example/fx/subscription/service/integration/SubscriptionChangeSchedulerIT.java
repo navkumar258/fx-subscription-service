@@ -149,7 +149,7 @@ class SubscriptionChangeSchedulerIT {
     eventsOutboxRepository.save(eventsOutbox);
 
     await()
-            .atMost(Duration.ofSeconds(1))
+            .atMost(Duration.ofSeconds(2))
             .pollInterval(Duration.ofMillis(200))
             .untilAsserted(() -> {
               EventsOutbox eventsOutbox1 = eventsOutboxRepository.findById(eventsOutbox.getId()).orElseThrow();

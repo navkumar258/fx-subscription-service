@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.dto.user;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -17,4 +18,5 @@ public record UserSignUpRequest(
         @NotBlank(message = "Mobile is required")
         String mobile,
 
+        @JsonProperty(defaultValue = "false")
         boolean admin) {}
