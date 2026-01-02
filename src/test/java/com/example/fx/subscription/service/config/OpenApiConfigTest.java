@@ -81,7 +81,7 @@ class OpenApiConfigTest {
     assertNotNull(openAPI.getSecurity());
     assertEquals(1, openAPI.getSecurity().size());
 
-    SecurityRequirement securityRequirement = openAPI.getSecurity().get(0);
+    SecurityRequirement securityRequirement = openAPI.getSecurity().getFirst();
 
     assertTrue(securityRequirement.containsKey("bearerAuth"));
   }

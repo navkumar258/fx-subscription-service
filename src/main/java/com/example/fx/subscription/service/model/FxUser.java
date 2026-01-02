@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -124,6 +125,7 @@ public class FxUser implements Serializable, UserDetails {
   }
 
   @Override
+  @NonNull
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
   }
@@ -133,6 +135,7 @@ public class FxUser implements Serializable, UserDetails {
   }
 
   @Override
+  @NonNull
   public String getUsername() {
     return email;
   }
