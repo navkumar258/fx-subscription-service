@@ -36,6 +36,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Set up JDK 25 for CodeQL
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:

@@ -114,7 +114,7 @@ public class AuthController {
     user.setPassword(passwordEncoder.encode(request.password()));
     user.setMobile(request.mobile());
     user.setEnabled(true);
-    user.setRole(request.admin() ? UserRole.ADMIN : UserRole.USER);
+    user.setRole(Boolean.TRUE.equals(request.admin()) ? UserRole.ADMIN : UserRole.USER);
     return user;
   }
 
