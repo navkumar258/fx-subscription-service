@@ -33,7 +33,7 @@ public class EventsOutbox implements Serializable {
   private String eventType;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  @Column(columnDefinition = "json")
+  @Column(columnDefinition = "jsonb")
   private SubscriptionResponse payload;
 
   private String status;
