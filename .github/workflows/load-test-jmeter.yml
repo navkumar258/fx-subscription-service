@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.2
         with:
           java-version: '25'
           distribution: 'temurin'
@@ -42,13 +42,13 @@ jobs:
           test-plan-path: ./jmeter/test_plan.jmx
 
       - name: Upload Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jmeter-results
           path: result.jtl
 
       - name: Upload HTML Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jmeter-html-report
           path: reports
