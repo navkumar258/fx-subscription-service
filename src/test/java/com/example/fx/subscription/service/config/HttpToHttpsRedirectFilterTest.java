@@ -43,7 +43,7 @@ class HttpToHttpsRedirectFilterTest {
 
     filter.doFilter(request, response, chain);
 
-    verify(response).setStatus(308);
+    verify(response).setStatus(HttpServletResponse.SC_PERMANENT_REDIRECT);
     verify(response).setHeader("Location", "https://localhost:8443/api/v1/secure");
     verify(chain, never()).doFilter(any(), any());
   }
@@ -58,8 +58,45 @@ class HttpToHttpsRedirectFilterTest {
 
     filter.doFilter(request, response, chain);
 
-    verify(response).setStatus(308);
+    verify(response).setStatus(HttpServletResponse.SC_PERMANENT_REDIRECT);
     verify(response).setHeader("Location", "https://localhost:8443/api/v1/secure?param=value");
+    verify(chain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void whenQueryStringContainsCRLF_shouldPercentEncode() throws IOException, ServletException {
+    when(request.isSecure()).thenReturn(false);
+    when(request.getServerPort()).thenReturn(8080);
+    when(request.getServerName()).thenReturn("localhost");
+    when(request.getRequestURI()).thenReturn("/api/v1/secure");
+    // Attacker tries to inject a new header via CRLF
+    when(request.getQueryString()).thenReturn("q=1\r\nInjected-Header: true");
+
+    filter.doFilter(request, response, chain);
+
+    verify(response).setStatus(HttpServletResponse.SC_PERMANENT_REDIRECT);
+    // The URI class should escape \r and \n into %0D and %0A
+    verify(response).setHeader("Location", "https://localhost:8443/api/v1/secure?q=1%0D%0AInjected-Header:%20true");
+  }
+
+  @Test
+  void whenUriComponentsAreInvalid_shouldReturn400BadRequest() throws IOException, ServletException {
+    // Setup: Force an insecure request on the correct port
+    when(request.isSecure()).thenReturn(false);
+    when(request.getServerPort()).thenReturn(8080);
+
+    // An opening square bracket '[' is illegal in a URI host name
+    // and will cause the new URI(...) constructor to throw a URISyntaxException.
+    when(request.getServerName()).thenReturn("[invalid_host]");
+    when(request.getRequestURI()).thenReturn("/api");
+
+    filter.doFilter(request, response, chain);
+
+    // Verify: The catch block should trigger a 400 error
+    verify(response).sendError(eq(HttpServletResponse.SC_BAD_REQUEST), contains("Invalid URI components"));
+
+    // Ensure no redirect or chain continuation happened
+    verify(response, never()).setStatus(308);
     verify(chain, never()).doFilter(any(), any());
   }
 
@@ -72,7 +109,7 @@ class HttpToHttpsRedirectFilterTest {
     filter.doFilter(request, response, chain);
 
     verify(chain).doFilter(request, response);
-    verify(response, never()).setStatus(308);
+    verify(response, never()).setStatus(HttpServletResponse.SC_PERMANENT_REDIRECT);
     verify(response, never()).setHeader(eq("Location"), anyString());
 
     // Test insecure on wrong port

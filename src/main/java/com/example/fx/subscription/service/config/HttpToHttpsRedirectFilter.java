@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @ConditionalOnProperty("server.http.port")
 @Component
@@ -32,12 +34,26 @@ public class HttpToHttpsRedirectFilter implements Filter {
     HttpServletResponse httpResponse = (HttpServletResponse) response;
 
     if (!httpRequest.isSecure() && httpRequest.getServerPort() == httpPort) {
-      String redirectURL = "https://" + httpRequest.getServerName() + ":" + httpsPort + httpRequest.getRequestURI();
-      if (httpRequest.getQueryString() != null) {
-        redirectURL += "?" + httpRequest.getQueryString();
+      String serverName = httpRequest.getServerName();
+      String uri = httpRequest.getRequestURI();
+      String query = httpRequest.getQueryString();
+
+      try {
+        URI redirectUri = new URI(
+                "https",
+                null,
+                serverName,
+                httpsPort,
+                uri,
+                query,
+                null
+        );
+
+        httpResponse.setStatus(HttpServletResponse.SC_PERMANENT_REDIRECT);
+        httpResponse.setHeader("Location", redirectUri.toASCIIString());
+      } catch (URISyntaxException _) {
+        httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid URI components");
       }
-      httpResponse.setStatus(308);
-      httpResponse.setHeader("Location", redirectURL);
     } else {
       chain.doFilter(request, response);
     }
