@@ -40,10 +40,12 @@ public class Subscription implements Serializable {
 
   private BigDecimal threshold;
 
+  @Enumerated(EnumType.STRING)
   private ThresholdDirection direction;
 
   private List<String> notificationsChannels = new ArrayList<>();
 
+  @Enumerated(EnumType.STRING)
   private SubscriptionStatus status;
 
   @CreationTimestamp

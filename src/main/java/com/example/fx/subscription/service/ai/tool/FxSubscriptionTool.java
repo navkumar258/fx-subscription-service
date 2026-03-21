@@ -6,8 +6,8 @@ import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse
 import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.service.SubscriptionsService;
-import org.springaicommunity.mcp.annotation.McpTool;
-import org.springaicommunity.mcp.annotation.McpToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
