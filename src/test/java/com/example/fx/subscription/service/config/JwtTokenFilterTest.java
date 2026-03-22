@@ -54,7 +54,7 @@ class JwtTokenFilterTest {
   private JwtTokenProvider jwtTokenProvider;
   private JwtTokenFilter jwtTokenFilter;
 
-  // Using the same values from test application.properties
+  // Using the same values from test application.yaml
   private static final String SECRET_KEY = "/yq8RuTZgYPfpX4XdPYsy9DohY9EAFg+qQ6iNENWZOXHkLLhPqIYbhtQfEesQvdcjg9RvOjHb30N7/PlHlnL3w==";
   private static final long VALIDITY_IN_MILLISECONDS = 60000; // 60 seconds
 

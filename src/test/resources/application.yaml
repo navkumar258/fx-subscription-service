@@ -1,0 +1,53 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic:
+      subscription-changes: subscription-change-events
+  application:
+    name: fx-subscription-service
+  cache:
+    redis:
+      time-to-live-seconds: 3
+    type: simple
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  threads:
+    virtual:
+      enabled: true
+
+security:
+  jwt:
+    token:
+      expire-length: 60000
+      secret-key: "/yq8RuTZgYPfpX4XdPYsy9DohY9EAFg+qQ6iNENWZOXHkLLhPqIYbhtQfEesQvdcjg9RvOjHb30N7/PlHlnL3w=="
+
+management:
+  endpoints:
+    access:
+      default: none
+    web:
+      discovery:
+        enabled: false
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+outbox:
+  subscriptions:
+    check:
+      rate: 100ms
+      initial-delay: 100ms
+
+springdoc:
+  api-docs:
+    enabled: false
+
+server:
+  port: 8443

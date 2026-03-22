@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    hikari:
+      validation-timeout: 2500
+      connection-timeout: 2500
+      maximum-pool-size: 2
+  kafka:
+    producer:
+      properties:
+        retries: 0
+        request:
+          timeout:
+            ms: 1000
+        max:
+          block:
+            ms: 1000
+        retry:
+          backoff:
+            ms: 0
+        delivery:
+          timeout:
+            ms: 1000
+      acks: all
+      retries: 0
+    consumer:
+      auto-offset-reset: earliest
+      properties:
+        spring:
+          json:
+            value:
+              default:
+                type: com.example.fx.subscription.service.model.SubscriptionChangeEvent
+            trusted:
+              packages: com.example.fx.subscription.service.model
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+outbox:
+  subscriptions:
+    check:
+      rate: 500ms
+      initial-delay: 300ms

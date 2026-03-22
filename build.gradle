@@ -31,28 +31,27 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-kafka'
-    implementation "io.jsonwebtoken:jjwt-api:${vJjwtApi}"
     implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
-    implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
-    // for redis as cache
+    // Caching
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // for micrometer observation, metrics & logging
+    // Observability
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-opentelemetry'
-    implementation 'org.springframework.boot:spring-boot-zipkin'
-    implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
+    implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
     implementation "net.ttddyy.observation:datasource-micrometer-spring-boot:${vDatasourceMicrometer}"
-    // for openapi spec generation
+    // OpenAPI spec generation
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${vSpringDocWebMvcApi}", withoutCommonsLang3
+
+    implementation "io.jsonwebtoken:jjwt-api:${vJjwtApi}"
+    implementation "org.apache.commons:commons-lang3:${vCommonsLang3}"
+    implementation "com.github.loki4j:loki-logback-appender:${vLokiLogbackAppender}"
 
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${vJjwtImpl}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${vJjwtJackson}"
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
-    runtimeOnly 'io.micrometer:micrometer-tracing-bridge-otel'
-    runtimeOnly 'io.opentelemetry:opentelemetry-exporter-zipkin'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'

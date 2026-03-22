@@ -1,0 +1,116 @@
+spring:
+  application:
+    name: fx-subscription-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      connection-timeout: 10000
+      max-lifetime: 900000
+      minimum-idle: 30
+    password: ${FX_POSTGRES_PASSWORD:password}
+    username: ${FX_POSTGRES_USER:postgres}
+    url: jdbc:postgresql://${FX_POSTGRES_HOST:localhost:5432}/${FX_POSTGRES_DB:fx_subscription_db}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  cache:
+    type: redis
+    redis:
+      time-to-live-seconds: 300
+  ssl:
+    bundle:
+      jks:
+        fx-subscription-service:
+          keystore:
+            location: ${FX_KEYSTORE_LOCATION:classpath:keystore.p12}
+            password: ${FX_KEYSTORE_PASSWORD:changeit}
+            type: PKCS12
+          #          truststore:
+          #            location: ${FX_TRUSTSTORE_LOCATION:classpath:keystore.p12}
+          #            password: ${FX_TRUSTSTORE_PASSWORD:changeit}
+          #            type: PKCS12
+          key:
+            alias: fx-subscription-service
+            password: ${FX_KEYSTORE_PASSWORD:changeit}
+        web-server:
+          reload-on-update: false
+  data:
+    redis:
+      url: ${FX_REDIS_HOST:redis://localhost:6379}
+  kafka:
+    topic:
+      subscription-changes: subscription-change-events
+    producer:
+      properties:
+        delivery:
+          timeout:
+            ms: 30000
+    bootstrap-servers: ${FX_KAFKA_HOST:localhost:9092}
+  threads:
+    virtual:
+      enabled: true
+  logging:
+    loki:
+      host: ${FX_LOKI_HOST:http://localhost:3100}
+
+server:
+  ssl:
+    bundle: fx-subscription-service
+    client-auth: NONE
+  port: 8443
+  http:
+    port: 8080
+
+security:
+  jwt:
+    token:
+      expire-length: 600000
+      secret-key: ${FX_JWT_SECRET_KEY:test}
+
+outbox:
+  subscriptions:
+    check:
+      rate: 300s
+      initial-delay: 30s
+
+springdoc:
+  api-docs:
+    enabled: false
+
+# traceID and spanId are predefined MDC keys - we want the logs to include them
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+# expose actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,probes,metrics,prometheus"
+  endpoint:
+    prometheus:
+      access: read-only
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  # For Exemplars to work, we need histogram buckets
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${FX_JAEGER_HOST:http://localhost:4318}/v1/traces
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    # All traces should be sent to the latency analysis tool
+    sampling:
+      probability: 1.0

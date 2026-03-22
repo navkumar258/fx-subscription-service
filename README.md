@@ -20,7 +20,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 - **Caching**: Redis cache with configurable TTL and Jackson serialization
 - **API Documentation**: OpenAPI 3.1.0 specification with Swagger UI and automated documentation generation
 - **Monitoring**: Prometheus metrics and health endpoints
-- **Observability**: Distributed tracing with Zipkin, Logging with Loki - integrated with Grafana OSS
+- **Observability**: Distributed tracing with Jaeger, Logging with Loki - integrated with Grafana OSS
 - **Scheduling**: Automated subscription processing and event publishing
 - **Testing**: Comprehensive unit and integration tests with TestContainers for PostgreSQL, Kafka, and Redis
 
@@ -76,10 +76,10 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 
 ### For Host-based Development
 - Java 25+
-- Gradle 9.2.1+
-- PostgreSQL 18.1+
-- Redis 8.4.0+
-- Apache Kafka 4.1.1+
+- Gradle 9.4.1+
+- PostgreSQL 18.3+
+- Redis 8.4.2+
+- Apache Kafka 4.2.0+
 - Docker Compose (for observability stack)
 - FX MCP Client (for AI interactions)
 
@@ -114,8 +114,7 @@ export FX_JWT_SECRET_KEY=your_jwt_secret_key_at_least_256_bits
 # export FX_POSTGRES_PASSWORD=password
 
 # Optional: Redis Configuration (defaults provided)
-# export FX_REDIS_HOST=redis
-# export FX_REDIS_PORT=6379
+# export FX_REDIS_HOST=redis://redis:6379
 ```
 
   Run below command to create a self-signed ssl cert locally:
@@ -157,7 +156,7 @@ chmod +x build_and_run.sh
   - FX Subscription Service (main application)
   - PostgreSQL database
   - Apache Kafka (message broker)
-  - Observability stack (Grafana, Prometheus, Loki, Zipkin)
+  - Observability stack (Grafana, Prometheus, Loki, Jaeger)
 
 #### 4. Verify Services Are Running
 
@@ -191,10 +190,10 @@ docker compose ps
 
 ```bash
 # Start monitoring and observability tools
-docker compose -f docker-compose.observability.yml up -d
+docker compose -f docker-compose.observability.yaml up -d
 
 # Verify observability services
-docker compose -f docker-compose.observability.yml ps
+docker compose -f docker-compose.observability.yaml ps
 ```
 
 ### Option 3: Host-based Development
@@ -212,7 +211,7 @@ docker compose up postgres kafka -d
 
 #### 2. Configure Application Properties
 
-Update `src/main/resources/application.properties` with your local database and Kafka settings.
+Update `src/main/resources/application.yaml` with your local database and Kafka settings.
 
 #### 3. Build and Run
 
@@ -247,7 +246,7 @@ After successful setup, the following services will be available:
 ### Observability Stack
 - **Grafana Dashboard**: http://localhost:3000 (admin/admin)
 - **Prometheus Metrics**: http://localhost:9090
-- **Zipkin Traces**: http://localhost:9411
+- **Jaeger Traces**: http://localhost:16686
 - **Loki Logs**: http://localhost:3100
 
 ### MCP Integration
@@ -293,7 +292,7 @@ docker exec -it kafka kafka-topics.sh --bootstrap-server localhost:9092 --list
 docker compose down
 
 # Stop with observability stack
-docker compose -f docker-compose.yml -f docker-compose.observability.yml down
+docker compose -f docker-compose.yaml -f docker-compose.observability.yaml down
 
 # Stop and remove volumes (⚠️ This will delete your data)
 docker compose down -v
@@ -305,8 +304,8 @@ The project includes several Docker configuration files for different purposes:
 
 - **`Dockerfile`**: Production-ready container image
 - **`Dockerfile.local`**: Multi-stage build for local development
-- **`docker-compose.yml`**: Core services (app, database, Kafka)
-- **`docker-compose.observability.yml`**: Monitoring and observability stack
+- **`docker-compose.yaml`**: Core services (app, database, Kafka)
+- **`docker-compose.observability.yaml`**: Monitoring and observability stack
 - **`build_and_run.sh`**: Automated setup script for complete local development environment
 ```
 
@@ -331,14 +330,13 @@ FX_POSTGRES_USER=postgres
 FX_POSTGRES_PASSWORD=password
 
 # Optional: Redis Configuration (defaults shown)
-FX_REDIS_HOST=redis:locallhost
-FX_REDIS_PORT=6379
+FX_REDIS_HOST=redis://redis:6379
 
 # Optional: Kafka Configuration (defaults shown)
 FX_KAFKA_HOST=kafka:29092
 
 # Optional: Tracing Configuration (defaults shown)
-FX_ZIPKIN_HOST=http://zipkin:9411
+FX_JAEGER_HOST=http://jaeger:4318
 ```
 
 ### Application Properties (for host-based development)
@@ -613,7 +611,7 @@ consumption.
 - Database connection metrics
 - Custom business metrics
 
-### Tracing (Zipkin via micrometer)
+### Tracing (Jaeger via Opentelemetry)
 
 - **Request Tracing**: End-to-end request flow visualization
 - **Performance Analysis**: Latency breakdown by service
@@ -738,7 +736,7 @@ For complete stack deployment including dependencies:
 
 ```bash
 # Local development with full observability
-docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+docker compose -f docker-compose.yaml -f docker-compose.observability.yaml up -d
 
 # Production-like setup with core services only
 docker compose up -d
@@ -781,12 +779,12 @@ docker compose up -d
 │   │   │       └── ai/                     # MCP tool integration
 │   │   │           └── tool/               # AI tools for MCP
 │   │   └── resources/
-│   │       ├── application.properties
+│   │       ├── application.yaml
 │   │       └── logback-spring.xml
 │   └── test/
 │       ├── java/                           # Test classes
 │       └── resources/
-│           └── application.properties
+│           └── application.yaml
 ├── fx-subscription-service-gatling/        # Gatling load testing subproject
 │   ├── src/gatling/java/                   # Gatling simulation classes
 │   │   └── com/example/fx/subscription/service/gatling/
@@ -799,11 +797,11 @@ docker compose up -d
 ├── build_and_run.sh                        # Automated setup script
 ├── create_github_release_backfill.sh       # GitHub release automation script
 ├── delete-old-ghcr-images.sh              # Container registry cleanup script
-├── docker-compose.yml                      # Core services (app, DB, Kafka)
-├── docker-compose.observability.yml        # Monitoring stack
+├── docker-compose.yaml                      # Core services (app, DB, Kafka)
+├── docker-compose.observability.yaml        # Monitoring stack
 ├── Dockerfile                              # Production container image
 ├── Dockerfile.local                        # Local development container
-├── prometheus.yml                          # Prometheus configuration
+├── prometheus.yaml                          # Prometheus configuration
 └── gradle/                                 # Gradle wrapper
 ```
 
@@ -922,7 +920,7 @@ chmod +x build_and_run.sh
   - FX Subscription Service (main application)
   - PostgreSQL database
   - Apache Kafka (message broker)
-  - Observability stack (Grafana, Prometheus, Loki, Zipkin)
+  - Observability stack (Grafana, Prometheus, Loki, Jaeger)
 
 ### Container Registry Management
 
@@ -986,4 +984,4 @@ For support and questions:
 
 ---
 
-**Note**: This service now provides a complete containerized development environment with automated setup via `build_and_run.sh`. The Docker-based setup includes PostgreSQL, Redis, Kafka, and full observability stack (Grafana, Prometheus, Loki, Zipkin) for a production-like local development experience. Redis caching has been implemented for improved performance and reduced database load. The AI chat functionality is handled by a separate FX MCP Client service.
+**Note**: This service now provides a complete containerized development environment with automated setup via `build_and_run.sh`. The Docker-based setup includes PostgreSQL, Redis, Kafka, and full observability stack (Grafana, Prometheus, Loki, Jaeger) for a production-like local development experience. Redis caching has been implemented for improved performance and reduced database load. The AI chat functionality is handled by a separate FX MCP Client service.

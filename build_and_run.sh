@@ -9,5 +9,5 @@ echo "➡️ Running tests, coverage and checks on host machine..."
 echo "✅ All Gradle tasks passed successfully."
 
 echo "➡️ Building and running Docker services in detached mode..."
-docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build -d
+docker compose -f docker-compose.yaml -f docker-compose.observability.yaml up --build -d
 echo "✅ Local setup is up and running!"

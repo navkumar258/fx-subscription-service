@@ -1,0 +1,12 @@
+spring:
+  data:
+    redis:
+      url: redis://localhost:6379
+  cache:
+    type: redis
+
+outbox:
+  subscriptions:
+    check:
+      initial-delay: 300s
+      rate: 300s
