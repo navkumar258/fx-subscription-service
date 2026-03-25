@@ -3,7 +3,7 @@ spring:
     hikari:
       validation-timeout: 2500
       connection-timeout: 2500
-      maximum-pool-size: 2
+      maximum-pool-size: 10
   kafka:
     producer:
       properties:

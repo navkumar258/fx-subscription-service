@@ -113,8 +113,7 @@ public class SubscriptionsService {
             .orElseThrow(() -> new SubscriptionNotFoundException(
                     SUBSCRIPTION_NOT_FOUND.formatted(id), id));
 
-    Optional.ofNullable(subscriptionUpdateRequest.currencyPair())
-            .ifPresent(subscription::setCurrencyPair);
+    Optional.ofNullable(subscriptionUpdateRequest.currencyPair()).ifPresent(subscription::setCurrencyPair);
 
     Optional.ofNullable(subscriptionUpdateRequest.direction())
             .map(ThresholdDirection::valueOf)
@@ -124,11 +123,8 @@ public class SubscriptionsService {
             .map(SubscriptionStatus::valueOf)
             .ifPresent(subscription::setStatus);
 
-    Optional.ofNullable(subscriptionUpdateRequest.threshold())
-            .ifPresent(subscription::setThreshold);
-
-    Optional.ofNullable(subscriptionUpdateRequest.notificationChannels())
-            .ifPresent(subscription::setNotificationsChannels);
+    Optional.ofNullable(subscriptionUpdateRequest.threshold()).ifPresent(subscription::setThreshold);
+    Optional.ofNullable(subscriptionUpdateRequest.notificationChannels()).ifPresent(subscription::setNotificationsChannels);
 
     Subscription updatedSubscription = subscriptionRepository.saveAndFlush(subscription);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(updatedSubscription, "SubscriptionUpdated"));

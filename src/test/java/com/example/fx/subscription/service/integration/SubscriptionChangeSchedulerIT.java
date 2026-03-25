@@ -7,23 +7,14 @@ import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.model.SubscriptionStatus;
 import com.example.fx.subscription.service.model.ThresholdDirection;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
-import com.example.fx.subscription.service.service.EventsOutboxService;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import com.example.fx.subscription.service.service.SubscriptionChangeScheduler;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -34,12 +25,9 @@ import org.testcontainers.kafka.KafkaContainer;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("kafka-test")
@@ -47,113 +35,114 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Import(PostgresTestContainerConfig.class)
 class SubscriptionChangeSchedulerIT {
 
+  private static final String SUBSCRIPTION_CHANGE_EVENT_TOPIC = "subscription-change-events";
+
   @Container
-  static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:4.2.0");
+  static final KafkaContainer kafka = new KafkaContainer("apache/kafka:4.2.0");
 
   @DynamicPropertySource
   static void overrideProps(DynamicPropertyRegistry registry) {
-    registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-  }
-
-  @TestConfiguration
-  static class TestKafkaProducerConfig {
-    @Bean
-    @Primary
-    public ProducerFactory<String, SubscriptionChangeEvent> testProducerFactory(KafkaProperties properties) {
-      Map<String, Object> configProps = new HashMap<>(properties.buildProducerProperties());
-      configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000);
-      configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 1006);
-      configProps.put(ProducerConfig.METADATA_MAX_AGE_CONFIG, 1000);
-      configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 1000);
-      configProps.put(ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, 1000);
-
-      configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-      configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-      configProps.put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-
-      return new DefaultKafkaProducerFactory<>(configProps);
-    }
-
-    @Bean
-    @Primary
-    public KafkaTemplate<String, SubscriptionChangeEvent> testKafkaTemplate(
-            ProducerFactory<String, SubscriptionChangeEvent> pf) {
-      return new KafkaTemplate<>(pf);
-    }
-
-    @Bean
-    public NewTopic subscriptionChangeEvents() {
-      return new NewTopic("subscription-change-events", 1, (short) 1);
-    }
+    registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+    registry.add("spring.kafka.topic.subscription-changes", () -> SUBSCRIPTION_CHANGE_EVENT_TOPIC);
   }
 
   @Autowired
   private EventsOutboxRepository eventsOutboxRepository;
 
   @Autowired
-  private EventsOutboxService eventsOutboxService;
+  private SubscriptionChangeScheduler subscriptionChangeScheduler;
 
-  @Autowired
-  private KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
+  private static KafkaConsumer<String, SubscriptionChangeEvent> consumer;
 
-  @AfterEach
-  void clear() {
+  @BeforeAll
+  static void setUpConsumer() {
+    Properties props = new Properties();
+    props.put("bootstrap.servers", kafka.getBootstrapServers());
+    props.put("group.id", "scheduler-it-group");
+    props.put("auto.offset.reset", "earliest");
+    props.put("key.deserializer", StringDeserializer.class.getName());
+    props.put("value.deserializer", JacksonJsonDeserializer.class.getName());
+    props.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, SubscriptionChangeEvent.class);
+    props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.example.fx.subscription.service.model");
+
+    consumer = new KafkaConsumer<>(props);
+    consumer.subscribe(Collections.singletonList(SUBSCRIPTION_CHANGE_EVENT_TOPIC));
+  }
+
+  @BeforeEach
+  void cleanDb() {
     eventsOutboxRepository.deleteAll();
   }
 
-  @Test
-  void givenPendingJob_whenKafkaSuccess_thenStatusIsSent() {
-    EventsOutbox eventsOutbox = new EventsOutbox();
-    eventsOutbox.setTimestamp(System.currentTimeMillis());
-    eventsOutbox.setEventType("SubscriptionCreated");
-    eventsOutbox.setStatus("PENDING");
-    eventsOutbox.setPayload(new SubscriptionResponse(
-            UUID.randomUUID().toString(),
-            null,
-            "GBP/USD",
-            BigDecimal.ONE,
-            ThresholdDirection.ABOVE,
-            null,
-            SubscriptionStatus.ACTIVE,
-            Instant.now(),
-            null
-    ));
-    eventsOutboxRepository.save(eventsOutbox);
-
-    await()
-            .atMost(Duration.ofSeconds(1))
-            .pollInterval(Duration.ofMillis(200))
-            .untilAsserted(() -> {
-              EventsOutbox eventsOutbox1 = eventsOutboxRepository.findById(eventsOutbox.getId()).orElseThrow();
-              assertEquals("SENT", eventsOutbox1.getStatus());
-            });
+  @AfterAll
+  static void tearDown() {
+    if (consumer != null) consumer.close();
   }
 
   @Test
-  void givenPendingJob_whenKafkaFails_thenStatusIsFailed() {
-    EventsOutbox eventsOutbox = new EventsOutbox();
-    eventsOutbox.setTimestamp(System.currentTimeMillis());
-    eventsOutbox.setEventType("SubscriptionCreated");
-    eventsOutbox.setStatus("PENDING");
-    eventsOutbox.setPayload(new SubscriptionResponse(
-            UUID.randomUUID().toString(),
-            null,
-            "A".repeat(1_100_000),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-    ));
-    eventsOutboxRepository.save(eventsOutbox);
+  void scheduler_shouldProcessPendingRecords_andUpdateToSent() {
+    // 1. GIVEN: Save a PENDING record in Postgres
+    EventsOutbox outbox = createOutboxRecord("PENDING", "GBP/USD");
+    eventsOutboxRepository.saveAndFlush(outbox);
 
-    await()
-            .atMost(Duration.ofSeconds(2))
-            .pollInterval(Duration.ofMillis(200))
-            .untilAsserted(() -> {
-              EventsOutbox eventsOutbox1 = eventsOutboxRepository.findById(eventsOutbox.getId()).orElseThrow();
-              assertEquals("FAILED", eventsOutbox1.getStatus());
-            });
+    // 2. WHEN: Manually trigger the scheduler
+    subscriptionChangeScheduler.checkForOutboxSubscriptions();
+
+    // 3. THEN: Verify Postgres status updated to SENT
+    EventsOutbox updated = eventsOutboxRepository.findById(outbox.getId()).orElseThrow();
+    assertThat(updated.getStatus()).isEqualTo("SENT");
+
+    // 4. THEN: Verify Kafka received the message
+    var records = consumer.poll(Duration.ofSeconds(5));
+    assertThat(records.count()).isGreaterThanOrEqualTo(1);
+  }
+
+  @Test
+  void scheduler_shouldHandleFailures_andMarkAsFailed() {
+    // 1. GIVEN: A record that will trigger the "Too Large" failure in the Publisher
+    String hugeData = "X".repeat(2 * 1024 * 1024); // 2MB payload
+    EventsOutbox outbox = createOutboxRecord("PENDING", hugeData);
+    eventsOutboxRepository.saveAndFlush(outbox);
+
+    // 2. WHEN: Trigger scheduler
+    subscriptionChangeScheduler.checkForOutboxSubscriptions();
+
+    // 3. THEN: Verify Postgres status updated to FAILED because of the Publisher's try-catch
+    EventsOutbox updated = eventsOutboxRepository.findById(outbox.getId()).orElseThrow();
+    assertThat(updated.getStatus()).isEqualTo("FAILED");
+  }
+
+  @Test
+  void scheduler_shouldIgnoreAlreadySentRecords() {
+    // 1. GIVEN: A record already marked as SENT
+    EventsOutbox outbox = createOutboxRecord("SENT", "GBP/USD");
+    eventsOutboxRepository.saveAndFlush(outbox);
+
+    // 2. WHEN: Trigger scheduler
+    subscriptionChangeScheduler.checkForOutboxSubscriptions();
+
+    // 3. THEN: Verify Kafka consumer is empty
+    var records = consumer.poll(Duration.ofMillis(500));
+    assertThat(records.isEmpty()).isTrue();
+  }
+
+  private EventsOutbox createOutboxRecord(String status, String currencyPair) {
+    EventsOutbox outbox = new EventsOutbox();
+    outbox.setAggregateId(UUID.randomUUID());
+    outbox.setEventType("SubscriptionCreated");
+    outbox.setStatus(status);
+    outbox.setTimestamp(System.currentTimeMillis());
+    outbox.setPayload(new SubscriptionResponse(
+            outbox.getAggregateId().toString(),
+            null,
+            currencyPair,
+            BigDecimal.valueOf(1.10),
+            ThresholdDirection.BELOW,
+            List.of("SMS"),
+            SubscriptionStatus.ACTIVE,
+            Instant.now(),
+            Instant.now()
+    ));
+    return outbox;
   }
 } 

@@ -4,15 +4,20 @@ import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
+import com.example.fx.subscription.service.service.EventsOutboxService;
 import com.example.fx.subscription.service.service.SubscriptionChangePublisher;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -21,23 +26,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @ActiveProfiles("kafka-test")
 @Testcontainers
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Import(PostgresTestContainerConfig.class)
 class SubscriptionChangePublisherIT {
 
-  @Value(value = "${spring.kafka.topic.subscription-changes}")
-  private String subscriptionChangesTopic;
+  private static final String SUBSCRIPTION_CHANGE_EVENT_TOPIC = "subscription-change-events";
 
   @Container
   static final KafkaContainer kafka = new KafkaContainer("apache/kafka:4.2.0");
@@ -45,149 +46,123 @@ class SubscriptionChangePublisherIT {
   @DynamicPropertySource
   static void kafkaProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+    registry.add("spring.kafka.topic.subscription-changes", () -> SUBSCRIPTION_CHANGE_EVENT_TOPIC);
   }
 
   @Autowired
   EventsOutboxRepository eventsOutboxRepository;
 
   @Autowired
+  EventsOutboxService eventsOutboxService;
+
+  @Autowired
   SubscriptionChangePublisher subscriptionChangePublisher;
 
-  private final List<SubscriptionChangeEvent> receivedEvents = new ArrayList<>();
+  private static KafkaConsumer<String, SubscriptionChangeEvent> consumer;
 
-  @KafkaListener(
-          topics = "${spring.kafka.topic.subscription-changes}",
-          groupId = "test-group")
-  public void listenForEvents(SubscriptionChangeEvent event) {
-    receivedEvents.add(event);
+  @BeforeAll
+  static void setUpConsumer() {
+    Properties props = new Properties();
+    props.put("bootstrap.servers", kafka.getBootstrapServers());
+    props.put("group.id", "subscription-change-publisher-it");
+    props.put("auto.offset.reset", "earliest");
+    props.put("key.deserializer", StringDeserializer.class.getName());
+    props.put("value.deserializer", JacksonJsonDeserializer.class.getName());
+    props.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, SubscriptionChangeEvent.class);
+    props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.example.fx.subscription.service.model");
+
+    consumer = new KafkaConsumer<>(props);
+    consumer.subscribe(Collections.singletonList(SUBSCRIPTION_CHANGE_EVENT_TOPIC));
   }
 
   @BeforeEach
-  void setUp() {
-    receivedEvents.clear();
+  void cleanDb() {
+    eventsOutboxRepository.deleteAll();
+  }
+
+  @AfterAll
+  static void tearDown() {
+    if (consumer != null) {
+      consumer.close();
+    }
   }
 
   @Test
-  void sendMessage_WhenSuccessful_ShouldSendToKafka() {
-    SubscriptionChangeEvent event = createTestEvent("SubscriptionCreated");
+  void sendMessage_publishesToKafka_andMarksOutboxSent() {
+    // given
+    EventsOutbox outbox = createAndSaveOutbox();
 
+    // when
+    subscriptionChangePublisher.sendMessage(toEvent(outbox));
+
+    // then
+    ConsumerRecords<String, SubscriptionChangeEvent> records =
+            consumer.poll(Duration.ofSeconds(2));
+
+    List<ConsumerRecord<String, SubscriptionChangeEvent>> list = new ArrayList<>();
+    records.iterator().forEachRemaining(list::add);
+
+    ConsumerRecord<String, SubscriptionChangeEvent> found =
+            list.stream()
+                    .filter(r -> SUBSCRIPTION_CHANGE_EVENT_TOPIC.equals(r.topic()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No record received from Kafka"));
+
+    assertThat(found.key()).isEqualTo(outbox.getPayload().id());
+    assertThat(found.value().eventId()).isEqualTo(toEvent(outbox).eventId());
+
+    String status = eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus();
+    assertThat(status).isEqualTo("SENT");
+  }
+
+  @Test
+  void sendMessage_failsWhenPayloadTooLarge_andMarksOutboxFailed() {
+    // given: A payload much larger than the default 1MB limit
+    String bloatedString = "A".repeat(2 * 1024 * 1024);
+
+    EventsOutbox outbox = createAndSaveOutbox();
+    outbox.setPayload(new SubscriptionResponse(
+            outbox.getAggregateId().toString(),
+            null,
+            bloatedString,
+            BigDecimal.valueOf(1.25),
+            ThresholdDirection.ABOVE,
+            List.of("EMAIL"),
+            SubscriptionStatus.ACTIVE,
+            Instant.now(),
+            Instant.now()
+    ));
+    eventsOutboxRepository.saveAndFlush(outbox);
+
+    SubscriptionChangeEvent event = toEvent(outbox);
+
+    // when
     subscriptionChangePublisher.sendMessage(event);
 
-    // Then - Fixed await block
-    await()
-            .atMost(1, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> !receivedEvents.isEmpty());
+    // then
+    String status = eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus();
+    assertThat(status).isEqualTo("FAILED");
 
-    // Verify the event details
-    assertThat(receivedEvents).hasSize(1);
-    SubscriptionChangeEvent receivedEvent = receivedEvents.getFirst();
-    assertThat(receivedEvent.eventType()).isEqualTo("SubscriptionCreated");
-    assertThat(receivedEvent.payload().id()).isEqualTo(event.payload().id());
+    ConsumerRecords<String, SubscriptionChangeEvent> records = consumer.poll(Duration.ofMillis(500));
+    assertThat(records).isEmpty();
   }
 
-  @Test
-  void publishSubscriptionChangeEvent_WithNonExistentOutbox_ShouldNotThrowException() {
-    // Given - Create event with non-existent outbox ID
-    Subscription subscription = createTestSubscription();
-    SubscriptionChangeEvent event = new SubscriptionChangeEvent(
-            UUID.randomUUID().toString(), // Non-existent ID
-            System.currentTimeMillis(),
-            "SubscriptionCreated",
-            SubscriptionResponse.fromSubscription(subscription)
-    );
-
-    // When & Then - Should not throw exception
-    subscriptionChangePublisher.sendMessage(event);
-
-    // Then - Fixed await block
-    await()
-            .atMost(1, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> !receivedEvents.isEmpty());
-
-    // Verify the event details
-    assertThat(receivedEvents).hasSize(1);
-
-    // Verify no outbox was updated (since it doesn't exist)
-    List<EventsOutbox> allOutboxes = eventsOutboxRepository.findAll();
-    assertThat(allOutboxes).isEmpty();
+  private EventsOutbox createAndSaveOutbox() {
+    EventsOutbox outbox = new EventsOutbox();
+    outbox.setAggregateId(UUID.randomUUID());
+    outbox.setEventType("SubscriptionCreated");
+    outbox.setStatus("PENDING");
+    outbox.setPayload(new SubscriptionResponse(outbox.getAggregateId().toString(), null, "GBP/USD", BigDecimal.valueOf(1.25), ThresholdDirection.ABOVE, List.of("EMAIL"), SubscriptionStatus.ACTIVE, Instant.now(), Instant.now()));
+    outbox.setTimestamp(System.currentTimeMillis());
+    return eventsOutboxRepository.saveAndFlush(outbox);
   }
 
-  @Test
-  void sendMessage_WhenSubscriptionUpdated_ShouldSendUpdateEvent() {
-    SubscriptionChangeEvent updateEvent = createTestEvent("SubscriptionUpdated");
-
-    subscriptionChangePublisher.sendMessage(updateEvent);
-
-    // Then - Fixed await block
-    await()
-            .atMost(1, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> !receivedEvents.isEmpty());
-
-    // Verify the event details
-    assertThat(receivedEvents).hasSize(1);
-    SubscriptionChangeEvent receivedEvent = receivedEvents.getFirst();
-    assertThat(receivedEvent.eventType()).isEqualTo("SubscriptionUpdated");
-    assertThat(receivedEvent.payload().id()).isEqualTo(updateEvent.payload().id());
-  }
-
-  @Test
-  void sendMessage_WhenSubscriptionDeleted_ShouldSendDeleteEvent() {
-    SubscriptionChangeEvent deleteEvent = createTestEvent("SubscriptionDeleted");
-
-    subscriptionChangePublisher.sendMessage(deleteEvent);
-
-    // Then - Fixed await block
-    await()
-            .atMost(1, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> !receivedEvents.isEmpty());
-
-    // Verify the event details
-    assertThat(receivedEvents).hasSize(1);
-    SubscriptionChangeEvent receivedEvent = receivedEvents.getFirst();
-    assertThat(receivedEvent.eventType()).isEqualTo("SubscriptionDeleted");
-    assertThat(receivedEvent.payload().id()).isEqualTo(deleteEvent.payload().id());
-  }
-
-  @Test
-  void sendMultipleMessages_ShouldSendAllToKafka() {
-    List<SubscriptionChangeEvent> events = List.of(
-            createTestEvent("SubscriptionCreated"),
-            createTestEvent("SubscriptionUpdated"),
-            createTestEvent("SubscriptionDeleted")
-    );
-
-    events.forEach(subscriptionChangePublisher::sendMessage);
-
-    // Then - Fixed await block
-    await()
-            .atMost(1, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> !receivedEvents.isEmpty());
-
-    // Verify the event details
-    assertThat(receivedEvents).hasSize(3);
-  }
-
-  private Subscription createTestSubscription() {
-    Subscription subscription = new Subscription();
-    subscription.setId(UUID.randomUUID());
-    subscription.setCurrencyPair("GBP/USD");
-    subscription.setThreshold(BigDecimal.valueOf(1.25));
-    subscription.setDirection(ThresholdDirection.ABOVE);
-    subscription.setStatus(SubscriptionStatus.ACTIVE);
-    return subscription;
-  }
-
-  private SubscriptionChangeEvent createTestEvent(String eventType) {
+  private SubscriptionChangeEvent toEvent(EventsOutbox outbox) {
     return new SubscriptionChangeEvent(
-            UUID.randomUUID().toString(),
-            System.currentTimeMillis(),
-            eventType,
-            SubscriptionResponse.fromSubscription(createTestSubscription())
+            outbox.getId().toString(),
+            outbox.getTimestamp(),
+            outbox.getEventType(),
+            outbox.getPayload()
     );
   }
 }

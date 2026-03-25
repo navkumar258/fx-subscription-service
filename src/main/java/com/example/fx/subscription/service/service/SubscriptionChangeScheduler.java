@@ -5,13 +5,10 @@ import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class SubscriptionChangeScheduler {
@@ -31,23 +28,24 @@ public class SubscriptionChangeScheduler {
           initialDelayString = "${outbox.subscriptions.check.initial-delay}",
           fixedRateString = "${outbox.subscriptions.check.rate}"
   )
-  @Async
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void checkForOutboxSubscriptions() {
     LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
-    int count = 0;
 
-    List<EventsOutbox> pendingEvents = eventsOutboxRepository.findByStatus("PENDING");
-    for (EventsOutbox eventsOutbox : pendingEvents) {
-      SubscriptionChangeEvent event = createSubscriptionChangeEvent(eventsOutbox);
+    var pendingEvents = eventsOutboxRepository.findByStatus("PENDING").stream()
+            .map(this::toEvent)
+            .toList();
+
+    if (pendingEvents.isEmpty()) return;
+
+    for (var event : pendingEvents) {
       subscriptionChangePublisher.sendMessage(event);
-      count++;
     }
 
-    LOGGER.info("[SubscriptionChangeScheduler] END published {} PENDING subscriptions", count);
+    LOGGER.info("[SubscriptionChangeScheduler] END published all PENDING subscriptions");
   }
 
-  private SubscriptionChangeEvent createSubscriptionChangeEvent(EventsOutbox eventsOutbox) {
+  private SubscriptionChangeEvent toEvent(EventsOutbox eventsOutbox) {
     return new SubscriptionChangeEvent(
             eventsOutbox.getId().toString(),
             eventsOutbox.getTimestamp(),

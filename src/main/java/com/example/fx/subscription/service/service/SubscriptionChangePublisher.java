@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class SubscriptionChangePublisher {
@@ -27,41 +24,21 @@ public class SubscriptionChangePublisher {
     this.subscriptionChangesTopic = subscriptionChangesTopic;
   }
 
-  public void sendMessage(SubscriptionChangeEvent subscriptionChangeEvent) {
-    String key = subscriptionChangeEvent.payload().id();
+  public void sendMessage(SubscriptionChangeEvent event) {
+    final String key = event.payload().id();
 
     try {
-      CompletableFuture<SendResult<String, SubscriptionChangeEvent>> future = kafkaTemplate.send(
-              subscriptionChangesTopic,
-              key,
-              subscriptionChangeEvent
-      );
+      var result = kafkaTemplate.send(subscriptionChangesTopic, key, event).join();
 
-      future.whenComplete((result, exception) -> {
-        if (exception != null) {
-          // handle async failure
-          LOGGER.error("[SubscriptionChangePublisher] Unable to publish subscription (async) with id: [{}] due to: [{}]",
-                  key,
-                  exception.getMessage());
+      LOGGER.info("Published SubscriptionChangeEvent with id: [{}] at offset: [{}]", key, result.getRecordMetadata().offset());
+      eventsOutboxService.updateOutboxStatus(event.eventId(), "SENT");
+    } catch (Exception ex) {
+      LOGGER.error("Failed to publish SubscriptionChangeEvent with id: [{}]", key, ex);
+      eventsOutboxService.updateOutboxStatus(event.eventId(), "FAILED");
 
-          // Will implement send to DLQ later
-          eventsOutboxService.updateOutboxStatus(subscriptionChangeEvent.eventId(), "FAILED");
-        } else {
-          // handle success
-          LOGGER.info("[SubscriptionChangePublisher] Publish subscription with id: [{}] with offset: [{}]",
-                  key,
-                  result.getRecordMetadata().offset());
-          eventsOutboxService.updateOutboxStatus(subscriptionChangeEvent.eventId(), "SENT");
-        }
-      });
-    } catch (Exception exception) {
-      // handle sync failure
-      LOGGER.error("[SubscriptionChangePublisher] Unable to publish subscription (sync) with id: [{}] due to: [{}]",
-              key,
-              exception.getMessage());
-
-      // Will implement send to DLQ later
-      eventsOutboxService.updateOutboxStatus(subscriptionChangeEvent.eventId(), "FAILED");
+      if (ex.getCause() instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 }
