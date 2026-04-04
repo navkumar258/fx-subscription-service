@@ -36,7 +36,10 @@ public class SubscriptionChangeScheduler {
             .map(this::toEvent)
             .toList();
 
-    if (pendingEvents.isEmpty()) return;
+    if (pendingEvents.isEmpty()) {
+      LOGGER.info("[SubscriptionChangeScheduler] END No events to publish!!!");
+      return;
+    }
 
     for (var event : pendingEvents) {
       subscriptionChangePublisher.sendMessage(event);

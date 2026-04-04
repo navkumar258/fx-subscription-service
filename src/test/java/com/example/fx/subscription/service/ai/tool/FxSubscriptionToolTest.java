@@ -66,7 +66,7 @@ class FxSubscriptionToolTest {
             .thenReturn(createdSubscriptionResponse);
 
     // When
-    String result = fxSubscriptionTool.createSubscriptionTool(USER_ID, GBP_USD, thresholdValue, direction, EMAIL);
+    String result = fxSubscriptionTool.createSubscription(USER_ID, GBP_USD, thresholdValue, direction, EMAIL);
 
     // Then
     assertThat(result)
@@ -78,7 +78,7 @@ class FxSubscriptionToolTest {
   }
 
   @Test
-  void createSubscriptionTool_WithInvalidUserId_ShouldThrowException() {
+  void createSubscription_WithInvalidUserId_ShouldThrowException() {
     // Given
     String invalidUserId = "invalid-uuid";
     double thresholdValue = 1.25;
@@ -86,7 +86,7 @@ class FxSubscriptionToolTest {
 
     // When & Then
     assertThatThrownBy(() ->
-            fxSubscriptionTool.createSubscriptionTool(invalidUserId, GBP_USD, thresholdValue, direction, EMAIL))
+            fxSubscriptionTool.createSubscription(invalidUserId, GBP_USD, thresholdValue, direction, EMAIL))
             .isInstanceOf(IllegalArgumentException.class);
 
     verify(subscriptionService, never()).createSubscription(any(), any());
@@ -114,7 +114,7 @@ class FxSubscriptionToolTest {
             .thenReturn(updatedSubscriptionResponse);
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(
+    String result = fxSubscriptionTool.updateSubscription(
             SUBSCRIPTION_ID,
             GBP_USD,
             newThresholdValue,
@@ -154,7 +154,7 @@ class FxSubscriptionToolTest {
             .thenReturn(updatedSubscriptionResponse);
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(
+    String result = fxSubscriptionTool.updateSubscription(
             SUBSCRIPTION_ID,
             GBP_USD,
             newThresholdValue,
@@ -183,7 +183,7 @@ class FxSubscriptionToolTest {
             .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + SUBSCRIPTION_ID, SUBSCRIPTION_ID));
 
     // When
-    String result = fxSubscriptionTool.updateSubscriptionTool(
+    String result = fxSubscriptionTool.updateSubscription(
             SUBSCRIPTION_ID,
             GBP_USD,
             newThresholdValue,
@@ -209,7 +209,7 @@ class FxSubscriptionToolTest {
     when(subscriptionService.deleteSubscriptionById(SUBSCRIPTION_ID)).thenReturn(deleteResponse);
 
     // When
-    String result = fxSubscriptionTool.deleteSubscriptionTool(SUBSCRIPTION_ID);
+    String result = fxSubscriptionTool.deleteSubscription(SUBSCRIPTION_ID);
 
     // Then
     assertThat(result).isEqualTo("Subscription " + SUBSCRIPTION_ID + " deleted successfully.");
@@ -224,7 +224,7 @@ class FxSubscriptionToolTest {
             .thenThrow(new SubscriptionNotFoundException("Subscription not found with ID: " + SUBSCRIPTION_ID, SUBSCRIPTION_ID));
 
     // When
-    String result = fxSubscriptionTool.deleteSubscriptionTool(SUBSCRIPTION_ID);
+    String result = fxSubscriptionTool.deleteSubscription(SUBSCRIPTION_ID);
 
     // Then
     assertThat(result).isEqualTo("Subscription " + SUBSCRIPTION_ID + " not found.");
@@ -233,7 +233,7 @@ class FxSubscriptionToolTest {
   }
 
   @Test
-  void getFxSubscriptionsForUserTool_WithSubscriptions_ShouldReturnFormattedList() {
+  void getSubscriptionsForUserTool_WithSubscriptions_ShouldReturnFormattedList() {
     List<SubscriptionResponse> subscriptions = List.of(
             new SubscriptionResponse(
                     "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
@@ -261,7 +261,7 @@ class FxSubscriptionToolTest {
     when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(subscriptionListResponse);
 
     // When
-    String result = fxSubscriptionTool.getFxSubscriptionsForUserTool(USER_ID);
+    String result = fxSubscriptionTool.getSubscriptionsForUser(USER_ID);
 
     // Then
     assertThat(result)
@@ -272,12 +272,12 @@ class FxSubscriptionToolTest {
   }
 
   @Test
-  void getFxSubscriptionsForUserTool_WithNoSubscriptions_ShouldReturnEmptyMessage() {
+  void getSubscriptionsForUserTool_WithNoSubscriptions_ShouldReturnEmptyMessage() {
     when(subscriptionService.findSubscriptionResponsesByUserId(USER_ID)).thenReturn(
             new SubscriptionListResponse(new ArrayList<>(), 0));
 
     // When
-    String result = fxSubscriptionTool.getFxSubscriptionsForUserTool(USER_ID);
+    String result = fxSubscriptionTool.getSubscriptionsForUser(USER_ID);
 
     // Then
     assertThat(result).isEqualTo("No active subscriptions found for the user " + USER_ID + ".");
