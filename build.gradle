@@ -165,8 +165,8 @@ tasks.register('coverageReport') {
 
 openApi {
     apiDocsUrl.set("https://localhost:8443/v3/api-docs")
-    trustStore.set(System.getenv("FX_KEYSTORE_LOCATION"))
-    trustStorePassword.set(System.getenv("FX_KEYSTORE_PASSWORD")?.toCharArray())
+    trustStore.set("src/main/resources/keystore.p12")
+    trustStorePassword.set("changeit".toCharArray())
 
     outputDir.set(file("$rootDir/api-docs"))
     outputFileName.set("fx-subscription-service.json")
