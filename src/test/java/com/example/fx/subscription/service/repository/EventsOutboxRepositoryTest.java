@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +45,7 @@ class EventsOutboxRepositoryTest {
     testSubscription.setThreshold(BigDecimal.valueOf(1.25));
     testSubscription.setDirection(ThresholdDirection.ABOVE);
     testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription.setCreatedAt(Instant.now());
 
     // Create test outbox event
     testEventsOutbox = new EventsOutbox();

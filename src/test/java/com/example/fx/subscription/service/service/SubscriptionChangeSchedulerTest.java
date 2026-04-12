@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,6 +46,7 @@ class SubscriptionChangeSchedulerTest {
     testSubscription.setDirection(ThresholdDirection.ABOVE);
     testSubscription.setNotificationsChannels(List.of("email", "sms"));
     testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription.setCreatedAt(Instant.now());
 
     testEventsOutbox = new EventsOutbox();
     testEventsOutbox.setId(testEventId);

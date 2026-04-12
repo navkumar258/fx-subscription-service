@@ -10,7 +10,10 @@ import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.service.SubscriptionChangeScheduler;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -25,7 +28,10 @@ import org.testcontainers.kafka.KafkaContainer;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -140,8 +146,8 @@ class SubscriptionChangeSchedulerIT {
             ThresholdDirection.BELOW,
             List.of("SMS"),
             SubscriptionStatus.ACTIVE,
-            Instant.now(),
-            Instant.now()
+            Instant.now().toString(),
+            Instant.now().toString()
     ));
     return outbox;
   }

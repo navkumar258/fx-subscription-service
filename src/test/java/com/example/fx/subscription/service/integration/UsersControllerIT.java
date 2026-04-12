@@ -143,7 +143,9 @@ class UsersControllerIT {
             .hasPathSatisfying("$.user.mobile", mobileAssert ->
                     mobileAssert.assertThat().isEqualTo("+1234567890"))
             .hasPathSatisfying("$.user.pushDeviceToken", tokenAssert ->
-                    tokenAssert.assertThat().isEqualTo("new-push-token"));
+                    tokenAssert.assertThat().isEqualTo("new-push-token"))
+            .hasPathSatisfying("$.user.createdAt", createdAtAssert ->
+                    createdAtAssert.assertThat().isNotNull());
 
     // 7. Verify user was updated in database
     FxUser updatedUser = fxUserRepository.findById(user.getId()).orElseThrow();
@@ -497,6 +499,7 @@ class UsersControllerIT {
     user.setMobile("+1234567890");
     user.setEnabled(true);
     user.setRole(role);
+    user.setCreatedAt(Instant.now());
     return fxUserRepository.save(user);
   }
 

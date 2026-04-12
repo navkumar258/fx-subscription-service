@@ -242,6 +242,7 @@ class SubscriptionsControllerIT {
     user.setMobile("+447911123456");
     user.setRole(role);
     user.setEnabled(true);
+    user.setCreatedAt(Instant.now());
     fxUserRepository.save(user);
   }
 
@@ -276,6 +277,7 @@ class SubscriptionsControllerIT {
 
     assertThat(createResponse.subscription().currencyPair()).isEqualTo("GBP/USD");
     assertThat(createResponse.subscription().threshold()).isEqualTo(threshold);
+    assertThat(createResponse.subscription().createdAt()).isNotNull();
 
     return createResponse.subscriptionId();
   }
@@ -308,7 +310,9 @@ class SubscriptionsControllerIT {
             .hasPathSatisfying("$.subscription.currencyPair", currencyPairAssert ->
                     currencyPairAssert.assertThat().isEqualTo("EUR/USD"))
             .hasPathSatisfying("$.subscription.threshold", thresholdAssert ->
-                    thresholdAssert.assertThat().asNumber().isEqualTo(threshold.doubleValue()));
+                    thresholdAssert.assertThat().asNumber().isEqualTo(threshold.doubleValue()))
+            .hasPathSatisfying("$.subscription.updatedAt", updatedAtAssert ->
+                    updatedAtAssert.assertThat().isNotNull());
   }
 
   private void verifyUserHasSubscription(String jwt) {

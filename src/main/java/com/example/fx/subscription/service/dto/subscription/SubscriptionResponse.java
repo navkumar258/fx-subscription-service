@@ -7,7 +7,6 @@ import com.example.fx.subscription.service.model.ThresholdDirection;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 public record SubscriptionResponse(
@@ -18,8 +17,8 @@ public record SubscriptionResponse(
         ThresholdDirection direction,
         List<String> notificationsChannels,
         SubscriptionStatus status,
-        Instant createdAt,
-        Instant updatedAt
+        String createdAt,
+        String updatedAt
 ) implements Serializable {
   public static SubscriptionResponse fromSubscription(Subscription subscription) {
     return new SubscriptionResponse(
@@ -30,8 +29,8 @@ public record SubscriptionResponse(
             subscription.getDirection(),
             subscription.getNotificationsChannels() != null ? subscription.getNotificationsChannels() : List.of(),
             subscription.getStatus(),
-            subscription.getCreatedAt(),
-            subscription.getUpdatedAt()
+            subscription.getCreatedAt().toString(),
+            subscription.getUpdatedAt() != null ? subscription.getUpdatedAt().toString() : null
     );
   }
 }

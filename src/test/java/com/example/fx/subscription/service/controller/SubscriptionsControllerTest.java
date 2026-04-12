@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -516,6 +517,7 @@ class SubscriptionsControllerTest {
     subscription.setDirection(ThresholdDirection.ABOVE);
     subscription.setNotificationsChannels(List.of("email", "sms"));
     subscription.setStatus(SubscriptionStatus.ACTIVE);
+    subscription.setCreatedAt(Instant.now());
     return subscription;
   }
 }

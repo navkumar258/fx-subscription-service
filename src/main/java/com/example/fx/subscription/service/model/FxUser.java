@@ -3,8 +3,6 @@ package com.example.fx.subscription.service.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -43,10 +41,10 @@ public class FxUser implements Serializable, UserDetails {
   @JsonIgnore
   private String pushDeviceToken;
 
-  @CreationTimestamp
+  @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
-  @UpdateTimestamp
+  @Column(insertable = false)
   private Instant updatedAt;
 
   @Enumerated(EnumType.STRING)

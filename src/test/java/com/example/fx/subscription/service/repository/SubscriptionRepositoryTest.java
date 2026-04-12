@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,6 +51,7 @@ class SubscriptionRepositoryTest {
     testUser1.setPassword(passwordEncoder.encode("password123"));
     testUser1.setEnabled(true);
     testUser1.setRole(UserRole.USER);
+    testUser1.setCreatedAt(Instant.now());
     testUser1 = fxUserRepository.save(testUser1);
 
     testUser2 = new FxUser();
@@ -58,6 +60,7 @@ class SubscriptionRepositoryTest {
     testUser2.setPassword(passwordEncoder.encode("password456"));
     testUser2.setEnabled(true);
     testUser2.setRole(UserRole.USER);
+    testUser2.setCreatedAt(Instant.now());
     testUser2 = fxUserRepository.save(testUser2);
 
     // Create test subscriptions
@@ -68,6 +71,7 @@ class SubscriptionRepositoryTest {
     testSubscription1.setDirection(ThresholdDirection.ABOVE);
     testSubscription1.setNotificationsChannels(List.of("email", "sms"));
     testSubscription1.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription1.setCreatedAt(Instant.now());
 
     testSubscription2 = new Subscription();
     testSubscription2.setUser(testUser1);
@@ -76,6 +80,7 @@ class SubscriptionRepositoryTest {
     testSubscription2.setDirection(ThresholdDirection.BELOW);
     testSubscription2.setNotificationsChannels(List.of("email"));
     testSubscription2.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription2.setCreatedAt(Instant.now());
 
     testSubscription3 = new Subscription();
     testSubscription3.setUser(testUser2);
@@ -84,6 +89,7 @@ class SubscriptionRepositoryTest {
     testSubscription3.setDirection(ThresholdDirection.ABOVE);
     testSubscription3.setNotificationsChannels(List.of("sms"));
     testSubscription3.setStatus(SubscriptionStatus.INACTIVE);
+    testSubscription3.setCreatedAt(Instant.now());
   }
 
   @AfterEach
@@ -188,6 +194,7 @@ class SubscriptionRepositoryTest {
     newUser.setPassword("password");
     newUser.setEnabled(true);
     newUser.setRole(UserRole.USER);
+    newUser.setCreatedAt(Instant.now());
     newUser = fxUserRepository.save(newUser);
 
     // When

@@ -68,6 +68,7 @@ class SubscriptionsServiceCacheTest {
     testUser.setId(testUserId);
     testUser.setEmail("test@example.com");
     testUser.setMobile("+1234567890");
+    testUser.setCreatedAt(Instant.now());
 
     testSubscription = new Subscription();
     testSubscription.setId(testSubscriptionId);

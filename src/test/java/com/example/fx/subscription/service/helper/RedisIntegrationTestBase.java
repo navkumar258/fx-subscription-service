@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -74,6 +75,7 @@ public abstract class RedisIntegrationTestBase {
     testUser.setMobile("+1234567890");
     testUser.setEnabled(true);
     testUser.setRole(UserRole.USER);
+    testUser.setCreatedAt(Instant.now());
 
     testUser = fxUserRepository.save(testUser);
     testUserId = testUser.getId();
@@ -85,6 +87,7 @@ public abstract class RedisIntegrationTestBase {
     testSubscription.setDirection(ThresholdDirection.ABOVE);
     testSubscription.setNotificationsChannels(List.of("email", "sms"));
     testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription.setCreatedAt(Instant.now());
 
     testSubscription = subscriptionRepository.save(testSubscription);
     testSubscriptionId = testSubscription.getId();

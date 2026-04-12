@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -125,6 +126,7 @@ public class SubscriptionsService {
 
     Optional.ofNullable(subscriptionUpdateRequest.threshold()).ifPresent(subscription::setThreshold);
     Optional.ofNullable(subscriptionUpdateRequest.notificationChannels()).ifPresent(subscription::setNotificationsChannels);
+    subscription.setUpdatedAt(Instant.now());
 
     Subscription updatedSubscription = subscriptionRepository.saveAndFlush(subscription);
     eventsOutboxRepository.save(createSubscriptionsOutboxEvent(updatedSubscription, "SubscriptionUpdated"));
@@ -162,6 +164,7 @@ public class SubscriptionsService {
     subscription.setDirection(ThresholdDirection.valueOf(createRequest.direction()));
     subscription.setNotificationsChannels(createRequest.notificationChannels());
     subscription.setStatus(SubscriptionStatus.ACTIVE);
+    subscription.setCreatedAt(Instant.now());
 
     return subscription;
   }

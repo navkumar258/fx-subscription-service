@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -57,6 +58,7 @@ class FxUserRepositoryTest {
     testUser1.setPassword(passwordEncoder.encode("password123"));
     testUser1.setEnabled(true);
     testUser1.setRole(UserRole.USER);
+    testUser1.setCreatedAt(Instant.now());
 
     testUser2 = new FxUser();
     testUser2.setEmail("user2@example.com");
@@ -64,6 +66,7 @@ class FxUserRepositoryTest {
     testUser2.setPassword(passwordEncoder.encode("password456"));
     testUser2.setEnabled(false);
     testUser2.setRole(UserRole.ADMIN);
+    testUser2.setCreatedAt(Instant.now());
 
     testUser3 = new FxUser();
     testUser3.setEmail("admin@example.com");
@@ -71,6 +74,7 @@ class FxUserRepositoryTest {
     testUser3.setPassword(passwordEncoder.encode("adminpass"));
     testUser3.setEnabled(true);
     testUser3.setRole(UserRole.ADMIN);
+    testUser3.setCreatedAt(Instant.now());
 
     // Save users
     testUser1 = fxUserRepository.save(testUser1);
@@ -85,6 +89,7 @@ class FxUserRepositoryTest {
     testSubscription1.setDirection(ThresholdDirection.ABOVE);
     testSubscription1.setNotificationsChannels(List.of("email", "sms"));
     testSubscription1.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription1.setCreatedAt(Instant.now());
 
     testSubscription2 = new Subscription();
     testSubscription2.setUser(testUser1);
@@ -93,6 +98,7 @@ class FxUserRepositoryTest {
     testSubscription2.setDirection(ThresholdDirection.BELOW);
     testSubscription2.setNotificationsChannels(List.of("email"));
     testSubscription2.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription2.setCreatedAt(Instant.now());
 
     // Save subscriptions
     subscriptionRepository.save(testSubscription1);
@@ -118,6 +124,7 @@ class FxUserRepositoryTest {
     newUser.setPassword("password");
     newUser.setEnabled(true);
     newUser.setRole(UserRole.USER);
+    newUser.setCreatedAt(Instant.now());
 
     // When
     FxUser savedUser = fxUserRepository.save(newUser);

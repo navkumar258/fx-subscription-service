@@ -2,7 +2,10 @@ package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
-import com.example.fx.subscription.service.model.*;
+import com.example.fx.subscription.service.model.EventsOutbox;
+import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
+import com.example.fx.subscription.service.model.SubscriptionStatus;
+import com.example.fx.subscription.service.model.ThresholdDirection;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.service.EventsOutboxService;
 import com.example.fx.subscription.service.service.SubscriptionChangePublisher;
@@ -129,8 +132,8 @@ class SubscriptionChangePublisherIT {
             ThresholdDirection.ABOVE,
             List.of("EMAIL"),
             SubscriptionStatus.ACTIVE,
-            Instant.now(),
-            Instant.now()
+            Instant.now().toString(),
+            Instant.now().toString()
     ));
     eventsOutboxRepository.saveAndFlush(outbox);
 
@@ -152,7 +155,17 @@ class SubscriptionChangePublisherIT {
     outbox.setAggregateId(UUID.randomUUID());
     outbox.setEventType("SubscriptionCreated");
     outbox.setStatus("PENDING");
-    outbox.setPayload(new SubscriptionResponse(outbox.getAggregateId().toString(), null, "GBP/USD", BigDecimal.valueOf(1.25), ThresholdDirection.ABOVE, List.of("EMAIL"), SubscriptionStatus.ACTIVE, Instant.now(), Instant.now()));
+    outbox.setPayload(new SubscriptionResponse(
+            outbox.getAggregateId().toString(),
+            null,
+            "GBP/USD",
+            BigDecimal.valueOf(1.25),
+            ThresholdDirection.ABOVE,
+            List.of("EMAIL"),
+            SubscriptionStatus.ACTIVE,
+            Instant.now().toString(),
+            Instant.now().toString()
+    ));
     outbox.setTimestamp(System.currentTimeMillis());
     return eventsOutboxRepository.saveAndFlush(outbox);
   }

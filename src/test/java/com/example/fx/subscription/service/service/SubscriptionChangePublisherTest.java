@@ -15,6 +15,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -112,6 +113,7 @@ class SubscriptionChangePublisherTest {
     testSubscription.setDirection(ThresholdDirection.ABOVE);
     testSubscription.setNotificationsChannels(List.of("email", "sms"));
     testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    testSubscription.setCreatedAt(Instant.now());
 
     return testSubscription;
   }

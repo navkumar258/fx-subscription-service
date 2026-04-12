@@ -2,15 +2,13 @@ package com.example.fx.subscription.service.dto.user;
 
 import com.example.fx.subscription.service.model.FxUser;
 
-import java.time.Instant;
-
 public record UserSummaryResponse(
         String id,
         String email,
         String mobile,
         boolean enabled,
-        Instant createdAt,
-        Instant updatedAt
+        String createdAt,
+        String updatedAt
 ) {
   public static UserSummaryResponse fromFxUser(FxUser fxUser) {
     return new UserSummaryResponse(
@@ -18,8 +16,8 @@ public record UserSummaryResponse(
             fxUser.getEmail(),
             fxUser.getMobile(),
             fxUser.isEnabled(),
-            fxUser.getCreatedAt(),
-            fxUser.getUpdatedAt()
+            fxUser.getCreatedAt().toString(),
+            fxUser.getUpdatedAt() != null ? fxUser.getUpdatedAt().toString() : null
     );
   }
 }

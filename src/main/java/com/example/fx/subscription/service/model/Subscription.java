@@ -2,8 +2,6 @@ package com.example.fx.subscription.service.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -48,11 +46,9 @@ public class Subscription implements Serializable {
   @Enumerated(EnumType.STRING)
   private SubscriptionStatus status;
 
-  @CreationTimestamp
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
-  @UpdateTimestamp
   @Column(insertable = false)
   private Instant updatedAt;
 

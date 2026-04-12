@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.Serial;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestController
@@ -115,6 +116,7 @@ public class AuthController {
     user.setMobile(request.mobile());
     user.setEnabled(true);
     user.setRole(Boolean.TRUE.equals(request.admin()) ? UserRole.ADMIN : UserRole.USER);
+    user.setCreatedAt(Instant.now());
     return user;
   }
 

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -265,6 +266,7 @@ class EventsOutboxServiceTest {
     subscription.setDirection(ThresholdDirection.ABOVE);
     subscription.setNotificationsChannels(List.of("email", "sms"));
     subscription.setStatus(SubscriptionStatus.ACTIVE);
+    subscription.setCreatedAt(Instant.now());
 
     return SubscriptionResponse.fromSubscription(subscription);
   }
