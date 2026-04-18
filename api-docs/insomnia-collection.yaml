@@ -1,0 +1,426 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Scratch Pad
+meta:
+  id: wrk_scratchpad
+  created: 1775932532310
+  modified: 1775932532310
+  description: ""
+collection:
+  - name: fx-subscription-service
+    meta:
+      id: fld_632a9d8772c644f8a0966b098c30f8cf
+      created: 1776515914351
+      modified: 1776516204469
+      sortKey: -1776515914351
+      description: ""
+    children:
+      - url: https://localhost:8443/api/v1/subscriptions/65474a53-dcbe-416a-b45a-0eb49e792122
+        name: Subscription by Id
+        meta:
+          id: req_c73e8e49cf8c429695dadf1993f9a3dd
+          created: 1776516240052
+          modified: 1776518405984
+          isPrivate: false
+          description: ""
+          sortKey: -1776516240052
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/subscriptions/65474a53-dcbe-416a-b45a-0eb49e792122
+        name: Update subscription by Id
+        meta:
+          id: req_9b2cc27221d449e1a796cf5ae3185354
+          created: 1776516253447
+          modified: 1776518364362
+          isPrivate: false
+          description: ""
+          sortKey: -1776516260005.5
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"currencyPair": "GBP/USD",
+            	"threshold": 1.275,
+            	"direction": "BELOW",
+            	"status": "ACTIVE",
+            	"notificationChannels": [
+            		"EMAIL"
+            	]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/subscriptions/65474a53-dcbe-416a-b45a-0eb49e792122
+        name: Subscription by Id
+        meta:
+          id: req_ee599e9e12e4447c853579ced7ceb10b
+          created: 1776516266564
+          modified: 1776518335306
+          isPrivate: false
+          description: ""
+          sortKey: -1776516266564
+        method: GET
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/subscriptions/my
+        name: My Subscriptions
+        meta:
+          id: req_6d5348a3959a440da5592c598b7ce86d
+          created: 1776516291863
+          modified: 1776518284104
+          isPrivate: false
+          description: ""
+          sortKey: -1776516291863
+        method: GET
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/subscriptions/all
+        name: All Subscriptions
+        meta:
+          id: req_880bbbabb1804b22aa8edddf2135ce45
+          created: 1776516315906
+          modified: 1776518260044
+          isPrivate: false
+          description: ""
+          sortKey: -1776516315906
+        method: GET
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/subscriptions
+        name: Create Subscription
+        meta:
+          id: req_1ee7a1d82ea142a3b2d2146061d33145
+          created: 1776516353128
+          modified: 1776518238264
+          isPrivate: false
+          description: ""
+          sortKey: -1776516353128
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"currencyPair": "EUR/USD",
+            	"threshold": 1.105,
+            	"direction": "ABOVE",
+            	"notificationChannels": [
+            		"EMAIL",
+            		"PUSH"
+            	]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/users/123e4567-e89b-12d3-a456-426614174000/subscriptions
+        name: User Subscriptions
+        meta:
+          id: req_958f683243b8485a8dccff1f6379100c
+          created: 1776516369468
+          modified: 1776518212757
+          isPrivate: false
+          description: ""
+          sortKey: -1776516369468
+        method: GET
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 599 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/users/123e4567-e89b-12d3-a456-426614174000
+        name: User by Id
+        meta:
+          id: req_4d1dcc637b69485ba3aeeeed70b2b043
+          created: 1776516383561
+          modified: 1776518047738
+          isPrivate: false
+          description: ""
+          sortKey: -1776516383561
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/users/123e4567-e89b-12d3-a456-426614174000
+        name: Update User by Id
+        meta:
+          id: req_aaaf2bd34f3b4f78ae01d8c21ea412f6
+          created: 1776516400597
+          modified: 1776518019477
+          isPrivate: false
+          description: ""
+          sortKey: -1776516400597
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email": "updated.user@example.com",
+            	"mobile": "+447700900999",
+            	"pushDeviceToken": "fcm-device-token"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: false
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/users/123e4567-e89b-12d3-a456-426614174000
+        name: User by Id
+        meta:
+          id: req_a3fbca7b16c049a9bd75b1f6bfeab11c
+          created: 1776516423504
+          modified: 1776518174166
+          isPrivate: false
+          description: ""
+          sortKey: -1776516423504
+        method: GET
+        authentication:
+          type: bearer
+          token: "{% response 'body', 'req_38b24ffbd01145cf90333b1019ce2297',
+            'b64::JC50b2tlbg==::46b', 'when-expired', 600 %}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/auth/login
+        name: Login
+        meta:
+          id: req_38b24ffbd01145cf90333b1019ce2297
+          created: 1776516486131
+          modified: 1776518156980
+          isPrivate: false
+          description: ""
+          sortKey: -1776516486131
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"username": "user@example.com",
+            	"password": "Password@123"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: https://localhost:8443/api/v1/auth/signup
+        name: Signup
+        meta:
+          id: req_e81fbc9094824cd6ae98071b8f0e481f
+          created: 1776516498836
+          modified: 1776517554223
+          isPrivate: false
+          description: ""
+          sortKey: -1776516498836
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email": "user@example.com",
+            	"password": "Password@123",
+            	"mobile": "+447700900123",
+            	"admin": false
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: fx-mcp-client
+    meta:
+      id: fld_2f83d750ce3c4dceb9b9d63ad1eeec17
+      created: 1776516840440
+      modified: 1776516978469
+      sortKey: -1776516377395.5
+      description: ""
+    children:
+      - url: http://localhost:8081/api/v1/ai/fx
+        name: Subscriptions Tool Call
+        meta:
+          id: req_0edcbb95173a440da62a8de8ae345ea8
+          created: 1776516872712
+          modified: 1776516986304
+          isPrivate: false
+          description: ""
+          sortKey: -1776516903357
+        method: GET
+        parameters:
+          - name: query
+            value: "list all subscriptions for the user id:
+              16cbc0ca-0b62-4fd5-91d3-7fae15b3edae"
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/api/v1/ai/pdf
+        name: PDF Tool Query1
+        meta:
+          id: req_c9c289a2360d4ab285316074277ee346
+          created: 1776516883067
+          modified: 1776516955343
+          isPrivate: false
+          description: ""
+          sortKey: -1776516903307
+        method: GET
+        parameters:
+          - name: query
+            value: list all chapters in the pdf
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: http://localhost:8081/api/v1/ai/pdf
+        name: PDF Tool Query2
+        meta:
+          id: req_c18aa4c2f2f64406bdb4aab8e9881395
+          created: 1776516903257
+          modified: 1776517648581
+          isPrivate: false
+          description: ""
+          sortKey: -1776516903257
+        method: GET
+        parameters:
+          - name: query
+            value: summarize the first chapter Introduction in around 200 words
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1775932550541
+    modified: 1775932550541
+environments:
+  name: Base Environment
+  meta:
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1775932550525
+    modified: 1776517162135
+    isPrivate: false
+  data:
+    "": ""
