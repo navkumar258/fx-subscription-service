@@ -35,11 +35,11 @@ public class FxSubscriptionTool {
                   specified currency pair, threshold, direction and preferred notification method.
                   """
   )
-  public String createSubscription(@McpToolParam(description = "Given user id") String userId,
-                                   @McpToolParam(description = "Given currency pair") String currencyPair,
-                                   @McpToolParam(description = "Given threshold") double thresholdValue,
-                                   @McpToolParam(description = "Given direction i.e. above or below") String direction,
-                                   @McpToolParam(description = "Given notification methods") String notificationMethod) {
+  public String createSubscription(@McpToolParam(description = "Given user id i.e. a valid uuid") String userId,
+                                   @McpToolParam(description = "Given currency pair i.e. GBP/USD") String currencyPair,
+                                   @McpToolParam(description = "Given threshold i.e. 1.30") double thresholdValue,
+                                   @McpToolParam(description = "Given direction i.e. ABOVE or BELOW") String direction,
+                                   @McpToolParam(description = "Given notification methods i.e. email,sms,push") String notificationMethod) {
     SubscriptionCreateRequest newSubscription = new SubscriptionCreateRequest(
             currencyPair,
             BigDecimal.valueOf(thresholdValue),
@@ -65,12 +65,12 @@ public class FxSubscriptionTool {
                   At least one of newThresholdValue or newNotificationMethod must be provided.
                   """
   )
-  public String updateSubscription(@McpToolParam(description = "Existing subscription id") String subscriptionId,
-                                   @McpToolParam(description = "New currency pair") String currencyPair,
-                                   @McpToolParam(description = "New threshold value") double newThresholdValue,
-                                   @McpToolParam(description = "New direction i.e. above or below", required = false) String direction,
-                                   @McpToolParam(description = "New status") String status,
-                                   @McpToolParam(description = "New notification methods", required = false) List<String> newNotificationMethod) {
+  public String updateSubscription(@McpToolParam(description = "Existing subscription id i.e. a valid uuid") String subscriptionId,
+                                   @McpToolParam(description = "New currency pair i.e. GBP/USD") String currencyPair,
+                                   @McpToolParam(description = "New threshold value i.e. 1.25") double newThresholdValue,
+                                   @McpToolParam(description = "New direction i.e. ABOVE or BELOW", required = false) String direction,
+                                   @McpToolParam(description = "New status i.e ACTIVE/INACTIVE/EXPIRED ") String status,
+                                   @McpToolParam(description = "New notification methods i.e. sms,email,push", required = false) List<String> newNotificationMethod) {
     try {
       SubscriptionUpdateRequest newSubscription = new SubscriptionUpdateRequest(
               currencyPair,
@@ -100,7 +100,7 @@ public class FxSubscriptionTool {
   @McpTool(name = "deleteSubscription",
           description = "Deletes an existing FX rate subscription for the given subscriptionId."
   )
-  public String deleteSubscription(@McpToolParam(description = "Subscription id to delete") String subscriptionId) {
+  public String deleteSubscription(@McpToolParam(description = "Subscription id to delete i.e. a valid uuid") String subscriptionId) {
     try {
       subscriptionService.deleteSubscriptionById(subscriptionId);
       return SUBSCRIPTION + subscriptionId + " deleted successfully.";
@@ -119,7 +119,7 @@ public class FxSubscriptionTool {
                   including Ids, currency pairs, thresholds, and notification methods.
                   """
   )
-  public String getSubscriptionsForUser(@McpToolParam(description = "User id to get all subscriptions") String userId) {
+  public String getSubscriptionsForUser(@McpToolParam(description = "User id to get all subscriptions i.e. a valid uuid") String userId) {
     SubscriptionListResponse subscriptionListResponse = subscriptionService.findSubscriptionResponsesByUserId(userId);
 
     if (subscriptionListResponse.totalCount() == 0) {

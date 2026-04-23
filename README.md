@@ -78,7 +78,7 @@ notifications, MCP (Model Context Protocol) server capabilities, and event-drive
 - Java 25+
 - Gradle 9.4.1+
 - PostgreSQL 18.3+
-- Redis 8.4.2+
+- Redis 8.6.2+
 - Apache Kafka 4.2.0+
 - Docker Compose (for observability stack)
 - FX MCP Client (for AI interactions)

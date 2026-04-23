@@ -31,7 +31,7 @@ jobs:
           KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
           KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       redis:
-        image: redis:8.4.2
+        image: redis:8.6.2
         ports:
           - 6379:6379
     steps:
