@@ -39,6 +39,8 @@ spring:
   data:
     redis:
       url: ${FX_REDIS_HOST:redis://localhost:6379}
+      repositories:
+        enabled: false
   kafka:
     topic:
       subscription-changes: subscription-change-events
@@ -64,8 +66,8 @@ server:
     bundle: fx-subscription-service
     client-auth: NONE
   port: 8443
-  http:
-    port: 8080
+  http2:
+    enabled: true
 
 security:
   jwt:
