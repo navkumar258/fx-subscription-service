@@ -44,7 +44,7 @@ class SubscriptionChangeSchedulerIT {
   private static final String SUBSCRIPTION_CHANGE_EVENT_TOPIC = "subscription-change-events";
 
   @Container
-  static final KafkaContainer kafka = new KafkaContainer("apache/kafka:4.2.0");
+  static final KafkaContainer kafka = new KafkaContainer("apache/kafka:4.3.0");
 
   @DynamicPropertySource
   static void overrideProps(DynamicPropertyRegistry registry) {
