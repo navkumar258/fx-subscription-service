@@ -50,6 +50,10 @@ spring:
           timeout:
             ms: 30000
     bootstrap-servers: ${FX_KAFKA_HOST:localhost:9092}
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
   threads:
     virtual:
       enabled: true
