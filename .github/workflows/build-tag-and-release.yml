@@ -189,8 +189,7 @@ jobs:
         run: |
           echo "--- Updating OpenAPI docs version ---"
           VERSION=${{ steps.versioning.outputs.NEW_VERSION }}
-          jq --arg v "$VERSION" '.info.version = $v' api-docs/fx-subscription-service.yaml > api-docs/fx-subscription-service.yaml.tmp
-          mv api-docs/fx-subscription-service.yaml.tmp api-docs/fx-subscription-service.yaml
+          sed -i -E "s/^(  version: ).*/\1\"$VERSION\"/" api-docs/fx-subscription-service.yaml
           echo "Updated api-docs/fx-subscription-service.yaml to version ${{ steps.versioning.outputs.NEW_VERSION }}"
 
       - name: Commit and push version update
