@@ -12,128 +12,129 @@ import java.util.UUID;
 
 @Entity
 @Table(
-        name = "events_outbox",
-        indexes = {
-                @Index(name = "idx_events_outbox_status", columnList = "status")
-        }
+		name = "events_outbox",
+		indexes = {
+				@Index(name = "idx_events_outbox_status", columnList = "status")
+		}
 )
 public class EventsOutbox implements Serializable {
 
-  @Serial
-  private static final long serialVersionUID = 6192587654480707584L;
+	@Serial
+	private static final long serialVersionUID = 6192587654480707584L;
 
-  @Id
-  @GeneratedValue
-  private UUID id;
+	@Id
+	@GeneratedValue
+	private UUID id;
 
-  private String aggregateType;
+	private String aggregateType;
 
-  private UUID aggregateId;
+	private UUID aggregateId;
 
-  private String eventType;
+	private String eventType;
 
-  @JdbcTypeCode(SqlTypes.JSON)
-  @Column(columnDefinition = "jsonb")
-  private SubscriptionResponse payload;
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "jsonb")
+	private SubscriptionResponse payload;
 
-  private String status;
+	private String status;
 
-  private long timestamp;
+	private long timestamp;
 
-  public UUID getId() {
-    return id;
-  }
+	public UUID getId() {
+		return id;
+	}
 
-  public void setId(UUID id) {
-    this.id = id;
-  }
+	public void setId(UUID id) {
+		this.id = id;
+	}
 
-  public String getAggregateType() {
-    return aggregateType;
-  }
+	public String getAggregateType() {
+		return aggregateType;
+	}
 
-  public void setAggregateType(String aggregateType) {
-    this.aggregateType = aggregateType;
-  }
+	public void setAggregateType(String aggregateType) {
+		this.aggregateType = aggregateType;
+	}
 
-  public UUID getAggregateId() {
-    return aggregateId;
-  }
+	public UUID getAggregateId() {
+		return aggregateId;
+	}
 
-  public void setAggregateId(UUID aggregateId) {
-    this.aggregateId = aggregateId;
-  }
+	public void setAggregateId(UUID aggregateId) {
+		this.aggregateId = aggregateId;
+	}
 
-  public String getEventType() {
-    return eventType;
-  }
+	public String getEventType() {
+		return eventType;
+	}
 
-  public void setEventType(String eventType) {
-    this.eventType = eventType;
-  }
+	public void setEventType(String eventType) {
+		this.eventType = eventType;
+	}
 
-  public SubscriptionResponse getPayload() {
-    return payload;
-  }
+	public SubscriptionResponse getPayload() {
+		return payload;
+	}
 
-  public void setPayload(SubscriptionResponse payload) {
-    this.payload = payload;
-  }
+	public void setPayload(SubscriptionResponse payload) {
+		this.payload = payload;
+	}
 
-  public String getStatus() {
-    return status;
-  }
+	public String getStatus() {
+		return status;
+	}
 
-  public void setStatus(String status) {
-    this.status = status;
-  }
+	public void setStatus(String status) {
+		this.status = status;
+	}
 
-  public long getTimestamp() {
-    return timestamp;
-  }
+	public long getTimestamp() {
+		return timestamp;
+	}
 
-  public void setTimestamp(long timestamp) {
-    this.timestamp = timestamp;
-  }
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
+	}
 
-  public EventsOutbox() {}
+	public EventsOutbox() {
+	}
 
-  public EventsOutbox(UUID id, String status) {
-    this.id = id;
-    this.status = status;
-  }
+	public EventsOutbox(UUID id, String status) {
+		this.id = id;
+		this.status = status;
+	}
 
-  public EventsOutbox(String status) {
-    this.status = status;
-  }
+	public EventsOutbox(String status) {
+		this.status = status;
+	}
 
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof EventsOutbox that)) return false;
-    return Objects.equals(id, that.id)
-            && Objects.equals(getAggregateType(), that.getAggregateType())
-            && Objects.equals(getAggregateId(), that.getAggregateId())
-            && Objects.equals(getEventType(), that.getEventType())
-            && Objects.equals(getPayload(), that.getPayload())
-            && Objects.equals(getStatus(), that.getStatus())
-            && Objects.equals(getTimestamp(), that.getTimestamp());
-  }
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof EventsOutbox that)) return false;
+		return Objects.equals(id, that.id)
+				&& Objects.equals(getAggregateType(), that.getAggregateType())
+				&& Objects.equals(getAggregateId(), that.getAggregateId())
+				&& Objects.equals(getEventType(), that.getEventType())
+				&& Objects.equals(getPayload(), that.getPayload())
+				&& Objects.equals(getStatus(), that.getStatus())
+				&& Objects.equals(getTimestamp(), that.getTimestamp());
+	}
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(id, getAggregateType(), getAggregateId(), getEventType(), getPayload(), getStatus(), getTimestamp());
-  }
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, getAggregateType(), getAggregateId(), getEventType(), getPayload(), getStatus(), getTimestamp());
+	}
 
-  @Override
-  public String toString() {
-    return "EventsOutbox{" +
-            "id=" + id +
-            ", aggregateType='" + aggregateType + '\'' +
-            ", aggregateId=" + aggregateId +
-            ", eventType='" + eventType + '\'' +
-            ", payload=" + payload +
-            ", status=" + status +
-            ", timestamp=" + timestamp +
-            '}';
-  }
+	@Override
+	public String toString() {
+		return "EventsOutbox{" +
+				"id=" + id +
+				", aggregateType='" + aggregateType + '\'' +
+				", aggregateId=" + aggregateId +
+				", eventType='" + eventType + '\'' +
+				", payload=" + payload +
+				", status=" + status +
+				", timestamp=" + timestamp +
+				'}';
+	}
 }

@@ -10,27 +10,27 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record SubscriptionResponse(
-        String id,
-        UserSummaryResponse user,
-        String currencyPair,
-        BigDecimal threshold,
-        ThresholdDirection direction,
-        List<String> notificationsChannels,
-        SubscriptionStatus status,
-        String createdAt,
-        String updatedAt
+		String id,
+		UserSummaryResponse user,
+		String currencyPair,
+		BigDecimal threshold,
+		ThresholdDirection direction,
+		List<String> notificationsChannels,
+		SubscriptionStatus status,
+		String createdAt,
+		String updatedAt
 ) implements Serializable {
-  public static SubscriptionResponse fromSubscription(Subscription subscription) {
-    return new SubscriptionResponse(
-            subscription.getId().toString(),
-            subscription.getUser() != null ? UserSummaryResponse.fromFxUser(subscription.getUser()) : null,
-            subscription.getCurrencyPair(),
-            subscription.getThreshold(),
-            subscription.getDirection(),
-            subscription.getNotificationsChannels() != null ? subscription.getNotificationsChannels() : List.of(),
-            subscription.getStatus(),
-            subscription.getCreatedAt().toString(),
-            subscription.getUpdatedAt() != null ? subscription.getUpdatedAt().toString() : null
-    );
-  }
+	public static SubscriptionResponse fromSubscription(Subscription subscription) {
+		return new SubscriptionResponse(
+				subscription.getId().toString(),
+				subscription.getUser() != null ? UserSummaryResponse.fromFxUser(subscription.getUser()) : null,
+				subscription.getCurrencyPair(),
+				subscription.getThreshold(),
+				subscription.getDirection(),
+				subscription.getNotificationsChannels() != null ? subscription.getNotificationsChannels() : List.of(),
+				subscription.getStatus(),
+				subscription.getCreatedAt().toString(),
+				subscription.getUpdatedAt() != null ? subscription.getUpdatedAt().toString() : null
+		);
+	}
 }

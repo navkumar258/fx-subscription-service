@@ -18,71 +18,71 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OpenApiConfigTest {
 
-  private OpenApiConfig openApiConfig;
-  private static final String MOCK_VERSION = "1.2.3-TEST";
+	private OpenApiConfig openApiConfig;
+	private static final String MOCK_VERSION = "1.2.3-TEST";
 
-  @Mock
-  private BuildProperties buildProperties;
+	@Mock
+	private BuildProperties buildProperties;
 
-  @BeforeEach
-  void setUp() {
-    when(buildProperties.getVersion()).thenReturn(MOCK_VERSION);
-    openApiConfig = new OpenApiConfig(buildProperties);
-  }
+	@BeforeEach
+	void setUp() {
+		when(buildProperties.getVersion()).thenReturn(MOCK_VERSION);
+		openApiConfig = new OpenApiConfig(buildProperties);
+	}
 
-  @Test
-  void testOpenApiBeanCreation() {
-    // When
-    OpenAPI openAPI = openApiConfig.openAPI();
+	@Test
+	void testOpenApiBeanCreation() {
+		// When
+		OpenAPI openAPI = openApiConfig.openAPI();
 
-    // Then
-    assertNotNull(openAPI);
-  }
+		// Then
+		assertNotNull(openAPI);
+	}
 
-  @Test
-  void testOpenApiInfoDetails() {
-    // When
-    OpenAPI openAPI = openApiConfig.openAPI();
-    Info info = openAPI.getInfo();
+	@Test
+	void testOpenApiInfoDetails() {
+		// When
+		OpenAPI openAPI = openApiConfig.openAPI();
+		Info info = openAPI.getInfo();
 
-    // Then
-    assertNotNull(info);
-    assertEquals("FX Subscription Service", info.getTitle());
-    assertEquals(MOCK_VERSION, info.getVersion());
-    assertEquals("This API manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities.", info.getDescription());
-    assertEquals("API Support", info.getContact().getName());
-    assertEquals("support@navkumar258.com", info.getContact().getEmail());
-    assertEquals("https://navkumar258.github.io", info.getContact().getUrl());
-    assertEquals("MIT License", info.getLicense().getName());
-    assertEquals("https://mit-license.org/", info.getLicense().getUrl());
-  }
+		// Then
+		assertNotNull(info);
+		assertEquals("FX Subscription Service", info.getTitle());
+		assertEquals(MOCK_VERSION, info.getVersion());
+		assertEquals("This API manages foreign exchange (FX) rate subscriptions and users with real-time notifications, MCP (Model Context Protocol) server capabilities.", info.getDescription());
+		assertEquals("API Support", info.getContact().getName());
+		assertEquals("support@navkumar258.com", info.getContact().getEmail());
+		assertEquals("https://navkumar258.github.io", info.getContact().getUrl());
+		assertEquals("MIT License", info.getLicense().getName());
+		assertEquals("https://mit-license.org/", info.getLicense().getUrl());
+	}
 
-  @Test
-  void testOpenApiSecurityConfiguration() {
-    // When
-    OpenAPI openAPI = openApiConfig.openAPI();
-    Components components = openAPI.getComponents();
+	@Test
+	void testOpenApiSecurityConfiguration() {
+		// When
+		OpenAPI openAPI = openApiConfig.openAPI();
+		Components components = openAPI.getComponents();
 
-    // Then
-    assertNotNull(components);
-    SecurityScheme securityScheme = components.getSecuritySchemes().get("bearerAuth");
-    assertNotNull(securityScheme);
-    assertEquals(SecurityScheme.Type.HTTP, securityScheme.getType());
-    assertEquals("bearer", securityScheme.getScheme());
-    assertEquals("JWT", securityScheme.getBearerFormat());
-  }
+		// Then
+		assertNotNull(components);
+		SecurityScheme securityScheme = components.getSecuritySchemes().get("bearerAuth");
+		assertNotNull(securityScheme);
+		assertEquals(SecurityScheme.Type.HTTP, securityScheme.getType());
+		assertEquals("bearer", securityScheme.getScheme());
+		assertEquals("JWT", securityScheme.getBearerFormat());
+	}
 
-  @Test
-  void testOpenApiGlobalSecurityRequirement() {
-    // When
-    OpenAPI openAPI = openApiConfig.openAPI();
+	@Test
+	void testOpenApiGlobalSecurityRequirement() {
+		// When
+		OpenAPI openAPI = openApiConfig.openAPI();
 
-    // Then
-    assertNotNull(openAPI.getSecurity());
-    assertEquals(1, openAPI.getSecurity().size());
+		// Then
+		assertNotNull(openAPI.getSecurity());
+		assertEquals(1, openAPI.getSecurity().size());
 
-    SecurityRequirement securityRequirement = openAPI.getSecurity().getFirst();
+		SecurityRequirement securityRequirement = openAPI.getSecurity().getFirst();
 
-    assertTrue(securityRequirement.containsKey("bearerAuth"));
-  }
+		assertTrue(securityRequirement.containsKey("bearerAuth"));
+	}
 }

@@ -8,35 +8,35 @@ import java.io.Serial;
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class SubscriptionNotFoundException extends RuntimeException {
 
-  @Serial
-  private static final long serialVersionUID = 1488659236727262493L;
+	@Serial
+	private static final long serialVersionUID = 1488659236727262493L;
 
-  private final String subscriptionId;
-  private final String errorCode;
+	private final String subscriptionId;
+	private final String errorCode;
 
-  public SubscriptionNotFoundException(String message) {
-    super(message);
-    this.subscriptionId = null;
-    this.errorCode = "SUBSCRIPTION_NOT_FOUND";
-  }
+	public SubscriptionNotFoundException(String message) {
+		super(message);
+		this.subscriptionId = null;
+		this.errorCode = "SUBSCRIPTION_NOT_FOUND";
+	}
 
-  public SubscriptionNotFoundException(String message, String subscriptionId) {
-    super(message);
-    this.subscriptionId = subscriptionId;
-    this.errorCode = "SUBSCRIPTION_NOT_FOUND";
-  }
+	public SubscriptionNotFoundException(String message, String subscriptionId) {
+		super(message);
+		this.subscriptionId = subscriptionId;
+		this.errorCode = "SUBSCRIPTION_NOT_FOUND";
+	}
 
-  public SubscriptionNotFoundException(String message, String subscriptionId, String errorCode) {
-    super(message);
-    this.subscriptionId = subscriptionId;
-    this.errorCode = errorCode;
-  }
+	public SubscriptionNotFoundException(String message, String subscriptionId, String errorCode) {
+		super(message);
+		this.subscriptionId = subscriptionId;
+		this.errorCode = errorCode;
+	}
 
-  public String getSubscriptionId() {
-    return subscriptionId;
-  }
+	public String getSubscriptionId() {
+		return subscriptionId;
+	}
 
-  public String getErrorCode() {
-    return errorCode;
-  }
+	public String getErrorCode() {
+		return errorCode;
+	}
 }

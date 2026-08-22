@@ -26,103 +26,103 @@ import static com.example.fx.subscription.service.util.LogSanitizer.sanitizeForL
 @Observed(name = "users.controller")
 public class UsersController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(UsersController.class);
-  private final FxUsersService fxUsersService;
+	private static final Logger LOGGER = LoggerFactory.getLogger(UsersController.class);
+	private final FxUsersService fxUsersService;
 
-  public UsersController(FxUsersService fxUsersService) {
-    this.fxUsersService = fxUsersService;
-  }
+	public UsersController(FxUsersService fxUsersService) {
+		this.fxUsersService = fxUsersService;
+	}
 
-  @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<UserListResponse> getAllUsers(
-          @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    Page<FxUser> usersPage = fxUsersService.findAllUsers(pageable);
-    List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
-            .map(UserSummaryResponse::fromFxUser)
-            .toList();
+	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<UserListResponse> getAllUsers(
+			@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		Page<FxUser> usersPage = fxUsersService.findAllUsers(pageable);
+		List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
+				.map(UserSummaryResponse::fromFxUser)
+				.toList();
 
-    UserListResponse response = new UserListResponse(
-            userResponses,
-            usersPage.getTotalElements(),
-            usersPage.getTotalPages(),
-            usersPage.getNumber(),
-            usersPage.getSize()
-    );
+		UserListResponse response = new UserListResponse(
+				userResponses,
+				usersPage.getTotalElements(),
+				usersPage.getTotalPages(),
+				usersPage.getNumber(),
+				usersPage.getSize()
+		);
 
-    LOGGER.info("Retrieved {} users from page {} of {}",
-            usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
+		LOGGER.info("Retrieved {} users from page {} of {}",
+				usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
 
-    return ResponseEntity.ok(response);
-  }
+		return ResponseEntity.ok(response);
+	}
 
-  @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-  public ResponseEntity<UserDetailResponse> getUserById(@PathVariable String id) {
-    FxUser fxUser = fxUsersService.findUserById(id)
-            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
+	@GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
+	public ResponseEntity<UserDetailResponse> getUserById(@PathVariable String id) {
+		FxUser fxUser = fxUsersService.findUserById(id)
+				.orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
-    LOGGER.atInfo().log("Retrieved user: userId={}", sanitizeForLog(id));
+		LOGGER.atInfo().log("Retrieved user: userId={}", sanitizeForLog(id));
 
-    UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
-    return ResponseEntity.ok(response);
-  }
+		UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
+		return ResponseEntity.ok(response);
+	}
 
-  @GetMapping(path = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<UserListResponse> searchUsers(
-          @RequestParam(required = false) String email,
-          @RequestParam(required = false) String mobile,
-          @RequestParam(defaultValue = "true") boolean enabled,
-          @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    Page<FxUser> usersPage = fxUsersService.searchUsers(email, mobile, enabled, pageable);
-    List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
-            .map(UserSummaryResponse::fromFxUser)
-            .toList();
+	@GetMapping(path = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<UserListResponse> searchUsers(
+			@RequestParam(required = false) String email,
+			@RequestParam(required = false) String mobile,
+			@RequestParam(defaultValue = "true") boolean enabled,
+			@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		Page<FxUser> usersPage = fxUsersService.searchUsers(email, mobile, enabled, pageable);
+		List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
+				.map(UserSummaryResponse::fromFxUser)
+				.toList();
 
-    UserListResponse response = new UserListResponse(
-            userResponses,
-            usersPage.getTotalElements(),
-            usersPage.getTotalPages(),
-            usersPage.getNumber(),
-            usersPage.getSize()
-    );
+		UserListResponse response = new UserListResponse(
+				userResponses,
+				usersPage.getTotalElements(),
+				usersPage.getTotalPages(),
+				usersPage.getNumber(),
+				usersPage.getSize()
+		);
 
-    LOGGER.atInfo().log("Search results: {} users found with email={}, mobile={}, enabled={}",
-            usersPage.getTotalElements(), sanitizeForLog(email), sanitizeForLog(mobile), enabled);
+		LOGGER.atInfo().log("Search results: {} users found with email={}, mobile={}, enabled={}",
+				usersPage.getTotalElements(), sanitizeForLog(email), sanitizeForLog(mobile), enabled);
 
-    return ResponseEntity.ok(response);
-  }
+		return ResponseEntity.ok(response);
+	}
 
-  @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-  public ResponseEntity<UserUpdateResponse> updateUser(
-          @PathVariable String id,
-          @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
-    FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
-    UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
+	@PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
+	public ResponseEntity<UserUpdateResponse> updateUser(
+			@PathVariable String id,
+			@Valid @RequestBody UserUpdateRequest userUpdateRequest) {
+		FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
+		UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
 
-    LOGGER.atInfo().log("User updated successfully: userId={}", sanitizeForLog(id));
+		LOGGER.atInfo().log("User updated successfully: userId={}", sanitizeForLog(id));
 
-    return ResponseEntity.ok(response);
-  }
+		return ResponseEntity.ok(response);
+	}
 
-  @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-    fxUsersService.deleteUser(id);
-    LOGGER.atInfo().log("User deleted successfully: userId={}", sanitizeForLog(id));
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+		fxUsersService.deleteUser(id);
+		LOGGER.atInfo().log("User deleted successfully: userId={}", sanitizeForLog(id));
 
-    return ResponseEntity.noContent().build();
-  }
+		return ResponseEntity.noContent().build();
+	}
 
-  @GetMapping(path = "/{id}/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
-  @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-  public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
-    UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
+	@GetMapping(path = "/{id}/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
+	public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
+		UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
 
-    LOGGER.atInfo().log("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
+		LOGGER.atInfo().log("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
 
-    return ResponseEntity.ok(response);
-  }
+		return ResponseEntity.ok(response);
+	}
 } 

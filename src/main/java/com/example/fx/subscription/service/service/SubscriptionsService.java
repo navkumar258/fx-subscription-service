@@ -23,161 +23,161 @@ import java.util.UUID;
 @Observed(name = "subscriptions.service")
 public class SubscriptionsService {
 
-  private static final String SUBSCRIPTION_NOT_FOUND = "Subscription not found with Id: %s";
+	private static final String SUBSCRIPTION_NOT_FOUND = "Subscription not found with Id: %s";
 
-  private final SubscriptionRepository subscriptionRepository;
-  private final FxUserRepository fxUserRepository;
-  private final EventsOutboxRepository eventsOutboxRepository;
+	private final SubscriptionRepository subscriptionRepository;
+	private final FxUserRepository fxUserRepository;
+	private final EventsOutboxRepository eventsOutboxRepository;
 
-  public SubscriptionsService(SubscriptionRepository subscriptionRepository,
-                              FxUserRepository fxUserRepository,
-                              EventsOutboxRepository eventsOutboxRepository) {
-    this.subscriptionRepository = subscriptionRepository;
-    this.fxUserRepository = fxUserRepository;
-    this.eventsOutboxRepository = eventsOutboxRepository;
-  }
+	public SubscriptionsService(SubscriptionRepository subscriptionRepository,
+	                            FxUserRepository fxUserRepository,
+	                            EventsOutboxRepository eventsOutboxRepository) {
+		this.subscriptionRepository = subscriptionRepository;
+		this.fxUserRepository = fxUserRepository;
+		this.eventsOutboxRepository = eventsOutboxRepository;
+	}
 
-  @Transactional(readOnly = true)
-  @Cacheable(key = "#id")
-  public SubscriptionResponse findSubscriptionById(String id) {
-    return subscriptionRepository.findById(UUID.fromString(id))
-            .map(SubscriptionResponse::fromSubscription)
-            .orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(id), id));
-  }
+	@Transactional(readOnly = true)
+	@Cacheable(key = "#id")
+	public SubscriptionResponse findSubscriptionById(String id) {
+		return subscriptionRepository.findById(UUID.fromString(id))
+				.map(SubscriptionResponse::fromSubscription)
+				.orElseThrow(() -> new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(id), id));
+	}
 
-  @Transactional(readOnly = true)
-  public Optional<Subscription> findSubscriptionEntityById(String id) {
-    return subscriptionRepository.findById(UUID.fromString(id));
-  }
+	@Transactional(readOnly = true)
+	public Optional<Subscription> findSubscriptionEntityById(String id) {
+		return subscriptionRepository.findById(UUID.fromString(id));
+	}
 
-  @Transactional(readOnly = true)
-  public List<Subscription> findSubscriptionsByUserId(String userId) {
-    return subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId));
-  }
+	@Transactional(readOnly = true)
+	public List<Subscription> findSubscriptionsByUserId(String userId) {
+		return subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId));
+	}
 
-  @Transactional(readOnly = true)
-  @Cacheable(cacheNames = "subscriptionsByUser", key = "#userId", unless = "#result.totalCount() == 0")
-  public SubscriptionListResponse findSubscriptionResponsesByUserId(String userId) {
-    List<SubscriptionResponse> subscriptions = subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId))
-            .stream()
-            .map(SubscriptionResponse::fromSubscription)
-            .toList();
-    if (subscriptions.isEmpty()) {
-      throw new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(userId));
-    }
+	@Transactional(readOnly = true)
+	@Cacheable(cacheNames = "subscriptionsByUser", key = "#userId", unless = "#result.totalCount() == 0")
+	public SubscriptionListResponse findSubscriptionResponsesByUserId(String userId) {
+		List<SubscriptionResponse> subscriptions = subscriptionRepository.findSubscriptionsByUserId(UUID.fromString(userId))
+				.stream()
+				.map(SubscriptionResponse::fromSubscription)
+				.toList();
+		if (subscriptions.isEmpty()) {
+			throw new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(userId));
+		}
 
-    return new SubscriptionListResponse(subscriptions, subscriptions.size());
-  }
+		return new SubscriptionListResponse(subscriptions, subscriptions.size());
+	}
 
-  @Transactional(readOnly = true)
-  public List<SubscriptionResponse> findAllSubscriptionResponses() {
-    return subscriptionRepository.findAll()
-            .stream()
-            .map(SubscriptionResponse::fromSubscription)
-            .toList();
-  }
+	@Transactional(readOnly = true)
+	public List<SubscriptionResponse> findAllSubscriptionResponses() {
+		return subscriptionRepository.findAll()
+				.stream()
+				.map(SubscriptionResponse::fromSubscription)
+				.toList();
+	}
 
-  @Transactional(readOnly = true)
-  public boolean isSubscriptionOwner(String subscriptionId, UUID userId) {
-    return subscriptionRepository.existsByIdAndUserId(
-            UUID.fromString(subscriptionId), userId);
-  }
+	@Transactional(readOnly = true)
+	public boolean isSubscriptionOwner(String subscriptionId, UUID userId) {
+		return subscriptionRepository.existsByIdAndUserId(
+				UUID.fromString(subscriptionId), userId);
+	}
 
-  @Caching(
-          put = @CachePut(key = "#result.id"),
-          evict = @CacheEvict(
-                  cacheNames = "subscriptionsByUser",
-                  key = "#userId.toString()"
-          )
-  )
-  public SubscriptionResponse createSubscription(SubscriptionCreateRequest createRequest, UUID userId) {
-    FxUser user = fxUserRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(
-                    "User not found with ID: %s, please try with a different user!".formatted(userId)));
+	@Caching(
+			put = @CachePut(key = "#result.id"),
+			evict = @CacheEvict(
+					cacheNames = "subscriptionsByUser",
+					key = "#userId.toString()"
+			)
+	)
+	public SubscriptionResponse createSubscription(SubscriptionCreateRequest createRequest, UUID userId) {
+		FxUser user = fxUserRepository.findById(userId)
+				.orElseThrow(() -> new UserNotFoundException(
+						"User not found with ID: %s, please try with a different user!".formatted(userId)));
 
-    Subscription subscription = subscriptionRepository.saveAndFlush(
-            mapSubscriptionCreateRequestToSubscription(createRequest, user));
-    eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionCreated"));
+		Subscription subscription = subscriptionRepository.saveAndFlush(
+				mapSubscriptionCreateRequestToSubscription(createRequest, user));
+		eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionCreated"));
 
-    return SubscriptionResponse.fromSubscription(subscription);
-  }
+		return SubscriptionResponse.fromSubscription(subscription);
+	}
 
-  @Caching(
-          put = @CachePut(key = "#id"),
-          evict = @CacheEvict(
-                  cacheNames = "subscriptionsByUser",
-                  key = "#result.user.id"
-          )
-  )
-  public SubscriptionResponse updateSubscriptionById(String id, SubscriptionUpdateRequest subscriptionUpdateRequest) {
-    Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
-            .orElseThrow(() -> new SubscriptionNotFoundException(
-                    SUBSCRIPTION_NOT_FOUND.formatted(id), id));
+	@Caching(
+			put = @CachePut(key = "#id"),
+			evict = @CacheEvict(
+					cacheNames = "subscriptionsByUser",
+					key = "#result.user.id"
+			)
+	)
+	public SubscriptionResponse updateSubscriptionById(String id, SubscriptionUpdateRequest subscriptionUpdateRequest) {
+		Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
+				.orElseThrow(() -> new SubscriptionNotFoundException(
+						SUBSCRIPTION_NOT_FOUND.formatted(id), id));
 
-    Optional.ofNullable(subscriptionUpdateRequest.currencyPair()).ifPresent(subscription::setCurrencyPair);
+		Optional.ofNullable(subscriptionUpdateRequest.currencyPair()).ifPresent(subscription::setCurrencyPair);
 
-    Optional.ofNullable(subscriptionUpdateRequest.direction())
-            .map(ThresholdDirection::valueOf)
-            .ifPresent(subscription::setDirection);
+		Optional.ofNullable(subscriptionUpdateRequest.direction())
+				.map(ThresholdDirection::valueOf)
+				.ifPresent(subscription::setDirection);
 
-    Optional.ofNullable(subscriptionUpdateRequest.status())
-            .map(SubscriptionStatus::valueOf)
-            .ifPresent(subscription::setStatus);
+		Optional.ofNullable(subscriptionUpdateRequest.status())
+				.map(SubscriptionStatus::valueOf)
+				.ifPresent(subscription::setStatus);
 
-    Optional.ofNullable(subscriptionUpdateRequest.threshold()).ifPresent(subscription::setThreshold);
-    Optional.ofNullable(subscriptionUpdateRequest.notificationChannels()).ifPresent(subscription::setNotificationsChannels);
-    subscription.setUpdatedAt(Instant.now());
+		Optional.ofNullable(subscriptionUpdateRequest.threshold()).ifPresent(subscription::setThreshold);
+		Optional.ofNullable(subscriptionUpdateRequest.notificationChannels()).ifPresent(subscription::setNotificationsChannels);
+		subscription.setUpdatedAt(Instant.now());
 
-    Subscription updatedSubscription = subscriptionRepository.saveAndFlush(subscription);
-    eventsOutboxRepository.save(createSubscriptionsOutboxEvent(updatedSubscription, "SubscriptionUpdated"));
+		Subscription updatedSubscription = subscriptionRepository.saveAndFlush(subscription);
+		eventsOutboxRepository.save(createSubscriptionsOutboxEvent(updatedSubscription, "SubscriptionUpdated"));
 
-    return SubscriptionResponse.fromSubscription(updatedSubscription);
-  }
+		return SubscriptionResponse.fromSubscription(updatedSubscription);
+	}
 
-  @Caching(
-          evict = {
-                  @CacheEvict(key = "#id", beforeInvocation = true),
-                  @CacheEvict(
-                          cacheNames = "subscriptionsByUser",
-                          key = "#result.userId"
-                  )
-          }
-  )
-  public SubscriptionDeleteResponse deleteSubscriptionById(String id) {
-    Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
-            .orElseThrow(() -> new SubscriptionNotFoundException(
-                    SUBSCRIPTION_NOT_FOUND.formatted(id), id));
+	@Caching(
+			evict = {
+					@CacheEvict(key = "#id", beforeInvocation = true),
+					@CacheEvict(
+							cacheNames = "subscriptionsByUser",
+							key = "#result.userId"
+					)
+			}
+	)
+	public SubscriptionDeleteResponse deleteSubscriptionById(String id) {
+		Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
+				.orElseThrow(() -> new SubscriptionNotFoundException(
+						SUBSCRIPTION_NOT_FOUND.formatted(id), id));
 
-    subscriptionRepository.deleteById(UUID.fromString(id));
-    eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionDeleted"));
+		subscriptionRepository.deleteById(UUID.fromString(id));
+		eventsOutboxRepository.save(createSubscriptionsOutboxEvent(subscription, "SubscriptionDeleted"));
 
-    return SubscriptionDeleteResponse.fromSubscriptionAndUserId(subscription.getUser().getId().toString(), id);
-  }
+		return SubscriptionDeleteResponse.fromSubscriptionAndUserId(subscription.getUser().getId().toString(), id);
+	}
 
-  private Subscription mapSubscriptionCreateRequestToSubscription(
-          SubscriptionCreateRequest createRequest,
-          FxUser user) {
-    Subscription subscription = new Subscription();
-    subscription.setUser(user);
-    subscription.setCurrencyPair(createRequest.currencyPair());
-    subscription.setThreshold(createRequest.threshold());
-    subscription.setDirection(ThresholdDirection.valueOf(createRequest.direction()));
-    subscription.setNotificationsChannels(createRequest.notificationChannels());
-    subscription.setStatus(SubscriptionStatus.ACTIVE);
-    subscription.setCreatedAt(Instant.now());
+	private Subscription mapSubscriptionCreateRequestToSubscription(
+			SubscriptionCreateRequest createRequest,
+			FxUser user) {
+		Subscription subscription = new Subscription();
+		subscription.setUser(user);
+		subscription.setCurrencyPair(createRequest.currencyPair());
+		subscription.setThreshold(createRequest.threshold());
+		subscription.setDirection(ThresholdDirection.valueOf(createRequest.direction()));
+		subscription.setNotificationsChannels(createRequest.notificationChannels());
+		subscription.setStatus(SubscriptionStatus.ACTIVE);
+		subscription.setCreatedAt(Instant.now());
 
-    return subscription;
-  }
+		return subscription;
+	}
 
-  private EventsOutbox createSubscriptionsOutboxEvent(Subscription subscription, String eventType) {
-    EventsOutbox eventsOutbox = new EventsOutbox();
-    eventsOutbox.setAggregateType("Subscription");
-    eventsOutbox.setAggregateId(subscription.getId());
-    eventsOutbox.setEventType(eventType);
-    eventsOutbox.setPayload(SubscriptionResponse.fromSubscription(subscription));
-    eventsOutbox.setStatus("PENDING");
-    eventsOutbox.setTimestamp(System.currentTimeMillis());
+	private EventsOutbox createSubscriptionsOutboxEvent(Subscription subscription, String eventType) {
+		EventsOutbox eventsOutbox = new EventsOutbox();
+		eventsOutbox.setAggregateType("Subscription");
+		eventsOutbox.setAggregateId(subscription.getId());
+		eventsOutbox.setEventType(eventType);
+		eventsOutbox.setPayload(SubscriptionResponse.fromSubscription(subscription));
+		eventsOutbox.setStatus("PENDING");
+		eventsOutbox.setTimestamp(System.currentTimeMillis());
 
-    return eventsOutbox;
-  }
+		return eventsOutbox;
+	}
 }

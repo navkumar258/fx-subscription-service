@@ -12,9 +12,9 @@ import java.util.UUID;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
 
-  @Query("SELECT s FROM Subscription s JOIN FETCH s.user WHERE s.user.id = :userId")
-  List<Subscription> findSubscriptionsByUserId(@Param("userId") UUID userId);
+	@Query("SELECT s FROM Subscription s JOIN FETCH s.user WHERE s.user.id = :userId")
+	List<Subscription> findSubscriptionsByUserId(@Param("userId") UUID userId);
 
-  boolean existsByIdAndUserId(UUID id, UUID userId);
+	boolean existsByIdAndUserId(UUID id, UUID userId);
 
 }

@@ -22,87 +22,87 @@ import java.util.UUID;
 @Transactional
 public class FxUsersService {
 
-  private static final String USER_NOT_FOUND_MESSAGE = "User not found with ID: ";
+	private static final String USER_NOT_FOUND_MESSAGE = "User not found with ID: ";
 
-  private final FxUserRepository fxUserRepository;
-  private final SubscriptionRepository subscriptionRepository;
+	private final FxUserRepository fxUserRepository;
+	private final SubscriptionRepository subscriptionRepository;
 
-  public FxUsersService(FxUserRepository fxUserRepository, SubscriptionRepository subscriptionRepository) {
-    this.fxUserRepository = fxUserRepository;
-    this.subscriptionRepository = subscriptionRepository;
-  }
+	public FxUsersService(FxUserRepository fxUserRepository, SubscriptionRepository subscriptionRepository) {
+		this.fxUserRepository = fxUserRepository;
+		this.subscriptionRepository = subscriptionRepository;
+	}
 
-  @Transactional(readOnly = true)
-  public Page<FxUser> findAllUsers(Pageable pageable) {
-    return fxUserRepository.findAll(pageable);
-  }
+	@Transactional(readOnly = true)
+	public Page<FxUser> findAllUsers(Pageable pageable) {
+		return fxUserRepository.findAll(pageable);
+	}
 
-  @Transactional(readOnly = true)
-  public Optional<FxUser> findUserById(String id) {
-    return fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id));
-  }
+	@Transactional(readOnly = true)
+	public Optional<FxUser> findUserById(String id) {
+		return fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id));
+	}
 
-  @Transactional(readOnly = true)
-  public Page<FxUser> searchUsers(String email, String mobile, boolean enabled, Pageable pageable) {
-    return fxUserRepository.searchUsers(email, mobile, enabled, pageable);
-  }
+	@Transactional(readOnly = true)
+	public Page<FxUser> searchUsers(String email, String mobile, boolean enabled, Pageable pageable) {
+		return fxUserRepository.searchUsers(email, mobile, enabled, pageable);
+	}
 
-  public FxUser updateUser(String id, UserUpdateRequest userUpdateRequest) {
-    FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
-            .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
+	public FxUser updateUser(String id, UserUpdateRequest userUpdateRequest) {
+		FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
+				.orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
-    Optional.ofNullable(userUpdateRequest.email())
-            .filter(StringUtils::hasText)
-            .ifPresent(user::setEmail);
+		Optional.ofNullable(userUpdateRequest.email())
+				.filter(StringUtils::hasText)
+				.ifPresent(user::setEmail);
 
-    Optional.ofNullable(userUpdateRequest.mobile())
-            .filter(StringUtils::hasText)
-            .ifPresent(user::setMobile);
+		Optional.ofNullable(userUpdateRequest.mobile())
+				.filter(StringUtils::hasText)
+				.ifPresent(user::setMobile);
 
-    Optional.ofNullable(userUpdateRequest.pushDeviceToken())
-            .filter(StringUtils::hasText)
-            .ifPresent(user::setPushDeviceToken);
+		Optional.ofNullable(userUpdateRequest.pushDeviceToken())
+				.filter(StringUtils::hasText)
+				.ifPresent(user::setPushDeviceToken);
 
-    return fxUserRepository.save(user);
-  }
+		return fxUserRepository.save(user);
+	}
 
-  public FxUser updateUserStatus(String id, boolean enabled) {
-    FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
-            .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
+	public FxUser updateUserStatus(String id, boolean enabled) {
+		FxUser user = fxUserRepository.findByIdWithSubscriptions(UUID.fromString(id))
+				.orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
-    user.setEnabled(enabled);
-    return fxUserRepository.save(user);
-  }
+		user.setEnabled(enabled);
+		return fxUserRepository.save(user);
+	}
 
-  public void deleteUser(String id) {
-    FxUser user = fxUserRepository.findById(UUID.fromString(id))
-            .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
+	public void deleteUser(String id) {
+		FxUser user = fxUserRepository.findById(UUID.fromString(id))
+				.orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + id, id));
 
-    // Check if user has active subscriptions
-    List<Subscription> activeSubscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
-    if (!activeSubscriptions.isEmpty()) {
-      throw new IllegalStateException("Cannot delete user with active subscriptions. Please delete subscriptions first.");
-    }
+		// Check if user has active subscriptions
+		List<Subscription> activeSubscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
+		if (!activeSubscriptions.isEmpty()) {
+			throw new IllegalStateException("Cannot delete user with active subscriptions. Please delete subscriptions first.");
+		}
 
-    fxUserRepository.delete(user);
-  }
+		fxUserRepository.delete(user);
+	}
 
-  @Transactional(readOnly = true)
-  public UserSubscriptionsResponse getUserSubscriptions(String userId) {
-    FxUser user = fxUserRepository.findById(UUID.fromString(userId))
-            .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + userId, userId));
+	@Transactional(readOnly = true)
+	public UserSubscriptionsResponse getUserSubscriptions(String userId) {
+		FxUser user = fxUserRepository.findById(UUID.fromString(userId))
+				.orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MESSAGE + userId, userId));
 
-    List<Subscription> subscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
+		List<Subscription> subscriptions = subscriptionRepository.findSubscriptionsByUserId(user.getId());
 
-    List<SubscriptionResponse> subscriptionResponses =
-            subscriptions.stream()
-                    .map(SubscriptionResponse::fromSubscription)
-                    .toList();
+		List<SubscriptionResponse> subscriptionResponses =
+				subscriptions.stream()
+						.map(SubscriptionResponse::fromSubscription)
+						.toList();
 
-    return new UserSubscriptionsResponse(
-            user.getId().toString(),
-            subscriptionResponses,
-            subscriptions.size()
-    );
-  }
+		return new UserSubscriptionsResponse(
+				user.getId().toString(),
+				subscriptionResponses,
+				subscriptions.size()
+		);
+	}
 }

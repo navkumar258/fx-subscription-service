@@ -380,7 +380,7 @@ The service automatically generates OpenAPI 3.1.0 documentation using SpringDoc.
 
 - **Swagger UI**: `https://localhost:8443/swagger-ui.html`
 - **OpenAPI JSON**: `https://localhost:8443/v3/api-docs`
-- **Generated Documentation**: `api-docs/fx-subscription-service.json`
+- **Generated Documentation**: `api-docs/fx-subscription-service.yaml`
 
 ### Authentication Endpoints
 

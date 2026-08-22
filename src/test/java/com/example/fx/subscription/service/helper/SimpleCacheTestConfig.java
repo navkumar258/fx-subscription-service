@@ -14,17 +14,17 @@ import org.springframework.context.annotation.Bean;
 @EnableCaching
 public class SimpleCacheTestConfig {
 
-  @Bean
-  CacheManager cacheManager() {
-    return new ConcurrentMapCacheManager("subscription", "subscriptionsByUser");
-  }
+	@Bean
+	CacheManager cacheManager() {
+		return new ConcurrentMapCacheManager("subscription", "subscriptionsByUser");
+	}
 
-  @Bean
-  SubscriptionsService subscriptionService(
-          SubscriptionRepository subscriptionRepository,
-          FxUserRepository fxUserRepository,
-          EventsOutboxRepository eventsOutboxRepository) {
-    return new SubscriptionsService(subscriptionRepository, fxUserRepository, eventsOutboxRepository);
-  }
+	@Bean
+	SubscriptionsService subscriptionService(
+			SubscriptionRepository subscriptionRepository,
+			FxUserRepository fxUserRepository,
+			EventsOutboxRepository eventsOutboxRepository) {
+		return new SubscriptionsService(subscriptionRepository, fxUserRepository, eventsOutboxRepository);
+	}
 
 }

@@ -25,72 +25,72 @@ import java.util.UUID;
 @Import({RedisTestContainerConfig.class, PostgresTestContainerConfig.class})
 public abstract class RedisIntegrationTestBase {
 
-  @Autowired
-  protected CacheManager cacheManager;
+	@Autowired
+	protected CacheManager cacheManager;
 
-  @Autowired
-  protected SubscriptionRepository subscriptionRepository;
+	@Autowired
+	protected SubscriptionRepository subscriptionRepository;
 
-  @Autowired
-  protected FxUserRepository fxUserRepository;
+	@Autowired
+	protected FxUserRepository fxUserRepository;
 
-  @Autowired
-  protected EventsOutboxRepository eventsOutboxRepository;
+	@Autowired
+	protected EventsOutboxRepository eventsOutboxRepository;
 
-  // Mock external dependencies to speed up tests
-  @MockitoBean
-  KafkaAdmin kafkaAdmin;
+	// Mock external dependencies to speed up tests
+	@MockitoBean
+	KafkaAdmin kafkaAdmin;
 
-  @MockitoBean
-  KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
+	@MockitoBean
+	KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
-  protected FxUser testUser;
-  protected Subscription testSubscription;
-  protected UUID testUserId;
-  protected UUID testSubscriptionId;
+	protected FxUser testUser;
+	protected Subscription testSubscription;
+	protected UUID testUserId;
+	protected UUID testSubscriptionId;
 
-  @BeforeEach
-  void setUp() {
-    clearAllCaches();
-    clearAllData();
-    seedDefaultTestData();
-  }
+	@BeforeEach
+	void setUp() {
+		clearAllCaches();
+		clearAllData();
+		seedDefaultTestData();
+	}
 
-  protected void clearAllCaches() {
-    cacheManager.getCacheNames().forEach(name ->
-            Objects.requireNonNull(cacheManager.getCache(name)).clear()
-    );
-  }
+	protected void clearAllCaches() {
+		cacheManager.getCacheNames().forEach(name ->
+				Objects.requireNonNull(cacheManager.getCache(name)).clear()
+		);
+	}
 
-  protected void clearAllData() {
-    eventsOutboxRepository.deleteAll();
-    subscriptionRepository.deleteAll();
-    fxUserRepository.deleteAll();
-  }
+	protected void clearAllData() {
+		eventsOutboxRepository.deleteAll();
+		subscriptionRepository.deleteAll();
+		fxUserRepository.deleteAll();
+	}
 
-  protected void seedDefaultTestData() {
-    testUser = new FxUser();
-    testUser.setEmail("test@example.com");
-    testUser.setPassword("password");
-    testUser.setMobile("+1234567890");
-    testUser.setEnabled(true);
-    testUser.setRole(UserRole.USER);
-    testUser.setCreatedAt(Instant.now());
+	protected void seedDefaultTestData() {
+		testUser = new FxUser();
+		testUser.setEmail("test@example.com");
+		testUser.setPassword("password");
+		testUser.setMobile("+1234567890");
+		testUser.setEnabled(true);
+		testUser.setRole(UserRole.USER);
+		testUser.setCreatedAt(Instant.now());
 
-    testUser = fxUserRepository.save(testUser);
-    testUserId = testUser.getId();
+		testUser = fxUserRepository.save(testUser);
+		testUserId = testUser.getId();
 
-    testSubscription = new Subscription();
-    testSubscription.setUser(testUser);
-    testSubscription.setCurrencyPair("GBP/USD");
-    testSubscription.setThreshold(BigDecimal.valueOf(1.25));
-    testSubscription.setDirection(ThresholdDirection.ABOVE);
-    testSubscription.setNotificationsChannels(List.of("email", "sms"));
-    testSubscription.setStatus(SubscriptionStatus.ACTIVE);
-    testSubscription.setCreatedAt(Instant.now());
+		testSubscription = new Subscription();
+		testSubscription.setUser(testUser);
+		testSubscription.setCurrencyPair("GBP/USD");
+		testSubscription.setThreshold(BigDecimal.valueOf(1.25));
+		testSubscription.setDirection(ThresholdDirection.ABOVE);
+		testSubscription.setNotificationsChannels(List.of("email", "sms"));
+		testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+		testSubscription.setCreatedAt(Instant.now());
 
-    testSubscription = subscriptionRepository.save(testSubscription);
-    testSubscriptionId = testSubscription.getId();
-  }
+		testSubscription = subscriptionRepository.save(testSubscription);
+		testSubscriptionId = testSubscription.getId();
+	}
 }
 

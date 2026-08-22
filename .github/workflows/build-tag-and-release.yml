@@ -189,9 +189,9 @@ jobs:
         run: |
           echo "--- Updating OpenAPI docs version ---"
           VERSION=${{ steps.versioning.outputs.NEW_VERSION }}
-          jq --arg v "$VERSION" '.info.version = $v' api-docs/fx-subscription-service.json > api-docs/fx-subscription-service.json.tmp
-          mv api-docs/fx-subscription-service.json.tmp api-docs/fx-subscription-service.json
-          echo "Updated api-docs/fx-subscription-service.json to version ${{ steps.versioning.outputs.NEW_VERSION }}"
+          jq --arg v "$VERSION" '.info.version = $v' api-docs/fx-subscription-service.yaml > api-docs/fx-subscription-service.yaml.tmp
+          mv api-docs/fx-subscription-service.yaml.tmp api-docs/fx-subscription-service.yaml
+          echo "Updated api-docs/fx-subscription-service.yaml to version ${{ steps.versioning.outputs.NEW_VERSION }}"
 
       - name: Commit and push version update
         if: ${{ steps.version_check.outputs.skip_update == 'false' }}
@@ -203,7 +203,7 @@ jobs:
 
           # Add the modified build.gradle file.
           git add build.gradle
-          git add api-docs/fx-subscription-service.json
+          git add api-docs/fx-subscription-service.yaml
           git commit -m "chore: Bump version to ${{ steps.versioning.outputs.NEW_VERSION }}" || echo "No changes to commit."
           git push
 

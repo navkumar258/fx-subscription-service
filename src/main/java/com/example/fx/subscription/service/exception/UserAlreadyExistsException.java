@@ -8,35 +8,35 @@ import java.io.Serial;
 @ResponseStatus(HttpStatus.CONFLICT)
 public class UserAlreadyExistsException extends RuntimeException {
 
-  @Serial
-  private static final long serialVersionUID = 8903008788528889577L;
+	@Serial
+	private static final long serialVersionUID = 8903008788528889577L;
 
-  private final String email;
-  private final String errorCode;
+	private final String email;
+	private final String errorCode;
 
-  public UserAlreadyExistsException(String message) {
-    super(message);
-    this.email = null;
-    this.errorCode = "USER_ALREADY_EXISTS";
-  }
+	public UserAlreadyExistsException(String message) {
+		super(message);
+		this.email = null;
+		this.errorCode = "USER_ALREADY_EXISTS";
+	}
 
-  public UserAlreadyExistsException(String message, String email) {
-    super(message);
-    this.email = email;
-    this.errorCode = "USER_ALREADY_EXISTS";
-  }
+	public UserAlreadyExistsException(String message, String email) {
+		super(message);
+		this.email = email;
+		this.errorCode = "USER_ALREADY_EXISTS";
+	}
 
-  public UserAlreadyExistsException(String message, String email, String errorCode) {
-    super(message);
-    this.email = email;
-    this.errorCode = errorCode;
-  }
+	public UserAlreadyExistsException(String message, String email, String errorCode) {
+		super(message);
+		this.email = email;
+		this.errorCode = errorCode;
+	}
 
-  public String getEmail() {
-    return email;
-  }
+	public String getEmail() {
+		return email;
+	}
 
-  public String getErrorCode() {
-    return errorCode;
-  }
+	public String getErrorCode() {
+		return errorCode;
+	}
 }

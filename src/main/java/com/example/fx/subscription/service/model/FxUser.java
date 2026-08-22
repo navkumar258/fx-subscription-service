@@ -16,188 +16,188 @@ import java.util.*;
 @Entity
 @Table(name = "fx_users")
 public class FxUser implements Serializable, UserDetails {
-  @Serial
-  private static final long serialVersionUID = -2164347536884263543L;
+	@Serial
+	private static final long serialVersionUID = -2164347536884263543L;
 
-  @Id
-  @GeneratedValue
-  private UUID id;
+	@Id
+	@GeneratedValue
+	private UUID id;
 
-  @Column(nullable = false, unique = true)
-  @JsonIgnore
-  private String email;
+	@Column(nullable = false, unique = true)
+	@JsonIgnore
+	private String email;
 
-  @Column(nullable = false)
-  @JsonIgnore
-  private String mobile;
+	@Column(nullable = false)
+	@JsonIgnore
+	private String mobile;
 
-  @Column(nullable = false)
-  @JsonIgnore
-  private String password;
+	@Column(nullable = false)
+	@JsonIgnore
+	private String password;
 
-  @Column(nullable = false)
-  private boolean enabled;
+	@Column(nullable = false)
+	private boolean enabled;
 
-  @JsonIgnore
-  private String pushDeviceToken;
+	@JsonIgnore
+	private String pushDeviceToken;
 
-  @Column(nullable = false, updatable = false)
-  private Instant createdAt;
+	@Column(nullable = false, updatable = false)
+	private Instant createdAt;
 
-  @Column(insertable = false)
-  private Instant updatedAt;
+	@Column(insertable = false)
+	private Instant updatedAt;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private UserRole role = UserRole.USER;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private UserRole role = UserRole.USER;
 
-  @OneToMany(
-          mappedBy = "user",
-          cascade = CascadeType.ALL,
-          fetch = FetchType.LAZY,
-          orphanRemoval = true
-  )
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private Set<Subscription> subscriptions = new HashSet<>();
+	@OneToMany(
+			mappedBy = "user",
+			cascade = CascadeType.ALL,
+			fetch = FetchType.LAZY,
+			orphanRemoval = true
+	)
+	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+	private Set<Subscription> subscriptions = new HashSet<>();
 
-  public FxUser() {
-  }
+	public FxUser() {
+	}
 
-  public FxUser(UUID userId) {
-    this.id = userId;
-  }
+	public FxUser(UUID userId) {
+		this.id = userId;
+	}
 
-  public FxUser(UUID userId, String email, String password, UserRole role) {
-    this.id = userId;
-    this.email = email;
-    this.password = password;
-    this.role = role;
-  }
+	public FxUser(UUID userId, String email, String password, UserRole role) {
+		this.id = userId;
+		this.email = email;
+		this.password = password;
+		this.role = role;
+	}
 
-  public UUID getId() {
-    return id;
-  }
+	public UUID getId() {
+		return id;
+	}
 
-  public void setId(UUID uuid) {
-    this.id = uuid;
-  }
+	public void setId(UUID uuid) {
+		this.id = uuid;
+	}
 
-  public String getEmail() {
-    return getUsername();
-  }
+	public String getEmail() {
+		return getUsername();
+	}
 
-  public void setEmail(String email) {
-    this.email = email;
-  }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-  public String getMobile() {
-    return mobile;
-  }
+	public String getMobile() {
+		return mobile;
+	}
 
-  public void setMobile(String mobile) {
-    this.mobile = mobile;
-  }
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
 
-  public Set<Subscription> getSubscriptions() {
-    return subscriptions;
-  }
+	public Set<Subscription> getSubscriptions() {
+		return subscriptions;
+	}
 
-  public void setSubscriptions(Set<Subscription> subscriptions) {
-    this.subscriptions = subscriptions;
-  }
+	public void setSubscriptions(Set<Subscription> subscriptions) {
+		this.subscriptions = subscriptions;
+	}
 
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
 
-  public void setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
-  }
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
 
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
+	public Instant getUpdatedAt() {
+		return updatedAt;
+	}
 
-  public void setUpdatedAt(Instant updatedAt) {
-    this.updatedAt = updatedAt;
-  }
+	public void setUpdatedAt(Instant updatedAt) {
+		this.updatedAt = updatedAt;
+	}
 
-  @Override
-  @NonNull
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-  }
+	@Override
+	@NonNull
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+	}
 
-  public String getPassword() {
-    return password;
-  }
+	public String getPassword() {
+		return password;
+	}
 
-  @Override
-  @NonNull
-  public String getUsername() {
-    return email;
-  }
+	@Override
+	@NonNull
+	public String getUsername() {
+		return email;
+	}
 
-  public void setPassword(String password) {
-    this.password = password;
-  }
+	public void setPassword(String password) {
+		this.password = password;
+	}
 
-  @Override
-  public boolean isEnabled() {
-    return enabled;
-  }
+	@Override
+	public boolean isEnabled() {
+		return enabled;
+	}
 
-  public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
-  }
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
 
-  public UserRole getRole() {
-    return role;
-  }
+	public UserRole getRole() {
+		return role;
+	}
 
-  public void setRole(UserRole role) {
-    this.role = role;
-  }
+	public void setRole(UserRole role) {
+		this.role = role;
+	}
 
-  public String getPushDeviceToken() {
-    return pushDeviceToken;
-  }
+	public String getPushDeviceToken() {
+		return pushDeviceToken;
+	}
 
-  public void setPushDeviceToken(String pushDeviceToken) {
-    this.pushDeviceToken = pushDeviceToken;
-  }
+	public void setPushDeviceToken(String pushDeviceToken) {
+		this.pushDeviceToken = pushDeviceToken;
+	}
 
-  public void addSubscription(Subscription subscription) {
-    this.subscriptions.add(subscription);
-    subscription.setUser(this); // Set the inverse side
-  }
+	public void addSubscription(Subscription subscription) {
+		this.subscriptions.add(subscription);
+		subscription.setUser(this); // Set the inverse side
+	}
 
-  public void removeSubscription(Subscription subscription) {
-    this.subscriptions.remove(subscription);
-    subscription.setUser(null); // Remove the inverse side reference
-  }
+	public void removeSubscription(Subscription subscription) {
+		this.subscriptions.remove(subscription);
+		subscription.setUser(null); // Remove the inverse side reference
+	}
 
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof FxUser that)) return false;
-    return Objects.equals(getId(), that.getId())
-            && Objects.equals(getEmail(), that.getEmail())
-            && Objects.equals(getMobile(), that.getMobile())
-            && Objects.equals(getPushDeviceToken(), that.getPushDeviceToken());
-  }
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof FxUser that)) return false;
+		return Objects.equals(getId(), that.getId())
+				&& Objects.equals(getEmail(), that.getEmail())
+				&& Objects.equals(getMobile(), that.getMobile())
+				&& Objects.equals(getPushDeviceToken(), that.getPushDeviceToken());
+	}
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(getId(), getEmail(), getMobile(), getPushDeviceToken());
-  }
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId(), getEmail(), getMobile(), getPushDeviceToken());
+	}
 
-  @Override
-  public String toString() {
-    return "FxUser{" +
-            "id=" + id +
-            ", email='" + email + '\'' +
-            ", mobile='" + mobile + '\'' +
-            ", pushDeviceToken='" + pushDeviceToken + '\'' +
-            '}';
-  }
+	@Override
+	public String toString() {
+		return "FxUser{" +
+				"id=" + id +
+				", email='" + email + '\'' +
+				", mobile='" + mobile + '\'' +
+				", pushDeviceToken='" + pushDeviceToken + '\'' +
+				'}';
+	}
 }

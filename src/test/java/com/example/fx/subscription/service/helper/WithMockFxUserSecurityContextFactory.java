@@ -10,12 +10,12 @@ import org.springframework.security.test.context.support.WithSecurityContextFact
 import static com.example.fx.subscription.service.helper.WithMockFxUser.userId;
 
 public class WithMockFxUserSecurityContextFactory implements WithSecurityContextFactory<WithMockFxUser> {
-  @Override
-  public SecurityContext createSecurityContext(WithMockFxUser annotation) {
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    FxUser user = new FxUser(userId, annotation.email(), "password", annotation.role());
-    Authentication auth = new UsernamePasswordAuthenticationToken(user, "password", user.getAuthorities());
-    context.setAuthentication(auth);
-    return context;
-  }
+	@Override
+	public SecurityContext createSecurityContext(WithMockFxUser annotation) {
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		FxUser user = new FxUser(userId, annotation.email(), "password", annotation.role());
+		Authentication auth = new UsernamePasswordAuthenticationToken(user, "password", user.getAuthorities());
+		context.setAuthentication(auth);
+		return context;
+	}
 }

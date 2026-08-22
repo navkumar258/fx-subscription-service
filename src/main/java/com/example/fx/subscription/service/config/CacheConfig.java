@@ -17,39 +17,39 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig {
 
-  private final int cacheTtlSeconds;
+	private final int cacheTtlSeconds;
 
-  public CacheConfig(
-          @Value(value = "${spring.cache.redis.time-to-live-seconds}") int cacheTtlSeconds
-  ) {
-    this.cacheTtlSeconds = cacheTtlSeconds;
-  }
+	public CacheConfig(
+			@Value(value = "${spring.cache.redis.time-to-live-seconds}") int cacheTtlSeconds
+	) {
+		this.cacheTtlSeconds = cacheTtlSeconds;
+	}
 
-  @Bean
-  public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
-  ) {
-    return builder -> {
-      JacksonJsonRedisSerializer<SubscriptionListResponse> subListSerializer =
-              new JacksonJsonRedisSerializer<>(SubscriptionListResponse.class);
-      builder.withCacheConfiguration("subscriptionsByUser",
-              RedisCacheConfiguration.defaultCacheConfig()
-                      .serializeValuesWith(
-                              RedisSerializationContext.SerializationPair.fromSerializer(subListSerializer)
-                      )
-                      .entryTtl(Duration.ofSeconds(cacheTtlSeconds))
-                      .disableCachingNullValues()
-      );
+	@Bean
+	public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
+	) {
+		return builder -> {
+			JacksonJsonRedisSerializer<SubscriptionListResponse> subListSerializer =
+					new JacksonJsonRedisSerializer<>(SubscriptionListResponse.class);
+			builder.withCacheConfiguration("subscriptionsByUser",
+					RedisCacheConfiguration.defaultCacheConfig()
+							.serializeValuesWith(
+									RedisSerializationContext.SerializationPair.fromSerializer(subListSerializer)
+							)
+							.entryTtl(Duration.ofSeconds(cacheTtlSeconds))
+							.disableCachingNullValues()
+			);
 
-      JacksonJsonRedisSerializer<SubscriptionResponse> subSerializer =
-              new JacksonJsonRedisSerializer<>(SubscriptionResponse.class);
-      builder.withCacheConfiguration("subscription",
-              RedisCacheConfiguration.defaultCacheConfig()
-                      .serializeValuesWith(
-                              RedisSerializationContext.SerializationPair.fromSerializer(subSerializer)
-                      )
-                      .entryTtl(Duration.ofSeconds(cacheTtlSeconds))
-                      .disableCachingNullValues()
-      );
-    };
-  }
+			JacksonJsonRedisSerializer<SubscriptionResponse> subSerializer =
+					new JacksonJsonRedisSerializer<>(SubscriptionResponse.class);
+			builder.withCacheConfiguration("subscription",
+					RedisCacheConfiguration.defaultCacheConfig()
+							.serializeValuesWith(
+									RedisSerializationContext.SerializationPair.fromSerializer(subSerializer)
+							)
+							.entryTtl(Duration.ofSeconds(cacheTtlSeconds))
+							.disableCachingNullValues()
+			);
+		};
+	}
 }

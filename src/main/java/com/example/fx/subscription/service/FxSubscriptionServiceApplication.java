@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class FxSubscriptionServiceApplication {
 
-  public static void main(String[] args) {
-    SpringApplication.run(FxSubscriptionServiceApplication.class, args);
-  }
+	public static void main(String[] args) {
+		SpringApplication.run(FxSubscriptionServiceApplication.class, args);
+	}
 }

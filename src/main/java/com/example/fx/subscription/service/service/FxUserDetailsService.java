@@ -8,15 +8,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FxUserDetailsService implements UserDetailsService {
-  private final FxUserRepository fxUserRepository;
+	private final FxUserRepository fxUserRepository;
 
-  public FxUserDetailsService(FxUserRepository fxUserRepository) {
-    this.fxUserRepository = fxUserRepository;
-  }
+	public FxUserDetailsService(FxUserRepository fxUserRepository) {
+		this.fxUserRepository = fxUserRepository;
+	}
 
-  @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    return fxUserRepository.findByEmail(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-  }
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		return fxUserRepository.findByEmail(username)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+	}
 }

@@ -7,7 +7,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,49 +19,48 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class WebSecurityConfig {
 
-  private final JwtTokenProvider jwtTokenProvider;
+	private final JwtTokenProvider jwtTokenProvider;
 
-  public WebSecurityConfig(JwtTokenProvider jwtTokenProvider) {
-    this.jwtTokenProvider = jwtTokenProvider;
-  }
+	public WebSecurityConfig(JwtTokenProvider jwtTokenProvider) {
+		this.jwtTokenProvider = jwtTokenProvider;
+	}
 
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-    JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtTokenProvider);
-    http
-            .csrf(AbstractHttpConfigurer::disable)
-            .headers(headers -> headers
-                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-            .sessionManagement(session -> session
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint(unauthorizedEntryPoint()))
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/h2-console/**").permitAll()
-                    .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/mcp/**").permitAll()
-                    .requestMatchers("/v3/api-docs.yaml").permitAll()
-                    .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
-                    .anyRequest().authenticated())
-            .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+		JwtTokenFilter jwtTokenFilter = new JwtTokenFilter(jwtTokenProvider);
+		http
+				.headers(headers -> headers
+						.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(ex -> ex
+						.authenticationEntryPoint(unauthorizedEntryPoint()))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/h2-console/**").permitAll()
+						.requestMatchers("/actuator/**").permitAll()
+						.requestMatchers("/mcp/**").permitAll()
+						.requestMatchers("/v3/api-docs.yaml").permitAll()
+						.requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
+						.anyRequest().authenticated())
+				.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
-    return http.build();
-  }
+		return http.build();
+	}
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) {
-    return authConfig.getAuthenticationManager();
-  }
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) {
+		return authConfig.getAuthenticationManager();
+	}
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-  @Bean
-  public AuthenticationEntryPoint unauthorizedEntryPoint() {
-    return (_, response, _) ->
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-  }
+	@Bean
+	public AuthenticationEntryPoint unauthorizedEntryPoint() {
+		return (_, response, _) ->
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+	}
 }
 

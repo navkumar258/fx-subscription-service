@@ -21,133 +21,133 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RedisCacheIT extends RedisIntegrationTestBase {
 
-  @Autowired
-  private SubscriptionsService subscriptionsService;
+	@Autowired
+	private SubscriptionsService subscriptionsService;
 
-  private void assertCacheHas(String cacheName, String key) {
-    Awaitility.await()
-            .pollDelay(Duration.ofMillis(300))
-            .until(() -> true);
-    assertNotNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
-  }
+	private void assertCacheHas(String cacheName, String key) {
+		Awaitility.await()
+				.pollDelay(Duration.ofMillis(300))
+				.until(() -> true);
+		assertNotNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
+	}
 
-  private void assertCacheMissing(String cacheName, String key) {
-    Awaitility.await()
-            .pollDelay(Duration.ofMillis(300))
-            .until(() -> true);
-    assertNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
-  }
+	private void assertCacheMissing(String cacheName, String key) {
+		Awaitility.await()
+				.pollDelay(Duration.ofMillis(300))
+				.until(() -> true);
+		assertNull(Objects.requireNonNull(cacheManager.getCache(cacheName)).get(key));
+	}
 
-  @Test
-  void shouldCacheSubscriptionById() {
-    SubscriptionResponse firstCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
-    assertNotNull(firstCall);
+	@Test
+	void shouldCacheSubscriptionById() {
+		SubscriptionResponse firstCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+		assertNotNull(firstCall);
 
-    assertCacheHas("subscription", testSubscriptionId.toString());
+		assertCacheHas("subscription", testSubscriptionId.toString());
 
-    SubscriptionResponse secondCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
-    assertNotNull(secondCall);
-  }
+		SubscriptionResponse secondCall = subscriptionsService.findSubscriptionById(testSubscriptionId.toString());
+		assertNotNull(secondCall);
+	}
 
-  @Test
-  void shouldCacheSubscriptionsByUser() {
-    SubscriptionListResponse firstCall = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
-    assertNotNull(firstCall);
-    assertEquals(1, firstCall.totalCount());
+	@Test
+	void shouldCacheSubscriptionsByUser() {
+		SubscriptionListResponse firstCall = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
+		assertNotNull(firstCall);
+		assertEquals(1, firstCall.totalCount());
 
-    assertCacheHas("subscriptionsByUser", testUserId.toString());
+		assertCacheHas("subscriptionsByUser", testUserId.toString());
 
-    SubscriptionListResponse secondCall = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
-    assertNotNull(secondCall);
-  }
+		SubscriptionListResponse secondCall = subscriptionsService.findSubscriptionResponsesByUserId(testUserId.toString());
+		assertNotNull(secondCall);
+	}
 
-  @Test
-  void shouldNotCacheEmptySubscriptionsList() {
-    String randomUserId = UUID.randomUUID().toString();
-    assertThrows(SubscriptionNotFoundException.class,
-            () -> subscriptionsService.findSubscriptionResponsesByUserId(randomUserId));
+	@Test
+	void shouldNotCacheEmptySubscriptionsList() {
+		String randomUserId = UUID.randomUUID().toString();
+		assertThrows(SubscriptionNotFoundException.class,
+				() -> subscriptionsService.findSubscriptionResponsesByUserId(randomUserId));
 
-    assertCacheMissing("subscriptionsByUser", randomUserId);
-  }
+		assertCacheMissing("subscriptionsByUser", randomUserId);
+	}
 
-  @Test
-  void shouldEvictUserCacheOnCreate() {
-    String userId = testUserId.toString();
-    Objects.requireNonNull(cacheManager.getCache("subscriptionsByUser")).put(userId, new SubscriptionListResponse(List.of(), 0));
+	@Test
+	void shouldEvictUserCacheOnCreate() {
+		String userId = testUserId.toString();
+		Objects.requireNonNull(cacheManager.getCache("subscriptionsByUser")).put(userId, new SubscriptionListResponse(List.of(), 0));
 
-    subscriptionsService.createSubscription(new SubscriptionCreateRequest(
-            "EUR/USD", BigDecimal.valueOf(1.10), "BELOW", List.of("email")
-    ), testUserId);
+		subscriptionsService.createSubscription(new SubscriptionCreateRequest(
+				"EUR/USD", BigDecimal.valueOf(1.10), "BELOW", List.of("email")
+		), testUserId);
 
-    assertCacheMissing("subscriptionsByUser", userId);
-  }
+		assertCacheMissing("subscriptionsByUser", userId);
+	}
 
-  @Test
-  void shouldUpdateCacheOnSubscriptionUpdate() {
-    subscriptionsService.updateSubscriptionById(
-            testSubscriptionId.toString(),
-            new SubscriptionUpdateRequest("EUR/USD", BigDecimal.valueOf(1.15), "BELOW", "ACTIVE", List.of("sms"))
-    );
+	@Test
+	void shouldUpdateCacheOnSubscriptionUpdate() {
+		subscriptionsService.updateSubscriptionById(
+				testSubscriptionId.toString(),
+				new SubscriptionUpdateRequest("EUR/USD", BigDecimal.valueOf(1.15), "BELOW", "ACTIVE", List.of("sms"))
+		);
 
-    SubscriptionResponse cached = Objects.requireNonNull(cacheManager.getCache("subscription"))
-            .get(testSubscriptionId.toString(), SubscriptionResponse.class);
-    assertNotNull(cached);
-    assertEquals("EUR/USD", cached.currencyPair());
-  }
+		SubscriptionResponse cached = Objects.requireNonNull(cacheManager.getCache("subscription"))
+				.get(testSubscriptionId.toString(), SubscriptionResponse.class);
+		assertNotNull(cached);
+		assertEquals("EUR/USD", cached.currencyPair());
+	}
 
-  @Test
-  void shouldEvictBothCachesOnDelete() {
-    String subKey = testSubscriptionId.toString();
-    String userKey = testUserId.toString();
-    Objects.requireNonNull(cacheManager.getCache("subscription")).put(subKey, SubscriptionResponse.fromSubscription(testSubscription));
-    Objects.requireNonNull(cacheManager.getCache("subscriptionsByUser")).put(userKey, new SubscriptionListResponse(List.of(), 0));
+	@Test
+	void shouldEvictBothCachesOnDelete() {
+		String subKey = testSubscriptionId.toString();
+		String userKey = testUserId.toString();
+		Objects.requireNonNull(cacheManager.getCache("subscription")).put(subKey, SubscriptionResponse.fromSubscription(testSubscription));
+		Objects.requireNonNull(cacheManager.getCache("subscriptionsByUser")).put(userKey, new SubscriptionListResponse(List.of(), 0));
 
-    subscriptionsService.deleteSubscriptionById(subKey);
+		subscriptionsService.deleteSubscriptionById(subKey);
 
-    assertCacheMissing("subscription", subKey);
-    assertCacheMissing("subscriptionsByUser", userKey);
-  }
+		assertCacheMissing("subscription", subKey);
+		assertCacheMissing("subscriptionsByUser", userKey);
+	}
 
-  @Test
-  void shouldRespectCacheTTL() {
-    String subscriptionId = testSubscriptionId.toString();
+	@Test
+	void shouldRespectCacheTTL() {
+		String subscriptionId = testSubscriptionId.toString();
 
-    // Clear caches first
-    clearAllCaches();
+		// Clear caches first
+		clearAllCaches();
 
-    // First call to populate cache
-    SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
-    assertNotNull(result);
+		// First call to populate cache
+		SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
+		assertNotNull(result);
 
-    // Verify cache entry exists
-    assertCacheHas("subscription", subscriptionId);
+		// Verify cache entry exists
+		assertCacheHas("subscription", subscriptionId);
 
-    // Wait for TTL (3s) to expire
-    Awaitility.await()
-            .pollDelay(Duration.ofMillis(3100))
-            .until(() -> true);
+		// Wait for TTL (3s) to expire
+		Awaitility.await()
+				.pollDelay(Duration.ofMillis(3100))
+				.until(() -> true);
 
-    // Cache entry should be expired
-    assertCacheMissing("subscription", subscriptionId);
-  }
+		// Cache entry should be expired
+		assertCacheMissing("subscription", subscriptionId);
+	}
 
-  @Test
-  void shouldVerifyCacheSerialization() {
-    String subscriptionId = testSubscriptionId.toString();
+	@Test
+	void shouldVerifyCacheSerialization() {
+		String subscriptionId = testSubscriptionId.toString();
 
-    // First call to populate cache
-    SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
-    assertNotNull(result);
+		// First call to populate cache
+		SubscriptionResponse result = subscriptionsService.findSubscriptionById(subscriptionId);
+		assertNotNull(result);
 
-    // Verify the cached object can be retrieved and deserialized
-    assertCacheHas("subscription", subscriptionId);
+		// Verify the cached object can be retrieved and deserialized
+		assertCacheHas("subscription", subscriptionId);
 
-    SubscriptionResponse cachedResponse = (SubscriptionResponse) Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("subscription")).get(subscriptionId)).get();
-    assertNotNull(cachedResponse);
-    assertEquals(subscriptionId, cachedResponse.id());
-    assertEquals("GBP/USD", cachedResponse.currencyPair());
-    assertEquals("ABOVE", cachedResponse.direction().name());
-    assertEquals("ACTIVE", cachedResponse.status().name());
-  }
+		SubscriptionResponse cachedResponse = (SubscriptionResponse) Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("subscription")).get(subscriptionId)).get();
+		assertNotNull(cachedResponse);
+		assertEquals(subscriptionId, cachedResponse.id());
+		assertEquals("GBP/USD", cachedResponse.currencyPair());
+		assertEquals("ABOVE", cachedResponse.direction().name());
+		assertEquals("ACTIVE", cachedResponse.status().name());
+	}
 }
 

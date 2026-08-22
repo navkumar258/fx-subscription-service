@@ -10,6 +10,6 @@ import java.util.UUID;
 @Repository
 public interface EventsOutboxRepository extends JpaRepository<EventsOutbox, UUID> {
 
-  List<EventsOutbox> findByStatus(String status);
+	List<EventsOutbox> findByStatus(String status);
 
 }

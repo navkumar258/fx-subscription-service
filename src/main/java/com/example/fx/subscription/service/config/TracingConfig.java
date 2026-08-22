@@ -10,19 +10,19 @@ import org.springframework.http.server.observation.ServerRequestObservationConte
 @Configuration(proxyBeanMethods = false)
 public class TracingConfig {
 
-  @Bean
-  ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
-    return new ObservedAspect(observationRegistry);
-  }
+	@Bean
+	ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
+		return new ObservedAspect(observationRegistry);
+	}
 
-  @Bean
-  public ObservationPredicate excludeActuatorFromTracing() {
-    return (name, context) -> {
-      if (context instanceof ServerRequestObservationContext srCtx) {
-        return !srCtx.getCarrier().getRequestURI().startsWith("/actuator");
-      }
-      return true;
-    };
-  }
+	@Bean
+	public ObservationPredicate excludeActuatorFromTracing() {
+		return (name, context) -> {
+			if (context instanceof ServerRequestObservationContext srCtx) {
+				return !srCtx.getCarrier().getRequestURI().startsWith("/actuator");
+			}
+			return true;
+		};
+	}
 
 }

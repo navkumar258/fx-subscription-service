@@ -14,162 +14,162 @@ import java.util.UUID;
 
 @Entity
 @Table(
-        name = "subscriptions",
-        indexes = {
-                @Index(name = "idx_subscriptions_user_id", columnList = "user_id"),
-                @Index(name = "idx_subscriptions_id_user_id", columnList = "id, user_id")
-        }
+		name = "subscriptions",
+		indexes = {
+				@Index(name = "idx_subscriptions_user_id", columnList = "user_id"),
+				@Index(name = "idx_subscriptions_id_user_id", columnList = "id, user_id")
+		}
 )
 public class Subscription implements Serializable {
 
-  @Serial
-  private static final long serialVersionUID = 3399651306360537641L;
+	@Serial
+	private static final long serialVersionUID = 3399651306360537641L;
 
-  @Id
-  @GeneratedValue
-  private UUID id;
+	@Id
+	@GeneratedValue
+	private UUID id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private FxUser user;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+	private FxUser user;
 
-  private String currencyPair;
+	private String currencyPair;
 
-  private BigDecimal threshold;
+	private BigDecimal threshold;
 
-  @Enumerated(EnumType.STRING)
-  private ThresholdDirection direction;
+	@Enumerated(EnumType.STRING)
+	private ThresholdDirection direction;
 
-  private List<String> notificationsChannels = new ArrayList<>();
+	private List<String> notificationsChannels = new ArrayList<>();
 
-  @Enumerated(EnumType.STRING)
-  private SubscriptionStatus status;
+	@Enumerated(EnumType.STRING)
+	private SubscriptionStatus status;
 
-  @Column(nullable = false, updatable = false)
-  private Instant createdAt;
+	@Column(nullable = false, updatable = false)
+	private Instant createdAt;
 
-  @Column(insertable = false)
-  private Instant updatedAt;
+	@Column(insertable = false)
+	private Instant updatedAt;
 
-  public Subscription() {
-  }
+	public Subscription() {
+	}
 
-  public Subscription(UUID id,
-                      String currencyPair,
-                      BigDecimal threshold,
-                      ThresholdDirection direction,
-                      List<String> notificationsChannels,
-                      SubscriptionStatus status) {
-    this.id = id;
-    this.currencyPair = currencyPair;
-    this.threshold = threshold;
-    this.direction = direction;
-    this.notificationsChannels = notificationsChannels;
-    this.status = status;
-  }
+	public Subscription(UUID id,
+	                    String currencyPair,
+	                    BigDecimal threshold,
+	                    ThresholdDirection direction,
+	                    List<String> notificationsChannels,
+	                    SubscriptionStatus status) {
+		this.id = id;
+		this.currencyPair = currencyPair;
+		this.threshold = threshold;
+		this.direction = direction;
+		this.notificationsChannels = notificationsChannels;
+		this.status = status;
+	}
 
-  public UUID getId() {
-    return id;
-  }
+	public UUID getId() {
+		return id;
+	}
 
-  public void setId(UUID id) {
-    this.id = id;
-  }
+	public void setId(UUID id) {
+		this.id = id;
+	}
 
-  public String getCurrencyPair() {
-    return currencyPair;
-  }
+	public String getCurrencyPair() {
+		return currencyPair;
+	}
 
-  public void setCurrencyPair(String currencyPair) {
-    this.currencyPair = currencyPair;
-  }
+	public void setCurrencyPair(String currencyPair) {
+		this.currencyPair = currencyPair;
+	}
 
-  public BigDecimal getThreshold() {
-    return threshold;
-  }
+	public BigDecimal getThreshold() {
+		return threshold;
+	}
 
-  public void setThreshold(BigDecimal threshold) {
-    this.threshold = threshold;
-  }
+	public void setThreshold(BigDecimal threshold) {
+		this.threshold = threshold;
+	}
 
-  public List<String> getNotificationsChannels() {
-    return notificationsChannels != null ? notificationsChannels : List.of();
-  }
+	public List<String> getNotificationsChannels() {
+		return notificationsChannels != null ? notificationsChannels : List.of();
+	}
 
-  public void setNotificationsChannels(List<String> notificationsChannels) {
-    this.notificationsChannels = notificationsChannels != null ?
-            new ArrayList<>(notificationsChannels) : new ArrayList<>();
-  }
+	public void setNotificationsChannels(List<String> notificationsChannels) {
+		this.notificationsChannels = notificationsChannels != null ?
+				new ArrayList<>(notificationsChannels) : new ArrayList<>();
+	}
 
-  public ThresholdDirection getDirection() {
-    return direction;
-  }
+	public ThresholdDirection getDirection() {
+		return direction;
+	}
 
-  public void setDirection(ThresholdDirection direction) {
-    this.direction = direction;
-  }
+	public void setDirection(ThresholdDirection direction) {
+		this.direction = direction;
+	}
 
-  public SubscriptionStatus getStatus() {
-    return status;
-  }
+	public SubscriptionStatus getStatus() {
+		return status;
+	}
 
-  public void setStatus(SubscriptionStatus status) {
-    this.status = status;
-  }
+	public void setStatus(SubscriptionStatus status) {
+		this.status = status;
+	}
 
-  public FxUser getUser() {
-    return user;
-  }
+	public FxUser getUser() {
+		return user;
+	}
 
-  public void setUser(FxUser user) {
-    this.user = user;
-  }
+	public void setUser(FxUser user) {
+		this.user = user;
+	}
 
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
 
-  public void setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
-  }
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
+	}
 
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
+	public Instant getUpdatedAt() {
+		return updatedAt;
+	}
 
-  public void setUpdatedAt(Instant updatedAt) {
-    this.updatedAt = updatedAt;
-  }
+	public void setUpdatedAt(Instant updatedAt) {
+		this.updatedAt = updatedAt;
+	}
 
-  @Override
-  public boolean equals(Object o) {
-    if (!(o instanceof Subscription that)) return false;
-    return Objects.equals(id, that.id)
-            && Objects.equals(getCurrencyPair(), that.getCurrencyPair())
-            && Objects.equals(getThreshold(), that.getThreshold())
-            && getDirection() == that.getDirection()
-            && Objects.equals(getNotificationsChannels(), that.getNotificationsChannels())
-            && getStatus() == that.getStatus();
-  }
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof Subscription that)) return false;
+		return Objects.equals(id, that.id)
+				&& Objects.equals(getCurrencyPair(), that.getCurrencyPair())
+				&& Objects.equals(getThreshold(), that.getThreshold())
+				&& getDirection() == that.getDirection()
+				&& Objects.equals(getNotificationsChannels(), that.getNotificationsChannels())
+				&& getStatus() == that.getStatus();
+	}
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(id, getCurrencyPair(), getThreshold(), getDirection(), getNotificationsChannels(), getStatus());
-  }
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, getCurrencyPair(), getThreshold(), getDirection(), getNotificationsChannels(), getStatus());
+	}
 
-  @Override
-  public String toString() {
-    return "Subscription{" +
-            "id=" + id +
-            ", User=" + user +
-            ", currencyPair='" + currencyPair + '\'' +
-            ", threshold=" + threshold +
-            ", direction=" + direction +
-            ", notificationsChannels=" + notificationsChannels +
-            ", status=" + status +
-            ", createdAt=" + createdAt +
-            ", updatedAt=" + updatedAt +
-            '}';
-  }
+	@Override
+	public String toString() {
+		return "Subscription{" +
+				"id=" + id +
+				", User=" + user +
+				", currencyPair='" + currencyPair + '\'' +
+				", threshold=" + threshold +
+				", direction=" + direction +
+				", notificationsChannels=" + notificationsChannels +
+				", status=" + status +
+				", createdAt=" + createdAt +
+				", updatedAt=" + updatedAt +
+				'}';
+	}
 }

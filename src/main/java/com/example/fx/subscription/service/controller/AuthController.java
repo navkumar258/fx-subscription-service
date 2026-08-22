@@ -37,93 +37,93 @@ import java.util.stream.Collectors;
 @Observed(name = "auth.controller")
 public class AuthController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
-  private final AuthenticationManager authenticationManager;
-  private final JwtTokenProvider jwtTokenProvider;
-  private final FxUserDetailsService fxUserDetailsService;
-  private final FxUserRepository fxUserRepository;
-  private final PasswordEncoder passwordEncoder;
+	private final AuthenticationManager authenticationManager;
+	private final JwtTokenProvider jwtTokenProvider;
+	private final FxUserDetailsService fxUserDetailsService;
+	private final FxUserRepository fxUserRepository;
+	private final PasswordEncoder passwordEncoder;
 
-  public AuthController(AuthenticationManager authenticationManager,
-                        JwtTokenProvider jwtTokenProvider,
-                        FxUserDetailsService fxUserDetailsService,
-                        FxUserRepository fxUserRepository,
-                        PasswordEncoder passwordEncoder) {
-    this.authenticationManager = authenticationManager;
-    this.jwtTokenProvider = jwtTokenProvider;
-    this.fxUserDetailsService = fxUserDetailsService;
-    this.fxUserRepository = fxUserRepository;
-    this.passwordEncoder = passwordEncoder;
-  }
+	public AuthController(AuthenticationManager authenticationManager,
+	                      JwtTokenProvider jwtTokenProvider,
+	                      FxUserDetailsService fxUserDetailsService,
+	                      FxUserRepository fxUserRepository,
+	                      PasswordEncoder passwordEncoder) {
+		this.authenticationManager = authenticationManager;
+		this.jwtTokenProvider = jwtTokenProvider;
+		this.fxUserDetailsService = fxUserDetailsService;
+		this.fxUserRepository = fxUserRepository;
+		this.passwordEncoder = passwordEncoder;
+	}
 
-  @PostMapping("/login")
-  public ResponseEntity<AuthLoginResponse> login(@Valid @RequestBody AuthRequest authRequest) {
-    try {
-      authenticationManager.authenticate(
-              new UsernamePasswordAuthenticationToken(
-                      authRequest.username(), authRequest.password()
-              )
-      );
+	@PostMapping("/login")
+	public ResponseEntity<AuthLoginResponse> login(@Valid @RequestBody AuthRequest authRequest) {
+		try {
+			authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(
+							authRequest.username(), authRequest.password()
+					)
+			);
 
-      UserDetails userDetails = fxUserDetailsService.loadUserByUsername(authRequest.username());
+			UserDetails userDetails = fxUserDetailsService.loadUserByUsername(authRequest.username());
 
-      String token = jwtTokenProvider.createToken(
-              userDetails.getUsername(),
-              userDetails.getAuthorities().stream()
-                      .map(GrantedAuthority::getAuthority)
-                      .collect(Collectors.toSet())
-      );
+			String token = jwtTokenProvider.createToken(
+					userDetails.getUsername(),
+					userDetails.getAuthorities().stream()
+							.map(GrantedAuthority::getAuthority)
+							.collect(Collectors.toSet())
+			);
 
-      LOGGER.info("User logged in successfully: username={}", authRequest.username());
+			LOGGER.info("User logged in successfully: username={}", authRequest.username());
 
-      return ResponseEntity.ok(new AuthLoginResponse(token, "Login successful"));
+			return ResponseEntity.ok(new AuthLoginResponse(token, "Login successful"));
 
-    } catch (AuthenticationException ex) {
-      LOGGER.warn("Authentication failed: username={}, message={}",
-              authRequest.username(), ex.getMessage());
+		} catch (AuthenticationException ex) {
+			LOGGER.warn("Authentication failed: username={}, message={}",
+					authRequest.username(), ex.getMessage());
 
-      // Let the ControllerAdvice handle this exception
-      throw new AuthenticationException("Invalid username/password") {
-        @Serial
-        private static final long serialVersionUID = -4224865560755387326L;
+			// Let the ControllerAdvice handle this exception
+			throw new AuthenticationException("Invalid username/password") {
+				@Serial
+				private static final long serialVersionUID = -4224865560755387326L;
 
-        @Override
-        public String getMessage() {
-          return "Invalid username/password";
-        }
-      };
-    }
-  }
+				@Override
+				public String getMessage() {
+					return "Invalid username/password";
+				}
+			};
+		}
+	}
 
-  @PostMapping("/signup")
-  public ResponseEntity<AuthSignupResponse> signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
-    FxUser user = createUserFromRequest(userSignUpRequest);
-    try {
-      FxUser savedUser = fxUserRepository.save(user);
-      LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
+	@PostMapping("/signup")
+	public ResponseEntity<AuthSignupResponse> signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
+		FxUser user = createUserFromRequest(userSignUpRequest);
+		try {
+			FxUser savedUser = fxUserRepository.save(user);
+			LOGGER.info("User registered successfully: email={}, userId={}", user.getEmail(), user.getId());
 
-      return buildSignupResponse(savedUser, userSignUpRequest.admin());
-    } catch (DataIntegrityViolationException _) {
-      throw new UserAlreadyExistsException("Email is already registered", userSignUpRequest.email());
-    }
-  }
+			return buildSignupResponse(savedUser, userSignUpRequest.admin());
+		} catch (DataIntegrityViolationException _) {
+			throw new UserAlreadyExistsException("Email is already registered", userSignUpRequest.email());
+		}
+	}
 
-  private FxUser createUserFromRequest(UserSignUpRequest request) {
-    FxUser user = new FxUser();
-    user.setEmail(request.email());
-    user.setPassword(passwordEncoder.encode(request.password()));
-    user.setMobile(request.mobile());
-    user.setEnabled(true);
-    user.setRole(Boolean.TRUE.equals(request.admin()) ? UserRole.ADMIN : UserRole.USER);
-    user.setCreatedAt(Instant.now());
-    return user;
-  }
+	private FxUser createUserFromRequest(UserSignUpRequest request) {
+		FxUser user = new FxUser();
+		user.setEmail(request.email());
+		user.setPassword(passwordEncoder.encode(request.password()));
+		user.setMobile(request.mobile());
+		user.setEnabled(true);
+		user.setRole(Boolean.TRUE.equals(request.admin()) ? UserRole.ADMIN : UserRole.USER);
+		user.setCreatedAt(Instant.now());
+		return user;
+	}
 
-  private ResponseEntity<AuthSignupResponse> buildSignupResponse(FxUser user, boolean isAdmin) {
-    String message = isAdmin ? "Admin registered successfully" : "User registered successfully";
-    AuthSignupResponse response = new AuthSignupResponse(user.getId().toString(), message);
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
-  }
+	private ResponseEntity<AuthSignupResponse> buildSignupResponse(FxUser user, boolean isAdmin) {
+		String message = isAdmin ? "Admin registered successfully" : "User registered successfully";
+		AuthSignupResponse response = new AuthSignupResponse(user.getId().toString(), message);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
 }
 

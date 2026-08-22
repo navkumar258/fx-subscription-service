@@ -17,76 +17,76 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TracingConfigTest {
 
-  @Mock
-  private ObservationRegistry observationRegistry;
+	@Mock
+	private ObservationRegistry observationRegistry;
 
-  @Mock
-  private HttpServletRequest httpServletRequest;
+	@Mock
+	private HttpServletRequest httpServletRequest;
 
-  private TracingConfig tracingConfig;
+	private TracingConfig tracingConfig;
 
-  @BeforeEach
-  void setUp() {
-    tracingConfig = new TracingConfig();
-  }
+	@BeforeEach
+	void setUp() {
+		tracingConfig = new TracingConfig();
+	}
 
-  @Test
-  void observedAspect_ShouldCreateObservedAspect() {
-    // When
-    ObservedAspect observedAspect = tracingConfig.observedAspect(observationRegistry);
+	@Test
+	void observedAspect_ShouldCreateObservedAspect() {
+		// When
+		ObservedAspect observedAspect = tracingConfig.observedAspect(observationRegistry);
 
-    // Then
-    assertNotNull(observedAspect);
-  }
+		// Then
+		assertNotNull(observedAspect);
+	}
 
-  @Test
-  void excludeActuatorFromTracing_ShouldCreateObservationPredicate() {
-    // When
-    ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
+	@Test
+	void excludeActuatorFromTracing_ShouldCreateObservationPredicate() {
+		// When
+		ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
 
-    // Then
-    assertNotNull(predicate);
-  }
+		// Then
+		assertNotNull(predicate);
+	}
 
-  @Test
-  void excludeActuatorFromTracing_ShouldExcludeActuatorEndpoints() {
-    // Given
-    ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
-    ServerRequestObservationContext context = new ServerRequestObservationContext(httpServletRequest, null);
+	@Test
+	void excludeActuatorFromTracing_ShouldExcludeActuatorEndpoints() {
+		// Given
+		ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
+		ServerRequestObservationContext context = new ServerRequestObservationContext(httpServletRequest, null);
 
-    when(httpServletRequest.getRequestURI()).thenReturn("/actuator/health");
+		when(httpServletRequest.getRequestURI()).thenReturn("/actuator/health");
 
-    // When
-    boolean shouldExclude = predicate.test("test", context);
+		// When
+		boolean shouldExclude = predicate.test("test", context);
 
-    // Then
-    assertFalse(shouldExclude, "Actuator endpoints should be excluded from tracing");
-  }
+		// Then
+		assertFalse(shouldExclude, "Actuator endpoints should be excluded from tracing");
+	}
 
-  @Test
-  void excludeActuatorFromTracing_ShouldIncludeNonActuatorEndpoints() {
-    // Given
-    ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
-    ServerRequestObservationContext context = new ServerRequestObservationContext(httpServletRequest, null);
+	@Test
+	void excludeActuatorFromTracing_ShouldIncludeNonActuatorEndpoints() {
+		// Given
+		ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
+		ServerRequestObservationContext context = new ServerRequestObservationContext(httpServletRequest, null);
 
-    when(httpServletRequest.getRequestURI()).thenReturn("/api/v1/subscriptions");
+		when(httpServletRequest.getRequestURI()).thenReturn("/api/v1/subscriptions");
 
-    // When
-    boolean shouldInclude = predicate.test("test", context);
+		// When
+		boolean shouldInclude = predicate.test("test", context);
 
-    // Then
-    assertTrue(shouldInclude, "Non-actuator endpoints should be included in tracing");
-  }
+		// Then
+		assertTrue(shouldInclude, "Non-actuator endpoints should be included in tracing");
+	}
 
-  @Test
-  void excludeActuatorFromTracing_ShouldHandleNullContext() {
-    // Given
-    ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
+	@Test
+	void excludeActuatorFromTracing_ShouldHandleNullContext() {
+		// Given
+		ObservationPredicate predicate = tracingConfig.excludeActuatorFromTracing();
 
-    // When
-    boolean shouldInclude = predicate.test("test", null);
+		// When
+		boolean shouldInclude = predicate.test("test", null);
 
-    // Then
-    assertTrue(shouldInclude, "Null contexts should be included in tracing");
-  }
+		// Then
+		assertTrue(shouldInclude, "Null contexts should be included in tracing");
+	}
 }

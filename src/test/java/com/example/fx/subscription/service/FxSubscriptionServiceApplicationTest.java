@@ -14,19 +14,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest
 class FxSubscriptionServiceApplicationTest {
 
-  @Autowired
-  private ApplicationContext applicationContext;
+	@Autowired
+	private ApplicationContext applicationContext;
 
-  // Mock external dependencies to speed up tests
-  @MockitoBean
-  KafkaAdmin kafkaAdmin;
+	// Mock external dependencies to speed up tests
+	@MockitoBean
+	KafkaAdmin kafkaAdmin;
 
-  @MockitoBean
-  KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
+	@MockitoBean
+	KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
-  @Test
-  void contextLoads() {
-    // Then
-    assertNotNull(applicationContext, "Application context should be loaded");
-  }
+	@Test
+	void contextLoads() {
+		// Then
+		assertNotNull(applicationContext, "Application context should be loaded");
+	}
 }

@@ -7,29 +7,29 @@ import java.time.Instant;
 import java.util.List;
 
 public record UserDetailResponse(
-        String id,
-        String email,
-        String mobile,
-        boolean enabled,
-        String pushDeviceToken,
-        Instant createdAt,
-        Instant updatedAt,
-        List<SubscriptionResponse> subscriptions
+		String id,
+		String email,
+		String mobile,
+		boolean enabled,
+		String pushDeviceToken,
+		Instant createdAt,
+		Instant updatedAt,
+		List<SubscriptionResponse> subscriptions
 ) {
-  public static UserDetailResponse fromFxUser(FxUser fxUser) {
-    List<SubscriptionResponse> subscriptions = fxUser.getSubscriptions().stream()
-            .map(SubscriptionResponse::fromSubscription)
-            .toList();
+	public static UserDetailResponse fromFxUser(FxUser fxUser) {
+		List<SubscriptionResponse> subscriptions = fxUser.getSubscriptions().stream()
+				.map(SubscriptionResponse::fromSubscription)
+				.toList();
 
-    return new UserDetailResponse(
-            fxUser.getId().toString(),
-            fxUser.getEmail(),
-            fxUser.getMobile(),
-            fxUser.isEnabled(),
-            fxUser.getPushDeviceToken(),
-            fxUser.getCreatedAt(),
-            fxUser.getUpdatedAt(),
-            subscriptions
-    );
-  }
+		return new UserDetailResponse(
+				fxUser.getId().toString(),
+				fxUser.getEmail(),
+				fxUser.getMobile(),
+				fxUser.isEnabled(),
+				fxUser.getPushDeviceToken(),
+				fxUser.getCreatedAt(),
+				fxUser.getUpdatedAt(),
+				subscriptions
+		);
+	}
 } 

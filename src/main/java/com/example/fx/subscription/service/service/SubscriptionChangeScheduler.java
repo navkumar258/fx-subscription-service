@@ -13,47 +13,47 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SubscriptionChangeScheduler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionChangeScheduler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionChangeScheduler.class);
 
-  private final EventsOutboxRepository eventsOutboxRepository;
-  private final SubscriptionChangePublisher subscriptionChangePublisher;
+	private final EventsOutboxRepository eventsOutboxRepository;
+	private final SubscriptionChangePublisher subscriptionChangePublisher;
 
-  public SubscriptionChangeScheduler(EventsOutboxRepository eventsOutboxRepository,
-                                     SubscriptionChangePublisher subscriptionChangePublisher) {
-    this.eventsOutboxRepository = eventsOutboxRepository;
-    this.subscriptionChangePublisher = subscriptionChangePublisher;
-  }
+	public SubscriptionChangeScheduler(EventsOutboxRepository eventsOutboxRepository,
+	                                   SubscriptionChangePublisher subscriptionChangePublisher) {
+		this.eventsOutboxRepository = eventsOutboxRepository;
+		this.subscriptionChangePublisher = subscriptionChangePublisher;
+	}
 
-  @Scheduled(
-          initialDelayString = "${outbox.subscriptions.check.initial-delay}",
-          fixedRateString = "${outbox.subscriptions.check.rate}"
-  )
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void checkForOutboxSubscriptions() {
-    LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
+	@Scheduled(
+			initialDelayString = "${outbox.subscriptions.check.initial-delay}",
+			fixedRateString = "${outbox.subscriptions.check.rate}"
+	)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void checkForOutboxSubscriptions() {
+		LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
 
-    var pendingEvents = eventsOutboxRepository.findByStatus("PENDING").stream()
-            .map(this::toEvent)
-            .toList();
+		var pendingEvents = eventsOutboxRepository.findByStatus("PENDING").stream()
+				.map(this::toEvent)
+				.toList();
 
-    if (pendingEvents.isEmpty()) {
-      LOGGER.info("[SubscriptionChangeScheduler] END No events to publish!!!");
-      return;
-    }
+		if (pendingEvents.isEmpty()) {
+			LOGGER.info("[SubscriptionChangeScheduler] END No events to publish!!!");
+			return;
+		}
 
-    for (var event : pendingEvents) {
-      subscriptionChangePublisher.sendMessage(event);
-    }
+		for (var event : pendingEvents) {
+			subscriptionChangePublisher.sendMessage(event);
+		}
 
-    LOGGER.info("[SubscriptionChangeScheduler] END published all PENDING subscriptions");
-  }
+		LOGGER.info("[SubscriptionChangeScheduler] END published all PENDING subscriptions");
+	}
 
-  private SubscriptionChangeEvent toEvent(EventsOutbox eventsOutbox) {
-    return new SubscriptionChangeEvent(
-            eventsOutbox.getId().toString(),
-            eventsOutbox.getTimestamp(),
-            eventsOutbox.getEventType(),
-            eventsOutbox.getPayload()
-    );
-  }
+	private SubscriptionChangeEvent toEvent(EventsOutbox eventsOutbox) {
+		return new SubscriptionChangeEvent(
+				eventsOutbox.getId().toString(),
+				eventsOutbox.getTimestamp(),
+				eventsOutbox.getEventType(),
+				eventsOutbox.getPayload()
+		);
+	}
 }

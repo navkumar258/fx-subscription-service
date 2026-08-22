@@ -8,35 +8,35 @@ import java.io.Serial;
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class UserNotFoundException extends RuntimeException {
 
-  @Serial
-  private static final long serialVersionUID = 1006298327459706365L;
+	@Serial
+	private static final long serialVersionUID = 1006298327459706365L;
 
-  private final String userId;
-  private final String errorCode;
+	private final String userId;
+	private final String errorCode;
 
-  public UserNotFoundException(String message) {
-    super(message);
-    this.userId = null;
-    this.errorCode = "USER_NOT_FOUND";
-  }
+	public UserNotFoundException(String message) {
+		super(message);
+		this.userId = null;
+		this.errorCode = "USER_NOT_FOUND";
+	}
 
-  public UserNotFoundException(String message, String userId) {
-    super(message);
-    this.userId = userId;
-    this.errorCode = "USER_NOT_FOUND";
-  }
+	public UserNotFoundException(String message, String userId) {
+		super(message);
+		this.userId = userId;
+		this.errorCode = "USER_NOT_FOUND";
+	}
 
-  public UserNotFoundException(String message, String userId, String errorCode) {
-    super(message);
-    this.userId = userId;
-    this.errorCode = errorCode;
-  }
+	public UserNotFoundException(String message, String userId, String errorCode) {
+		super(message);
+		this.userId = userId;
+		this.errorCode = errorCode;
+	}
 
-  public String getUserId() {
-    return userId;
-  }
+	public String getUserId() {
+		return userId;
+	}
 
-  public String getErrorCode() {
-    return errorCode;
-  }
+	public String getErrorCode() {
+		return errorCode;
+	}
 }
