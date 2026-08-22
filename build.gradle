@@ -164,12 +164,12 @@ tasks.register('coverageReport') {
 }
 
 openApi {
-    apiDocsUrl.set("https://localhost:8443/v3/api-docs")
+    apiDocsUrl.set("https://localhost:8443/v3/api-docs.yaml")
     trustStore.set("src/main/resources/keystore.p12")
     trustStorePassword.set("changeit".toCharArray())
 
     outputDir.set(file("$rootDir/api-docs"))
-    outputFileName.set("fx-subscription-service.json")
+    outputFileName.set("fx-subscription-service.yaml")
 
     customBootRun {
         args = ["--spring.profiles.active=openapi"]
