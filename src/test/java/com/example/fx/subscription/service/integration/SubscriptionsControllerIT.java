@@ -17,18 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
@@ -39,16 +36,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({PostgresTestContainerConfig.class, WebSecurityTestConfig.class})
 class SubscriptionsControllerIT {
 
-	@Autowired
-	MockMvcTester mockMvc;
-
-	@Autowired
-	ObjectMapper objectMapper;
+	private WebTestClient webTestClient;
 
 	@Autowired
 	FxUserRepository fxUserRepository;
@@ -69,16 +61,20 @@ class SubscriptionsControllerIT {
 	private SecretKey testSecretKey;
 
 	@BeforeEach
-	void setUp() {
+	void setUp(@LocalServerPort int port) {
 		// Cleanup database before each test
 		fxUserRepository.deleteAll();
 
 		// Setup JWT key
 		testSecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecretString));
+
+		this.webTestClient = WebTestClient.bindToServer()
+				.baseUrl("http://localhost:" + port)
+				.build();
 	}
 
 	@Test
-	void completeSubscriptionLifecycle_ShouldWorkEndToEnd() throws Exception {
+	void completeSubscriptionLifecycle_ShouldWorkEndToEnd() {
 		// Create admin user FIRST, then generate JWT
 		createTestUser("admin@example.com", UserRole.ADMIN);
 		String adminJwt = generateTestJwtToken("admin@example.com");
@@ -111,29 +107,29 @@ class SubscriptionsControllerIT {
 
 	@Test
 	void authenticationFlow_ShouldHandleInvalidTokens() {
-		// Test invalid JWT token
 		SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
 				"GBP/USD", BigDecimal.valueOf(1.20), "ABOVE", List.of("sms", "email"));
 
-		assertThat(mockMvc.post()
+		// Test invalid JWT token
+		webTestClient.post()
 				.uri("/api/v1/subscriptions")
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(createRequest))
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
-				.secure(true))
-				.hasStatus(HttpStatus.UNAUTHORIZED);
+				.bodyValue(createRequest)
+				.exchange()
+				.expectStatus().isUnauthorized();
 
 		// Test missing JWT token
-		assertThat(mockMvc.post()
+		webTestClient.post()
 				.uri("/api/v1/subscriptions")
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(createRequest))
-				.secure(true))
-				.hasStatus(HttpStatus.UNAUTHORIZED);
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(createRequest)
+				.exchange()
+				.expectStatus().isUnauthorized();
 	}
 
 	@Test
-	void authorizationFlow_ShouldEnforceAccessControl() throws Exception {
+	void authorizationFlow_ShouldEnforceAccessControl() {
 		// Create two users FIRST, then generate JWTs
 		createTestUser("user1@example.com", UserRole.USER);
 		createTestUser("user2@example.com", UserRole.USER);
@@ -145,34 +141,34 @@ class SubscriptionsControllerIT {
 		String subscriptionId = createSubscription(user1Jwt, BigDecimal.valueOf(1.25));
 
 		// User2 tries to access User1's subscription - should be forbidden
-		assertThat(mockMvc.get()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.get()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// User2 tries to update User1's subscription - should be forbidden
 		SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
 				"EUR/USD", BigDecimal.valueOf(1.15), "BELOW", "ACTIVE", List.of("email"));
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(updateRequest))
+		webTestClient.put()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.bodyValue(updateRequest)
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// User2 tries to delete User1's subscription - should be forbidden
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.delete()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 	}
 
 	@Test
-	void adminAuthorizationFlow_ShouldAllowAdminAccess() throws Exception {
+	void adminAuthorizationFlow_ShouldAllowAdminAccess() {
 		// Create admin user FIRST, then generate JWT
 		createTestUser("admin@example.com", UserRole.ADMIN);
 		String adminJwt = generateTestJwtToken("admin@example.com");
@@ -184,32 +180,32 @@ class SubscriptionsControllerIT {
 		String subscriptionId = createSubscription(userJwt, BigDecimal.valueOf(1.25));
 
 		// Admin should be able to access all subscriptions
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/subscriptions/all")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.subscriptions", subscriptionsAssert ->
-						subscriptionsAssert.assertThat().asArray().hasSizeGreaterThanOrEqualTo(1));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.subscriptions").isArray()
+				.jsonPath("$.subscriptions.length()").value(len -> assertThat((Integer) len).isGreaterThanOrEqualTo(1));
 
 		// Admin should be able to access any individual subscription
-		assertThat(mockMvc.get()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.get()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 
 		// Regular user should NOT be able to access all subscriptions
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/subscriptions/all")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 	}
 
 	@Test
-	void dataPersistenceFlow_ShouldPersistToDatabase() throws Exception {
+	void dataPersistenceFlow_ShouldPersistToDatabase() {
 		// Create user FIRST, then generate JWT
 		createTestUser("persistence_test@mail.com", UserRole.USER);
 		String userJwt = generateTestJwtToken("persistence_test@mail.com");
@@ -218,20 +214,16 @@ class SubscriptionsControllerIT {
 		String subscriptionId = createSubscription(userJwt, BigDecimal.valueOf(1.25));
 
 		// Verify subscription exists in user's subscription list
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/subscriptions/my")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.subscriptions", subscriptionsAssert ->
-						subscriptionsAssert.assertThat().asArray().hasSize(1))
-				.hasPathSatisfying("$.subscriptions[0].id", idAssert ->
-						idAssert.assertThat().isEqualTo(subscriptionId))
-				.hasPathSatisfying("$.subscriptions[0].currencyPair", currencyPairAssert ->
-						currencyPairAssert.assertThat().isEqualTo("GBP/USD"))
-				.hasPathSatisfying("$.subscriptions[0].threshold", thresholdAssert ->
-						thresholdAssert.assertThat().asNumber().isEqualTo(1.25));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.subscriptions.length()").isEqualTo(1)
+				.jsonPath("$.subscriptions[0].id").isEqualTo(subscriptionId)
+				.jsonPath("$.subscriptions[0].currencyPair").isEqualTo("GBP/USD")
+				.jsonPath("$.subscriptions[0].threshold").isEqualTo(1.25);
 	}
 
 	// Helper methods for creating test data
@@ -257,24 +249,22 @@ class SubscriptionsControllerIT {
 	}
 
 	// Helper methods for subscription operations
-	private String createSubscription(String jwt, BigDecimal threshold) throws Exception {
+	private String createSubscription(String jwt, BigDecimal threshold) {
 		SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
 				"GBP/USD", threshold, "ABOVE", List.of("email", "sms"));
 
-		MockHttpServletResponse response = mockMvc.post()
+		SubscriptionCreateResponse createResponse = webTestClient.post()
 				.uri("/api/v1/subscriptions")
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(createRequest))
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true)
+				.bodyValue(createRequest)
 				.exchange()
-				.getResponse();
+				.expectStatus().isCreated()
+				.expectBody(SubscriptionCreateResponse.class)
+				.returnResult()
+				.getResponseBody();
 
-		assertThat(response.getStatus()).isEqualTo(HttpStatus.CREATED.value());
-
-		SubscriptionCreateResponse createResponse = objectMapper.readValue(
-				response.getContentAsString(), SubscriptionCreateResponse.class);
-
+		assertThat(createResponse).isNotNull();
 		assertThat(createResponse.subscription().currencyPair()).isEqualTo("GBP/USD");
 		assertThat(createResponse.subscription().threshold()).isEqualTo(threshold);
 		assertThat(createResponse.subscription().createdAt()).isNotNull();
@@ -283,64 +273,58 @@ class SubscriptionsControllerIT {
 	}
 
 	private void verifySubscriptionExists(String jwt, String subscriptionId, String expectedCurrencyPair, BigDecimal expectedThreshold) {
-		assertThat(mockMvc.get()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.get()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.currencyPair", currencyPairAssert ->
-						currencyPairAssert.assertThat().isEqualTo(expectedCurrencyPair))
-				.hasPathSatisfying("$.threshold", thresholdAssert ->
-						thresholdAssert.assertThat().asNumber().isEqualTo(expectedThreshold.doubleValue()));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.currencyPair").isEqualTo(expectedCurrencyPair)
+				.jsonPath("$.threshold").isEqualTo(expectedThreshold.doubleValue());
 	}
 
 	private void updateSubscription(String jwt, String subscriptionId, BigDecimal threshold) {
 		SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
 				"EUR/USD", threshold, "BELOW", "ACTIVE", List.of("email"));
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(updateRequest))
+		webTestClient.put()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.subscription.currencyPair", currencyPairAssert ->
-						currencyPairAssert.assertThat().isEqualTo("EUR/USD"))
-				.hasPathSatisfying("$.subscription.threshold", thresholdAssert ->
-						thresholdAssert.assertThat().asNumber().isEqualTo(threshold.doubleValue()))
-				.hasPathSatisfying("$.subscription.updatedAt", updatedAtAssert ->
-						updatedAtAssert.assertThat().isNotNull());
+				.bodyValue(updateRequest)
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.subscription.currencyPair").isEqualTo("EUR/USD")
+				.jsonPath("$.subscription.threshold").isEqualTo(threshold.doubleValue())
+				.jsonPath("$.subscription.updatedAt").isNotEmpty();
 	}
 
 	private void verifyUserHasSubscription(String jwt) {
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/subscriptions/my")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.subscriptions", subscriptionsAssert ->
-						subscriptionsAssert.assertThat().asArray().hasSizeGreaterThanOrEqualTo(1))
-				.hasPathSatisfying("$.totalCount", totalCountAssert ->
-						totalCountAssert.assertThat().asNumber().isEqualTo(1));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.subscriptions").isArray()
+				.jsonPath("$.subscriptions.length()").value(len -> assertThat((Integer) len).isGreaterThanOrEqualTo(1))
+				.jsonPath("$.totalCount").isEqualTo(1);
 	}
 
 	private void deleteSubscription(String jwt, String subscriptionId) {
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.delete()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 	}
 
 	private void verifySubscriptionDeleted(String jwt, String subscriptionId) {
-		assertThat(mockMvc.get()
-				.uri("/api/v1/subscriptions/" + subscriptionId)
+		webTestClient.get()
+				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NOT_FOUND);
+				.exchange()
+				.expectStatus().isNotFound();
 	}
 }

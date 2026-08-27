@@ -11,123 +11,123 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({PostgresTestContainerConfig.class, WebSecurityTestConfig.class})
 class AuthenticationFlowIT {
 
-	@Autowired
-	private MockMvc mockMvc;
-
-	@Autowired
-	private ObjectMapper objectMapper;
+	private WebTestClient webTestClient;
 
 	@Autowired
 	private FxUserRepository fxUserRepository;
 
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-
 	// Mock external dependencies to speed up tests
 	@MockitoBean
-	KafkaAdmin kafkaAdmin;
+	private KafkaAdmin kafkaAdmin;
 
 	@MockitoBean
-	KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
+	private KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
 	@BeforeEach
-	void setUp() {
+	void setUp(@LocalServerPort int port) {
+		this.webTestClient = WebTestClient.bindToServer()
+				.baseUrl("http://localhost:" + port)
+				.build();
+
 		fxUserRepository.deleteAll();
 	}
 
 	@Test
-	void completeUserRegistrationAndLoginFlow_ShouldWorkEndToEnd() throws Exception {
+	void completeUserRegistrationAndLoginFlow_ShouldWorkEndToEnd() {
 		// 1. Register new user
 		UserSignUpRequest signUpRequest = new UserSignUpRequest(
 				"test@example.com", "password123", "+1234567890", false);
 
-		mockMvc.perform(post("/api/v1/auth/signup")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(signUpRequest)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.message").value("User registered successfully"));
+		webTestClient.post()
+				.uri("/api/v1/auth/signup")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(signUpRequest)
+				.exchange()
+				.expectStatus().isCreated()
+				.expectBody()
+				.jsonPath("$.message").isEqualTo("User registered successfully");
 
 		// 2. Login with registered user
 		AuthRequest authRequest = new AuthRequest("test@example.com", "password123");
 
-		mockMvc.perform(post("/api/v1/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(authRequest)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.token").exists())
-				.andExpect(jsonPath("$.message").value("Login successful"))
-				.andReturn().getResponse().getContentAsString();
+		webTestClient.post()
+				.uri("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(authRequest)
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.token").exists()
+				.jsonPath("$.message").isEqualTo("Login successful");
 
 		// 3. Verify user exists in database
 		assertThat(fxUserRepository.findByEmail("test@example.com")).isPresent();
 	}
 
 	@Test
-	void adminUserRegistrationAndPrivilegedAccess_ShouldWorkEndToEnd() throws Exception {
+	void adminUserRegistrationAndPrivilegedAccess_ShouldWorkEndToEnd() {
 		// 1. Register admin user
 		UserSignUpRequest adminSignUpRequest = new UserSignUpRequest(
 				"admin@example.com", "admin123", "+1234567890", true);
 
-		mockMvc.perform(post("/api/v1/auth/signup")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(adminSignUpRequest)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.message").value("Admin registered successfully"));
+		webTestClient.post()
+				.uri("/api/v1/auth/signup")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(adminSignUpRequest)
+				.exchange()
+				.expectStatus().isCreated()
+				.expectBody()
+				.jsonPath("$.message").isEqualTo("Admin registered successfully");
 
-		// 2. Login as admin
+		// 2. Login as admin and extract typed response
 		AuthRequest adminAuthRequest = new AuthRequest("admin@example.com", "admin123");
 
-		MockHttpServletResponse adminResponse = mockMvc.perform(post("/api/v1/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(adminAuthRequest)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.token").exists())
-				.andReturn().getResponse();
+		AuthLoginResponse adminResponse = webTestClient.post()
+				.uri("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(adminAuthRequest)
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody(AuthLoginResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(adminResponse).isNotNull();
+		assertThat(adminResponse.token()).isNotNull();
 
 		// 3. Use admin token to access privileged endpoints
-		String adminToken = extractTokenFromResponse(adminResponse.getContentAsString());
-
-		mockMvc.perform(get("/api/v1/subscriptions/all")
-						.header("Authorization", "Bearer " + adminToken))
-				.andExpect(status().isOk());
+		webTestClient.get()
+				.uri("/api/v1/subscriptions/all")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminResponse.token())
+				.exchange()
+				.expectStatus().isOk();
 	}
 
 	@Test
-	void invalidCredentials_ShouldBeRejected() throws Exception {
+	void invalidCredentials_ShouldBeRejected() {
 		// 1. Try to login with non-existent user
 		AuthRequest invalidRequest = new AuthRequest("nonexistent@example.com", "password123");
 
-		mockMvc.perform(post("/api/v1/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(invalidRequest)))
-				.andExpect(status().isUnauthorized());
+		webTestClient.post()
+				.uri("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(invalidRequest)
+				.exchange()
+				.expectStatus().isUnauthorized();
 	}
-
-	private String extractTokenFromResponse(String response) throws JacksonException {
-		return objectMapper.readValue(response, AuthLoginResponse.class)
-				.token();
-	}
-} 
+}

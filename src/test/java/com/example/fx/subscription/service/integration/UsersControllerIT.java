@@ -17,18 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import javax.crypto.SecretKey;
 import java.math.BigDecimal;
@@ -38,32 +35,27 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({PostgresTestContainerConfig.class, WebSecurityTestConfig.class})
 class UsersControllerIT {
 
-	@Autowired
-	MockMvcTester mockMvc;
+	private WebTestClient webTestClient;
 
 	@Autowired
-	ObjectMapper objectMapper;
+	private FxUserRepository fxUserRepository;
 
 	@Autowired
-	FxUserRepository fxUserRepository;
+	private SubscriptionRepository subscriptionRepository;
 
 	@Autowired
-	SubscriptionRepository subscriptionRepository;
-
-	@Autowired
-	PasswordEncoder passwordEncoder;
+	private PasswordEncoder passwordEncoder;
 
 	// Mock external dependencies to speed up tests
 	@MockitoBean
-	KafkaAdmin kafkaAdmin;
+	private KafkaAdmin kafkaAdmin;
 
 	@MockitoBean
-	KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
+	private KafkaTemplate<String, SubscriptionChangeEvent> kafkaTemplate;
 
 	@Value("${security.jwt.token.secret-key}")
 	private String jwtSecretString;
@@ -71,7 +63,11 @@ class UsersControllerIT {
 	private SecretKey testSecretKey;
 
 	@BeforeEach
-	void setUp() {
+	void setUp(@LocalServerPort int port) {
+		this.webTestClient = WebTestClient.bindToServer()
+				.baseUrl("http://localhost:" + port)
+				.build();
+
 		// Cleanup database before each test
 		subscriptionRepository.deleteAll();
 		fxUserRepository.deleteAll();
@@ -91,61 +87,52 @@ class UsersControllerIT {
 		String userJwt = generateTestJwtToken("user@example.com");
 
 		// 3. Admin can view all users
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.users", usersAssert ->
-						usersAssert.assertThat().asArray().hasSize(2))
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(2))
-				.hasPathSatisfying("$.users[0].email", emailAssert ->
-						emailAssert.assertThat().isEqualTo("user@example.com"))
-				.hasPathSatisfying("$.users[1].email", emailAssert ->
-						emailAssert.assertThat().isEqualTo("admin@example.com"));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.users").isArray()
+				.jsonPath("$.users.length()").isEqualTo(2)
+				.jsonPath("$.totalElements").isEqualTo(2)
+				.jsonPath("$.users[0].email").isEqualTo("user@example.com")
+				.jsonPath("$.users[1].email").isEqualTo("admin@example.com");
 
 		// 4. User can view their own profile
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.id", idAssert ->
-						idAssert.assertThat().isEqualTo(user.getId().toString()))
-				.hasPathSatisfying("$.email", emailAssert ->
-						emailAssert.assertThat().isEqualTo("user@example.com"));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.id").isEqualTo(user.getId().toString())
+				.jsonPath("$.email").isEqualTo("user@example.com");
 
 		// 5. User cannot view other user's profile
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + admin.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", admin.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// 6. Admin can update user
 		UserUpdateRequest updateRequest = new UserUpdateRequest(
 				"updated@example.com", "+1234567890", "new-push-token"
 		);
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/users/" + user.getId())
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(updateRequest))
+		webTestClient.put()
+				.uri("/api/v1/users/{id}", user.getId())
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.user.email", emailAssert ->
-						emailAssert.assertThat().isEqualTo("updated@example.com"))
-				.hasPathSatisfying("$.user.mobile", mobileAssert ->
-						mobileAssert.assertThat().isEqualTo("+1234567890"))
-				.hasPathSatisfying("$.user.pushDeviceToken", tokenAssert ->
-						tokenAssert.assertThat().isEqualTo("new-push-token"))
-				.hasPathSatisfying("$.user.createdAt", createdAtAssert ->
-						createdAtAssert.assertThat().isNotNull());
+				.bodyValue(updateRequest)
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.user.email").isEqualTo("updated@example.com")
+				.jsonPath("$.user.mobile").isEqualTo("+1234567890")
+				.jsonPath("$.user.pushDeviceToken").isEqualTo("new-push-token")
+				.jsonPath("$.user.createdAt").isNotEmpty();
 
 		// 7. Verify user was updated in database
 		FxUser updatedUser = fxUserRepository.findById(user.getId()).orElseThrow();
@@ -154,18 +141,18 @@ class UsersControllerIT {
 		assertThat(updatedUser.getPushDeviceToken()).isEqualTo("new-push-token");
 
 		// 8. Admin can delete user
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/users/" + user.getId())
+		webTestClient.delete()
+				.uri("/api/v1/users/{id}", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NO_CONTENT);
+				.exchange()
+				.expectStatus().isNoContent();
 
-		// 9. Verify user is deleted
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user.getId())
+		// 9. Verify user is deleted via API
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NOT_FOUND);
+				.exchange()
+				.expectStatus().isNotFound();
 
 		// 10. Verify user is actually deleted from database
 		assertThat(fxUserRepository.findById(user.getId())).isEmpty();
@@ -182,149 +169,145 @@ class UsersControllerIT {
 		String user2Jwt = generateTestJwtToken("user2@example.com");
 
 		// 1. Only admin can access /api/v1/users (get all users)
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// 2. Users can only access their own profile
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user1.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user1.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user2.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user2.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// 3. Admin can access any user's profile
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user1.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user1.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user2.getId())
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", user2.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 
 		// 4. Only admin can delete users
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/users/" + user1.getId())
+		webTestClient.delete()
+				.uri("/api/v1/users/{id}", user1.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/users/" + user1.getId())
+		webTestClient.delete()
+				.uri("/api/v1/users/{id}", user1.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NO_CONTENT);
+				.exchange()
+				.expectStatus().isNoContent();
 
 		// 5. Only admin can search users
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?email=user")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?email=user")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.exchange()
+				.expectStatus().isOk();
 	}
 
 	@Test
 	void searchByEmail_ShouldReturnMatchingUser() {
 		String adminJwt = prepareUserSearchData();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?email=john")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.users", usersAssert ->
-						usersAssert.assertThat().asArray().hasSize(1))
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(1))
-				.hasPathSatisfying("$.users[0].email", emailAssert ->
-						emailAssert.assertThat().isEqualTo("john@test.com"));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.users").isArray()
+				.jsonPath("$.users.length()").isEqualTo(1)
+				.jsonPath("$.totalElements").isEqualTo(1)
+				.jsonPath("$.users[0].email").isEqualTo("john@test.com");
 	}
 
 	@Test
 	void searchByMobile_ShouldReturnAllUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/search?mobile=+1234567890")
+		webTestClient.get()
+				.uri(uriBuilder -> uriBuilder
+						.path("/api/v1/users/search")
+						.queryParam("mobile", "07711223344")
+						.build())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(4));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.totalElements").isEqualTo(4);
 	}
 
 	@Test
 	void searchByUserEnabled_ShouldReturnEnabledUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?enabled=true")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(4));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.totalElements").isEqualTo(4);
 	}
 
 	@Test
 	void searchWithPagination_ShouldReturnPagedUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?size=2&page=0")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.users", usersAssert ->
-						usersAssert.assertThat().asArray().hasSize(2))
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(4))
-				.hasPathSatisfying("$.totalPages", pagesAssert ->
-						pagesAssert.assertThat().asNumber().isEqualTo(2));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.users").isArray()
+				.jsonPath("$.users.length()").isEqualTo(2)
+				.jsonPath("$.totalElements").isEqualTo(4)
+				.jsonPath("$.totalPages").isEqualTo(2);
 	}
 
 	@Test
 	void searchWithNoResults_ShouldReturnEmpty() {
 		String adminJwt = prepareUserSearchData();
 
-		assertThat(mockMvc.get()
+		webTestClient.get()
 				.uri("/api/v1/users/search?email=nonexistent")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.totalElements", totalAssert ->
-						totalAssert.assertThat().asNumber().isEqualTo(0))
-				.hasPathSatisfying("$.users", usersAssert ->
-						usersAssert.assertThat().asArray().hasSize(0));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.totalElements").isEqualTo(0)
+				.jsonPath("$.users").isArray()
+				.jsonPath("$.users.length()").isEqualTo(0);
 	}
 
 	@Test
@@ -336,66 +319,57 @@ class UsersControllerIT {
 		String adminJwt = generateTestJwtToken("admin@example.com");
 		String userJwt = generateTestJwtToken("user@example.com");
 
-		// Create subscription for user
+		// Create subscription for user via endpoint
 		SubscriptionCreateRequest subscriptionRequest = new SubscriptionCreateRequest(
 				"EUR/USD", BigDecimal.valueOf(1.15), "ABOVE", List.of("EMAIL", "SMS")
 		);
 
-		MockHttpServletResponse response = mockMvc.post()
+		webTestClient.post()
 				.uri("/api/v1/subscriptions")
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(subscriptionRequest))
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true)
+				.bodyValue(subscriptionRequest)
 				.exchange()
-				.getResponse();
-
-		assertThat(response.getStatus()).isEqualTo(HttpStatus.CREATED.value());
+				.expectStatus().isCreated();
 
 		// 1. User can view their own subscriptions
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user.getId() + "/subscriptions")
+		webTestClient.get()
+				.uri("/api/v1/users/{id}/subscriptions", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.userId", userIdAssert ->
-						userIdAssert.assertThat().isEqualTo(user.getId().toString()))
-				.hasPathSatisfying("$.totalCount", countAssert ->
-						countAssert.assertThat().asNumber().isEqualTo(1))
-				.hasPathSatisfying("$.subscriptions[0].currencyPair", currencyAssert ->
-						currencyAssert.assertThat().isEqualTo("EUR/USD"));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.userId").isEqualTo(user.getId().toString())
+				.jsonPath("$.totalCount").isEqualTo(1)
+				.jsonPath("$.subscriptions[0].currencyPair").isEqualTo("EUR/USD");
 
 		// 2. Admin can view any user's subscriptions
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + user.getId() + "/subscriptions")
+		webTestClient.get()
+				.uri("/api/v1/users/{id}/subscriptions", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.userId", userIdAssert ->
-						userIdAssert.assertThat().isEqualTo(user.getId().toString()))
-				.hasPathSatisfying("$.totalCount", countAssert ->
-						countAssert.assertThat().asNumber().isEqualTo(1));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.userId").isEqualTo(user.getId().toString())
+				.jsonPath("$.totalCount").isEqualTo(1);
 
 		// 3. User cannot view other user's subscriptions
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + admin.getId() + "/subscriptions")
+		webTestClient.get()
+				.uri("/api/v1/users/{id}/subscriptions", admin.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.FORBIDDEN);
+				.exchange()
+				.expectStatus().isForbidden();
 
 		// 4. User with no subscriptions returns empty list
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + admin.getId() + "/subscriptions")
+		webTestClient.get()
+				.uri("/api/v1/users/{id}/subscriptions", admin.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK)
-				.bodyJson()
-				.hasPathSatisfying("$.totalCount", countAssert ->
-						countAssert.assertThat().asNumber().isEqualTo(0))
-				.hasPathSatisfying("$.subscriptions", subscriptionsAssert ->
-						subscriptionsAssert.assertThat().asArray().hasSize(0));
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.totalCount").isEqualTo(0)
+				.jsonPath("$.subscriptions").isArray()
+				.jsonPath("$.subscriptions.length()").isEqualTo(0);
 	}
 
 	@Test
@@ -403,53 +377,53 @@ class UsersControllerIT {
 		FxUser admin = createTestUser("admin@example.com", UserRole.ADMIN);
 		String adminJwt = generateTestJwtToken("admin@example.com");
 
-		// 1. Invalid user ID
-		assertThat(mockMvc.get()
+		// 1. Invalid user ID format
+		webTestClient.get()
 				.uri("/api/v1/users/invalid-uuid")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+				.exchange()
+				.expectStatus().is5xxServerError();
 
 		// 2. Non-existent user ID
 		String nonExistentId = "550e8400-e29b-41d4-a716-446655440000";
-		assertThat(mockMvc.get()
-				.uri("/api/v1/users/" + nonExistentId)
+		webTestClient.get()
+				.uri("/api/v1/users/{id}", nonExistentId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NOT_FOUND);
+				.exchange()
+				.expectStatus().isNotFound();
 
 		// 3. Invalid update request (invalid email)
 		UserUpdateRequest invalidRequest = new UserUpdateRequest(
 				"invalid-email", "+1234567890", "token"
 		);
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/users/" + admin.getId())
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(invalidRequest))
+		webTestClient.put()
+				.uri("/api/v1/users/{id}", admin.getId())
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.BAD_REQUEST);
+				.bodyValue(invalidRequest)
+				.exchange()
+				.expectStatus().isBadRequest();
 
 		// 4. Invalid update request (invalid mobile)
 		UserUpdateRequest invalidMobileRequest = new UserUpdateRequest(
 				"valid@email.com", "invalid-mobile", "token"
 		);
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/users/" + admin.getId())
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(invalidMobileRequest))
+		webTestClient.put()
+				.uri("/api/v1/users/{id}", admin.getId())
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.BAD_REQUEST);
+				.bodyValue(invalidMobileRequest)
+				.exchange()
+				.expectStatus().isBadRequest();
 
 		// 5. Delete non-existent user
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/users/" + nonExistentId)
+		webTestClient.delete()
+				.uri("/api/v1/users/{id}", nonExistentId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NOT_FOUND);
+				.exchange()
+				.expectStatus().isNotFound();
 	}
 
 	@Test
@@ -461,18 +435,18 @@ class UsersControllerIT {
 		// 1. Verify user exists in database
 		assertThat(fxUserRepository.findByEmail("admin@example.com")).isPresent();
 
-		// 2. Update user and verify persistence
+		// 2. Update user and verify persistence via endpoint
 		UserUpdateRequest updateRequest = new UserUpdateRequest(
 				"updated@example.com", "+9876543210", "persistent-token"
 		);
 
-		assertThat(mockMvc.put()
-				.uri("/api/v1/users/" + admin.getId())
-				.contentType(MediaType.APPLICATION_JSON_VALUE)
-				.content(objectMapper.writeValueAsString(updateRequest))
+		webTestClient.put()
+				.uri("/api/v1/users/{id}", admin.getId())
+				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.OK);
+				.bodyValue(updateRequest)
+				.exchange()
+				.expectStatus().isOk();
 
 		// 3. Verify changes persisted to database
 		FxUser updatedUser = fxUserRepository.findById(admin.getId()).orElseThrow();
@@ -482,11 +456,11 @@ class UsersControllerIT {
 
 		// 4. Delete user and verify removal from database
 		adminJwt = generateTestJwtToken("updated@example.com");
-		assertThat(mockMvc.delete()
-				.uri("/api/v1/users/" + admin.getId())
+		webTestClient.delete()
+				.uri("/api/v1/users/{id}", admin.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
-				.secure(true))
-				.hasStatus(HttpStatus.NO_CONTENT);
+				.exchange()
+				.expectStatus().isNoContent();
 
 		assertThat(fxUserRepository.findById(admin.getId())).isEmpty();
 	}
@@ -496,7 +470,7 @@ class UsersControllerIT {
 		FxUser user = new FxUser();
 		user.setEmail(email);
 		user.setPassword(passwordEncoder.encode("password"));
-		user.setMobile("+1234567890");
+		user.setMobile("07711223344");
 		user.setEnabled(true);
 		user.setRole(role);
 		user.setCreatedAt(Instant.now());
