@@ -10,7 +10,7 @@ info:
   license:
     name: MIT License
     url: https://mit-license.org/
-  version: 3.2.38
+  version: 3.2.39
 servers:
 - url: https://localhost:8443
   description: Generated server url
