@@ -1,5 +1,6 @@
 package com.example.fx.subscription.service.service;
 
+import com.example.fx.subscription.service.model.EventsOutboxStatus;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,20 +26,26 @@ public class SubscriptionChangePublisher {
 	}
 
 	public void sendMessage(SubscriptionChangeEvent event) {
-		final String key = event.payload().id();
+		String key = event.payload().id();
 
 		try {
-			var result = kafkaTemplate.send(subscriptionChangesTopic, key, event).join();
-
-			LOGGER.info("Published SubscriptionChangeEvent with id: [{}] at offset: [{}]", key, result.getRecordMetadata().offset());
-			eventsOutboxService.updateOutboxStatus(event.eventId(), "SENT");
+			kafkaTemplate.send(subscriptionChangesTopic, key, event)
+					.whenComplete((result, ex) -> {
+						if (ex == null) {
+							LOGGER.info("Published SubscriptionChangeEvent with id: [{}] at offset: [{}]",
+									key, result.getRecordMetadata().offset());
+							eventsOutboxService.updateOutboxStatus(event.eventId(), EventsOutboxStatus.SENT);
+						} else {
+							handleFailure(event.eventId(), key, ex, "asynchronously");
+						}
+					});
 		} catch (Exception ex) {
-			LOGGER.error("Failed to publish SubscriptionChangeEvent with id: [{}]", key, ex);
-			eventsOutboxService.updateOutboxStatus(event.eventId(), "FAILED");
-
-			if (ex.getCause() instanceof InterruptedException) {
-				Thread.currentThread().interrupt();
-			}
+			handleFailure(event.eventId(), key, ex, "synchronously");
 		}
+	}
+
+	private void handleFailure(String eventId, String key, Throwable ex, String mode) {
+		LOGGER.error("Failed [{}] to publish SubscriptionChangeEvent with id: [{}]", mode, key, ex);
+		eventsOutboxService.updateOutboxStatus(eventId, EventsOutboxStatus.FAILED);
 	}
 }

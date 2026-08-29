@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.model.EventsOutbox;
+import com.example.fx.subscription.service.model.EventsOutboxStatus;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,7 +19,7 @@ public class EventsOutboxService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void updateOutboxStatus(String outboxId, String newStatus) {
+	public void updateOutboxStatus(String outboxId, EventsOutboxStatus newStatus) {
 		EventsOutbox outbox = eventsOutboxRepository.findById(UUID.fromString(outboxId))
 				.orElseThrow(() -> new RuntimeException("Outbox event not found with id: " + outboxId));
 

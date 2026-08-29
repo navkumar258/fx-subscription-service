@@ -1,16 +1,14 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.model.Subscription;
-import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
-import com.example.fx.subscription.service.model.SubscriptionStatus;
-import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.model.*;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
@@ -19,7 +17,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -56,7 +53,7 @@ class SubscriptionChangePublisherTest {
 		subscriptionChangePublisher.sendMessage(event);
 
 		// Then
-		verify(eventsOutboxService).updateOutboxStatus(event.eventId(), "SENT");
+		verify(eventsOutboxService).updateOutboxStatus(event.eventId(), EventsOutboxStatus.SENT);
 		verify(kafkaTemplate).send(topic, event.payload().id(), event);
 	}
 
@@ -65,7 +62,7 @@ class SubscriptionChangePublisherTest {
 		// Given
 		var event = createTestEvent();
 		var future = new CompletableFuture<SendResult<String, SubscriptionChangeEvent>>();
-		future.completeExceptionally(new RuntimeException("Kafka Down"));
+		future.completeExceptionally(new KafkaException("Kafka broker is down!!!"));
 
 		when(kafkaTemplate.send(anyString(), anyString(), any())).thenReturn(future);
 
@@ -73,26 +70,7 @@ class SubscriptionChangePublisherTest {
 		subscriptionChangePublisher.sendMessage(event);
 
 		// Then
-		verify(eventsOutboxService).updateOutboxStatus(event.eventId(), "FAILED");
-	}
-
-	@Test
-	void sendMessage_WhenInterrupted_ShouldRestoreStatusAndFail() {
-		// Given
-		var event = createTestEvent();
-		var future = new CompletableFuture<SendResult<String, SubscriptionChangeEvent>>();
-		// .join() wraps checked exceptions in CompletionException
-		future.completeExceptionally(new CompletionException(new InterruptedException("Interrupted!")));
-
-		when(kafkaTemplate.send(anyString(), anyString(), any())).thenReturn(future);
-
-		// When
-		subscriptionChangePublisher.sendMessage(event);
-
-		// Then
-		verify(eventsOutboxService).updateOutboxStatus(event.eventId(), "FAILED");
-		// Verify thread interrupt flag was restored
-		assert Thread.interrupted();
+		verify(eventsOutboxService).updateOutboxStatus(event.eventId(), EventsOutboxStatus.FAILED);
 	}
 
 	private SubscriptionChangeEvent createTestEvent() {

@@ -1,10 +1,7 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
-import com.example.fx.subscription.service.model.EventsOutbox;
-import com.example.fx.subscription.service.model.Subscription;
-import com.example.fx.subscription.service.model.SubscriptionStatus;
-import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,37 +44,35 @@ class EventsOutboxServiceTest {
 		testOutbox.setAggregateId(UUID.randomUUID());
 		testOutbox.setEventType("SubscriptionCreated");
 		testOutbox.setPayload(createTestSubscriptionResponse());
-		testOutbox.setStatus("PENDING");
+		testOutbox.setStatus(EventsOutboxStatus.PENDING);
 		testOutbox.setTimestamp(System.currentTimeMillis());
 	}
 
 	@Test
 	void updateOutboxStatus_WhenOutboxExists_ShouldUpdateStatusSuccessfully() {
 		// Given
-		String newStatus = "SENT";
 		when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
 		when(eventsOutboxRepository.save(any(EventsOutbox.class))).thenReturn(testOutbox);
 
 		// When
-		eventsOutboxService.updateOutboxStatus(testIdString, newStatus);
+		eventsOutboxService.updateOutboxStatus(testIdString, EventsOutboxStatus.SENT);
 
 		// Then
 		verify(eventsOutboxRepository).findById(testId);
 		verify(eventsOutboxRepository).save(argThat(outbox ->
 				outbox.getId().equals(testId) &&
-						newStatus.equals(outbox.getStatus())
+						EventsOutboxStatus.SENT.equals(outbox.getStatus())
 		));
 	}
 
 	@Test
 	void updateOutboxStatus_WhenOutboxDoesNotExist_ShouldThrowRuntimeException() {
 		// Given
-		String newStatus = "SENT";
 		when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.empty());
 
 		// When & Then
 		RuntimeException exception = assertThrows(RuntimeException.class, () ->
-				eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
+				eventsOutboxService.updateOutboxStatus(testIdString, EventsOutboxStatus.SENT)
 		);
 
 		assertEquals("Outbox event not found with id: " + testIdString, exception.getMessage());
@@ -89,11 +84,10 @@ class EventsOutboxServiceTest {
 	void updateOutboxStatus_WhenInvalidUUID_ShouldThrowIllegalArgumentException() {
 		// Given
 		String invalidId = "invalid-uuid";
-		String newStatus = "SENT";
 
 		// When & Then
 		assertThrows(IllegalArgumentException.class, () ->
-				eventsOutboxService.updateOutboxStatus(invalidId, newStatus)
+				eventsOutboxService.updateOutboxStatus(invalidId, EventsOutboxStatus.SENT)
 		);
 
 		verify(eventsOutboxRepository, never()).findById(any());
@@ -103,11 +97,10 @@ class EventsOutboxServiceTest {
 	@Test
 	void updateOutboxStatus_WhenNullId_ShouldThrowNullPointerException() {
 		// Given
-		String newStatus = "SENT";
 
 		// When & Then
 		assertThrows(NullPointerException.class, () ->
-				eventsOutboxService.updateOutboxStatus(null, newStatus)
+				eventsOutboxService.updateOutboxStatus(null, EventsOutboxStatus.SENT)
 		);
 
 		verify(eventsOutboxRepository, never()).findById(any());
@@ -128,24 +121,6 @@ class EventsOutboxServiceTest {
 		verify(eventsOutboxRepository).save(argThat(outbox ->
 				outbox.getId().equals(testId) &&
 						outbox.getStatus() == null
-		));
-	}
-
-	@Test
-	void updateOutboxStatus_WhenEmptyStatus_ShouldUpdateWithEmptyStatus() {
-		// Given
-		String emptyStatus = "";
-		when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
-		when(eventsOutboxRepository.save(any(EventsOutbox.class))).thenReturn(testOutbox);
-
-		// When
-		eventsOutboxService.updateOutboxStatus(testIdString, emptyStatus);
-
-		// Then
-		verify(eventsOutboxRepository).findById(testId);
-		verify(eventsOutboxRepository).save(argThat(outbox ->
-				outbox.getId().equals(testId) &&
-						emptyStatus.equals(outbox.getStatus())
 		));
 	}
 
@@ -203,12 +178,11 @@ class EventsOutboxServiceTest {
 	@Test
 	void updateOutboxStatus_ShouldPreserveOtherFields() {
 		// Given
-		String newStatus = "FAILED";
 		when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
 		when(eventsOutboxRepository.save(any(EventsOutbox.class))).thenReturn(testOutbox);
 
 		// When
-		eventsOutboxService.updateOutboxStatus(testIdString, newStatus);
+		eventsOutboxService.updateOutboxStatus(testIdString, EventsOutboxStatus.FAILED);
 
 		// Then
 		verify(eventsOutboxRepository).save(argThat(outbox ->
@@ -218,14 +192,13 @@ class EventsOutboxServiceTest {
 						outbox.getEventType().equals(testOutbox.getEventType()) &&
 						outbox.getPayload().equals(testOutbox.getPayload()) &&
 						outbox.getTimestamp() == testOutbox.getTimestamp() &&
-						newStatus.equals(outbox.getStatus())
+						EventsOutboxStatus.FAILED.equals(outbox.getStatus())
 		));
 	}
 
 	@Test
 	void updateOutboxStatus_WhenRepositorySaveFails_ShouldPropagateException() {
 		// Given
-		String newStatus = "SENT";
 		RuntimeException saveException = new RuntimeException("Database connection failed");
 
 		when(eventsOutboxRepository.findById(testId)).thenReturn(Optional.of(testOutbox));
@@ -233,7 +206,7 @@ class EventsOutboxServiceTest {
 
 		// When & Then
 		RuntimeException exception = assertThrows(RuntimeException.class, () ->
-				eventsOutboxService.updateOutboxStatus(testIdString, newStatus)
+				eventsOutboxService.updateOutboxStatus(testIdString, EventsOutboxStatus.SENT)
 		);
 
 		assertEquals("Database connection failed", exception.getMessage());

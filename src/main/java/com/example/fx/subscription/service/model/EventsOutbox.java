@@ -36,7 +36,8 @@ public class EventsOutbox implements Serializable {
 	@Column(columnDefinition = "jsonb")
 	private SubscriptionResponse payload;
 
-	private String status;
+	@Enumerated(EnumType.STRING)
+	private EventsOutboxStatus status;
 
 	private long timestamp;
 
@@ -80,11 +81,11 @@ public class EventsOutbox implements Serializable {
 		this.payload = payload;
 	}
 
-	public String getStatus() {
+	public EventsOutboxStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(EventsOutboxStatus status) {
 		this.status = status;
 	}
 
@@ -99,12 +100,12 @@ public class EventsOutbox implements Serializable {
 	public EventsOutbox() {
 	}
 
-	public EventsOutbox(UUID id, String status) {
+	public EventsOutbox(UUID id, EventsOutboxStatus status) {
 		this.id = id;
 		this.status = status;
 	}
 
-	public EventsOutbox(String status) {
+	public EventsOutbox(EventsOutboxStatus status) {
 		this.status = status;
 	}
 

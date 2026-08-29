@@ -16,7 +16,7 @@ class EventsOutboxTest {
 
 	private EventsOutbox eventsOutbox;
 	private UUID testId;
-	private String testStatus;
+	private EventsOutboxStatus testStatus;
 
 	@Mock
 	private SubscriptionResponse mockPayload;
@@ -24,7 +24,7 @@ class EventsOutboxTest {
 	@BeforeEach
 	void setUp() {
 		testId = UUID.randomUUID();
-		testStatus = "PENDING";
+		testStatus =EventsOutboxStatus.PENDING;
 		eventsOutbox = new EventsOutbox();
 	}
 
@@ -105,7 +105,7 @@ class EventsOutboxTest {
 		assertTrue(result.contains(testId.toString()));
 		assertTrue(result.contains("Subscription"));
 		assertTrue(result.contains("SUBSCRIPTION_CREATED"));
-		assertTrue(result.contains(testStatus));
+		assertTrue(result.contains(testStatus.toString()));
 		assertTrue(result.contains("123456789"));
 	}
 

@@ -175,7 +175,7 @@ public class SubscriptionsService {
 		eventsOutbox.setAggregateId(subscription.getId());
 		eventsOutbox.setEventType(eventType);
 		eventsOutbox.setPayload(SubscriptionResponse.fromSubscription(subscription));
-		eventsOutbox.setStatus("PENDING");
+		eventsOutbox.setStatus(EventsOutboxStatus.PENDING);
 		eventsOutbox.setTimestamp(System.currentTimeMillis());
 
 		return eventsOutbox;

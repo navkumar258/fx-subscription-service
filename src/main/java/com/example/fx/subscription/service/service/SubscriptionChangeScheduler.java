@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.model.EventsOutbox;
+import com.example.fx.subscription.service.model.EventsOutboxStatus;
 import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import org.slf4j.Logger;
@@ -32,18 +33,16 @@ public class SubscriptionChangeScheduler {
 	public void checkForOutboxSubscriptions() {
 		LOGGER.info("[SubscriptionChangeScheduler] START checking outbox table for subscriptions to publish...");
 
-		var pendingEvents = eventsOutboxRepository.findByStatus("PENDING").stream()
-				.map(this::toEvent)
-				.toList();
+		var pending = eventsOutboxRepository.findByStatus(EventsOutboxStatus.PENDING);
 
-		if (pendingEvents.isEmpty()) {
+		if (pending.isEmpty()) {
 			LOGGER.info("[SubscriptionChangeScheduler] END No events to publish!!!");
 			return;
 		}
 
-		for (var event : pendingEvents) {
-			subscriptionChangePublisher.sendMessage(event);
-		}
+		pending.stream()
+				.map(this::toEvent)
+				.forEach(subscriptionChangePublisher::sendMessage);
 
 		LOGGER.info("[SubscriptionChangeScheduler] END published all PENDING subscriptions");
 	}

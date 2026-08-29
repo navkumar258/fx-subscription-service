@@ -3,10 +3,7 @@ package com.example.fx.subscription.service.repository;
 import com.example.fx.subscription.service.ai.tool.FxSubscriptionTool;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
-import com.example.fx.subscription.service.model.EventsOutbox;
-import com.example.fx.subscription.service.model.Subscription;
-import com.example.fx.subscription.service.model.SubscriptionStatus;
-import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.model.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +50,7 @@ class EventsOutboxRepositoryTest {
 		testEventsOutbox.setAggregateId(UUID.randomUUID());
 		testEventsOutbox.setEventType("SubscriptionCreated");
 		testEventsOutbox.setPayload(SubscriptionResponse.fromSubscription(testSubscription));
-		testEventsOutbox.setStatus("PENDING");
+		testEventsOutbox.setStatus(EventsOutboxStatus.PENDING);
 		testEventsOutbox.setTimestamp(System.currentTimeMillis());
 	}
 
@@ -69,13 +66,13 @@ class EventsOutboxRepositoryTest {
 
 		// Then
 		assertNotNull(savedOutbox.getId());
-		assertEquals("PENDING", savedOutbox.getStatus());
+		assertEquals(EventsOutboxStatus.PENDING, savedOutbox.getStatus());
 		assertEquals("SubscriptionCreated", savedOutbox.getEventType());
 
 		// Verify it's in the database
 		Optional<EventsOutbox> foundOutbox = eventsOutboxRepository.findById(savedOutbox.getId());
 		assertTrue(foundOutbox.isPresent());
-		assertEquals("PENDING", foundOutbox.get().getStatus());
+		assertEquals(EventsOutboxStatus.PENDING, foundOutbox.get().getStatus());
 	}
 
 	@Test
@@ -89,7 +86,7 @@ class EventsOutboxRepositoryTest {
 		// Then
 		assertTrue(foundOutbox.isPresent());
 		assertEquals(savedOutbox.getId(), foundOutbox.get().getId());
-		assertEquals("PENDING", foundOutbox.get().getStatus());
+		assertEquals(EventsOutboxStatus.PENDING, foundOutbox.get().getStatus());
 	}
 
 	@Test
@@ -110,37 +107,37 @@ class EventsOutboxRepositoryTest {
 		createTestOutbox("FAILED");
 
 		// When
-		List<EventsOutbox> pendingEvents = eventsOutboxRepository.findByStatus("PENDING");
-		List<EventsOutbox> sentEvents = eventsOutboxRepository.findByStatus("SENT");
-		List<EventsOutbox> failedEvents = eventsOutboxRepository.findByStatus("FAILED");
+		List<EventsOutbox> pendingEvents = eventsOutboxRepository.findByStatus(EventsOutboxStatus.PENDING);
+		List<EventsOutbox> sentEvents = eventsOutboxRepository.findByStatus(EventsOutboxStatus.SENT);
+		List<EventsOutbox> failedEvents = eventsOutboxRepository.findByStatus(EventsOutboxStatus.FAILED);
 
 		// Then
 		assertEquals(2, pendingEvents.size());
 		assertEquals(1, sentEvents.size());
 		assertEquals(1, failedEvents.size());
 
-		assertTrue(pendingEvents.stream().allMatch(e -> "PENDING".equals(e.getStatus())));
-		assertTrue(sentEvents.stream().allMatch(e -> "SENT".equals(e.getStatus())));
-		assertTrue(failedEvents.stream().allMatch(e -> "FAILED".equals(e.getStatus())));
+		assertTrue(pendingEvents.stream().allMatch(e -> EventsOutboxStatus.PENDING.equals(e.getStatus())));
+		assertTrue(sentEvents.stream().allMatch(e -> EventsOutboxStatus.SENT.equals(e.getStatus())));
+		assertTrue(failedEvents.stream().allMatch(e -> EventsOutboxStatus.FAILED.equals(e.getStatus())));
 	}
 
 	@Test
 	void updateStatus_ShouldUpdateEventsOutboxStatus() {
 		// Given
 		EventsOutbox savedOutbox = eventsOutboxRepository.save(testEventsOutbox);
-		assertEquals("PENDING", savedOutbox.getStatus());
+		assertEquals(EventsOutboxStatus.PENDING, savedOutbox.getStatus());
 
 		// When
-		savedOutbox.setStatus("SENT");
+		savedOutbox.setStatus(EventsOutboxStatus.SENT);
 		EventsOutbox updatedOutbox = eventsOutboxRepository.save(savedOutbox);
 
 		// Then
-		assertEquals("SENT", updatedOutbox.getStatus());
+		assertEquals(EventsOutboxStatus.SENT, updatedOutbox.getStatus());
 
 		// Verify in database
 		Optional<EventsOutbox> foundOutbox = eventsOutboxRepository.findById(savedOutbox.getId());
 		assertTrue(foundOutbox.isPresent());
-		assertEquals("SENT", foundOutbox.get().getStatus());
+		assertEquals(EventsOutboxStatus.SENT, foundOutbox.get().getStatus());
 	}
 
 	@Test
@@ -180,7 +177,7 @@ class EventsOutboxRepositoryTest {
 		createTestOutbox("SENT");
 
 		// When
-		List<EventsOutbox> failedEvents = eventsOutboxRepository.findByStatus("FAILED");
+		List<EventsOutbox> failedEvents = eventsOutboxRepository.findByStatus(EventsOutboxStatus.FAILED);
 
 		// Then
 		assertTrue(failedEvents.isEmpty());
@@ -192,7 +189,7 @@ class EventsOutboxRepositoryTest {
 		outbox.setAggregateId(UUID.randomUUID());
 		outbox.setEventType("SubscriptionCreated");
 		outbox.setPayload(SubscriptionResponse.fromSubscription(testSubscription));
-		outbox.setStatus(status);
+		outbox.setStatus(EventsOutboxStatus.valueOf(status));
 		outbox.setTimestamp(System.currentTimeMillis());
 		return eventsOutboxRepository.save(outbox);
 	}

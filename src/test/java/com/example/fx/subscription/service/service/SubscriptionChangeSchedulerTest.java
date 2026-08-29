@@ -21,8 +21,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SubscriptionChangeSchedulerTest {
 
-	private static final String PENDING = "PENDING";
-
 	@Mock
 	private EventsOutboxRepository eventsOutboxRepository;
 
@@ -33,11 +31,10 @@ class SubscriptionChangeSchedulerTest {
 	private SubscriptionChangeScheduler subscriptionChangeScheduler;
 
 	private EventsOutbox testEventsOutbox;
-	private UUID testEventId;
 
 	@BeforeEach
 	void setUp() {
-		testEventId = UUID.randomUUID();
+		UUID testEventId = UUID.randomUUID();
 
 		Subscription testSubscription = new Subscription();
 		testSubscription.setId(UUID.randomUUID());
@@ -54,7 +51,7 @@ class SubscriptionChangeSchedulerTest {
 		testEventsOutbox.setAggregateId(testSubscription.getId());
 		testEventsOutbox.setEventType("SubscriptionCreated");
 		testEventsOutbox.setPayload(SubscriptionResponse.fromSubscription(testSubscription));
-		testEventsOutbox.setStatus(PENDING);
+		testEventsOutbox.setStatus(EventsOutboxStatus.PENDING);
 		testEventsOutbox.setTimestamp(System.currentTimeMillis());
 	}
 
@@ -62,28 +59,28 @@ class SubscriptionChangeSchedulerTest {
 	void checkForOutboxSubscriptions_WhenPendingEventsExist_ShouldPublishAllEvents() {
 		// Given
 		List<EventsOutbox> pendingEvents = List.of(testEventsOutbox);
-		when(eventsOutboxRepository.findByStatus(PENDING))
+		when(eventsOutboxRepository.findByStatus(EventsOutboxStatus.PENDING))
 				.thenReturn(pendingEvents);
 
 		// When
 		subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
 		// Then
-		verify(eventsOutboxRepository).findByStatus(PENDING);
+		verify(eventsOutboxRepository).findByStatus(EventsOutboxStatus.PENDING);
 		verify(subscriptionChangePublisher).sendMessage(any(SubscriptionChangeEvent.class));
 	}
 
 	@Test
 	void checkForOutboxSubscriptions_WhenNoPendingEvents_ShouldNotPublishAnyEvents() {
 		// Given
-		when(eventsOutboxRepository.findByStatus(PENDING))
+		when(eventsOutboxRepository.findByStatus(EventsOutboxStatus.PENDING))
 				.thenReturn(List.of());
 
 		// When
 		subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
 		// Then
-		verify(eventsOutboxRepository).findByStatus(PENDING);
+		verify(eventsOutboxRepository).findByStatus(EventsOutboxStatus.PENDING);
 		verify(subscriptionChangePublisher, never()).sendMessage(any(SubscriptionChangeEvent.class));
 	}
 
@@ -95,18 +92,18 @@ class SubscriptionChangeSchedulerTest {
 		secondEvent.setAggregateType("Subscription");
 		secondEvent.setAggregateId(UUID.randomUUID());
 		secondEvent.setEventType("SubscriptionUpdated");
-		secondEvent.setStatus(PENDING);
+		secondEvent.setStatus(EventsOutboxStatus.PENDING);
 		secondEvent.setTimestamp(System.currentTimeMillis());
 
 		List<EventsOutbox> pendingEvents = List.of(testEventsOutbox, secondEvent);
-		when(eventsOutboxRepository.findByStatus(PENDING))
+		when(eventsOutboxRepository.findByStatus(EventsOutboxStatus.PENDING))
 				.thenReturn(pendingEvents);
 
 		// When
 		subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
 		// Then
-		verify(eventsOutboxRepository).findByStatus(PENDING);
+		verify(eventsOutboxRepository).findByStatus(EventsOutboxStatus.PENDING);
 		verify(subscriptionChangePublisher, times(2)).sendMessage(any(SubscriptionChangeEvent.class));
 	}
 } 

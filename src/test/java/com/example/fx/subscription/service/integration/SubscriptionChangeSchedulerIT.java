@@ -2,10 +2,7 @@ package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
-import com.example.fx.subscription.service.model.EventsOutbox;
-import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
-import com.example.fx.subscription.service.model.SubscriptionStatus;
-import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.service.SubscriptionChangeScheduler;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -34,6 +31,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @ActiveProfiles("kafka-test")
@@ -95,8 +93,10 @@ class SubscriptionChangeSchedulerIT {
 		subscriptionChangeScheduler.checkForOutboxSubscriptions();
 
 		// 3. THEN: Verify Postgres status updated to SENT
-		EventsOutbox updated = eventsOutboxRepository.findById(outbox.getId()).orElseThrow();
-		assertThat(updated.getStatus()).isEqualTo("SENT");
+		await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+			EventsOutbox updated = eventsOutboxRepository.findById(outbox.getId()).orElseThrow();
+			assertThat(updated.getStatus()).isEqualTo(EventsOutboxStatus.SENT);
+		});
 
 		// 4. THEN: Verify Kafka received the message
 		var records = consumer.poll(Duration.ofSeconds(5));
@@ -115,7 +115,7 @@ class SubscriptionChangeSchedulerIT {
 
 		// 3. THEN: Verify Postgres status updated to FAILED because of the Publisher's try-catch
 		EventsOutbox updated = eventsOutboxRepository.findById(outbox.getId()).orElseThrow();
-		assertThat(updated.getStatus()).isEqualTo("FAILED");
+		assertThat(updated.getStatus()).isEqualTo(EventsOutboxStatus.FAILED);
 	}
 
 	@Test
@@ -136,7 +136,7 @@ class SubscriptionChangeSchedulerIT {
 		EventsOutbox outbox = new EventsOutbox();
 		outbox.setAggregateId(UUID.randomUUID());
 		outbox.setEventType("SubscriptionCreated");
-		outbox.setStatus(status);
+		outbox.setStatus(EventsOutboxStatus.valueOf(status));
 		outbox.setTimestamp(System.currentTimeMillis());
 		outbox.setPayload(new SubscriptionResponse(
 				outbox.getAggregateId().toString(),

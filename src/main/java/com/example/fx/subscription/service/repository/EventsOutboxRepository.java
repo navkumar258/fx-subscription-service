@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.repository;
 
 import com.example.fx.subscription.service.model.EventsOutbox;
+import com.example.fx.subscription.service.model.EventsOutboxStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,6 @@ import java.util.UUID;
 @Repository
 public interface EventsOutboxRepository extends JpaRepository<EventsOutbox, UUID> {
 
-	List<EventsOutbox> findByStatus(String status);
+	List<EventsOutbox> findByStatus(EventsOutboxStatus status);
 
 }

@@ -2,10 +2,7 @@ package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionResponse;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
-import com.example.fx.subscription.service.model.EventsOutbox;
-import com.example.fx.subscription.service.model.SubscriptionChangeEvent;
-import com.example.fx.subscription.service.model.SubscriptionStatus;
-import com.example.fx.subscription.service.model.ThresholdDirection;
+import com.example.fx.subscription.service.model.*;
 import com.example.fx.subscription.service.repository.EventsOutboxRepository;
 import com.example.fx.subscription.service.service.EventsOutboxService;
 import com.example.fx.subscription.service.service.SubscriptionChangePublisher;
@@ -34,6 +31,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @ActiveProfiles("kafka-test")
@@ -114,8 +112,7 @@ class SubscriptionChangePublisherIT {
 		assertThat(found.key()).isEqualTo(outbox.getPayload().id());
 		assertThat(found.value().eventId()).isEqualTo(toEvent(outbox).eventId());
 
-		String status = eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus();
-		assertThat(status).isEqualTo("SENT");
+		assertThat(eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus()).isEqualTo(EventsOutboxStatus.SENT);
 	}
 
 	@Test
@@ -143,8 +140,10 @@ class SubscriptionChangePublisherIT {
 		subscriptionChangePublisher.sendMessage(event);
 
 		// then
-		String status = eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus();
-		assertThat(status).isEqualTo("FAILED");
+		await().atMost(Duration.ofSeconds(2)).untilAsserted(() ->
+				assertThat(eventsOutboxService.findOutboxById(outbox.getId().toString()).getStatus())
+						.isEqualTo(EventsOutboxStatus.FAILED)
+		);
 
 		ConsumerRecords<String, SubscriptionChangeEvent> records = consumer.poll(Duration.ofMillis(500));
 		assertThat(records).isEmpty();
@@ -154,7 +153,7 @@ class SubscriptionChangePublisherIT {
 		EventsOutbox outbox = new EventsOutbox();
 		outbox.setAggregateId(UUID.randomUUID());
 		outbox.setEventType("SubscriptionCreated");
-		outbox.setStatus("PENDING");
+		outbox.setStatus(EventsOutboxStatus.FAILED);
 		outbox.setPayload(new SubscriptionResponse(
 				outbox.getAggregateId().toString(),
 				null,
