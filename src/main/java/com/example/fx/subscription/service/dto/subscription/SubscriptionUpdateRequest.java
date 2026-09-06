@@ -1,20 +1,23 @@
 package com.example.fx.subscription.service.dto.subscription;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public record SubscriptionUpdateRequest(
-		@NotBlank(message = "Currency pair is mandatory and should not be blank")
 		String currencyPair,
-		@Positive(message = "Threshold is mandatory and should be a positive number")
+		@Positive(message = "Threshold must be a positive number")
 		BigDecimal threshold,
-		@NotBlank(message = "Direction is mandatory and should not be blank")
 		String direction,
 		String status,
-		@NotEmpty(message = "Notification channels are mandatory and should contain at least 1 item")
 		List<String> notificationChannels) {
+	public boolean isEmpty() {
+		return !StringUtils.hasText(currencyPair)
+				&& threshold == null
+				&& !StringUtils.hasText(direction)
+				&& !StringUtils.hasText(status)
+				&& (notificationChannels == null || notificationChannels.isEmpty());
+	}
 }

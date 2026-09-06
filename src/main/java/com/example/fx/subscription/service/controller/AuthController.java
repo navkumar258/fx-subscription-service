@@ -16,19 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
@@ -58,7 +54,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<AuthLoginResponse> login(@Valid @RequestBody AuthRequest authRequest) {
+	public AuthLoginResponse login(@Valid @RequestBody AuthRequest authRequest) {
 		try {
 			authenticationManager.authenticate(
 					new UsernamePasswordAuthenticationToken(
@@ -77,27 +73,19 @@ public class AuthController {
 
 			LOGGER.info("User logged in successfully: username={}", authRequest.username());
 
-			return ResponseEntity.ok(new AuthLoginResponse(token, "Login successful"));
+			return new AuthLoginResponse(token, "Login successful");
 
 		} catch (AuthenticationException ex) {
 			LOGGER.warn("Authentication failed: username={}, message={}",
 					authRequest.username(), ex.getMessage());
 
-			// Let the ControllerAdvice handle this exception
-			throw new AuthenticationException("Invalid username/password") {
-				@Serial
-				private static final long serialVersionUID = -4224865560755387326L;
-
-				@Override
-				public String getMessage() {
-					return "Invalid username/password";
-				}
-			};
+			throw new BadCredentialsException("Invalid username/password");
 		}
 	}
 
 	@PostMapping("/signup")
-	public ResponseEntity<AuthSignupResponse> signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
+	@ResponseStatus(HttpStatus.CREATED)
+	public AuthSignupResponse signup(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
 		FxUser user = createUserFromRequest(userSignUpRequest);
 		try {
 			FxUser savedUser = fxUserRepository.save(user);
@@ -120,10 +108,9 @@ public class AuthController {
 		return user;
 	}
 
-	private ResponseEntity<AuthSignupResponse> buildSignupResponse(FxUser user, boolean isAdmin) {
+	private AuthSignupResponse buildSignupResponse(FxUser user, boolean isAdmin) {
 		String message = isAdmin ? "Admin registered successfully" : "User registered successfully";
-		AuthSignupResponse response = new AuthSignupResponse(user.getId().toString(), message);
-		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+		return new AuthSignupResponse(user.getId().toString(), message);
 	}
 }
 

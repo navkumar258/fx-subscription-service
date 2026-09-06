@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,12 +26,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest(AuthController.class)
@@ -91,13 +89,12 @@ class AuthControllerTest {
 		when(jwtTokenProvider.createToken(anyString(), any())).thenReturn(expectedToken);
 
 		// When
-		ResponseEntity<AuthLoginResponse> response = authController.login(authRequest);
+		AuthLoginResponse response = authController.login(authRequest);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(expectedToken, response.getBody().token());
-		assertEquals("Login successful", response.getBody().message());
+		assertEquals(expectedToken, response.token());
+		assertEquals("Login successful", response.message());
 
 		verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 		verify(fxUserDetailsService).loadUserByUsername("testuser");
@@ -105,7 +102,7 @@ class AuthControllerTest {
 	}
 
 	@Test
-	void login_WithInvalidCredentials_ShouldThrowAuthenticationException() {
+	void login_WithInvalidCredentials_ShouldThrowBadCredentialsException() {
 		// Given
 		AuthRequest authRequest = new AuthRequest("testuser", "wrongpassword");
 
@@ -113,8 +110,10 @@ class AuthControllerTest {
 				.thenThrow(new BadCredentialsException("Invalid credentials"));
 
 		// When & Then
-		assertThrows(org.springframework.security.core.AuthenticationException.class, () ->
+		BadCredentialsException exception = assertThrows(BadCredentialsException.class, () ->
 				authController.login(authRequest));
+
+		assertEquals("Invalid username/password", exception.getMessage());
 
 		verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 		verify(fxUserDetailsService, never()).loadUserByUsername(anyString());
@@ -142,12 +141,11 @@ class AuthControllerTest {
 		when(jwtTokenProvider.createToken(anyString(), any())).thenReturn(expectedToken);
 
 		// When
-		ResponseEntity<AuthLoginResponse> response = authController.login(authRequest);
+		AuthLoginResponse response = authController.login(authRequest);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(expectedToken, response.getBody().token());
+		assertEquals(expectedToken, response.token());
 
 		verify(jwtTokenProvider).createToken("adminuser", Set.of("ROLE_ADMIN", "ROLE_USER"));
 	}
@@ -167,14 +165,12 @@ class AuthControllerTest {
 		when(fxUserRepository.save(any(FxUser.class))).thenReturn(savedUser);
 
 		// When
-		ResponseEntity<AuthSignupResponse> response = authController.signup(signUpRequest);
+		AuthSignupResponse response = authController.signup(signUpRequest);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.CREATED, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(savedUser.getId().toString(), response.getBody().userId());
-		assertEquals("User registered successfully", response.getBody().message());
+		assertEquals(savedUser.getId().toString(), response.userId());
+		assertEquals("User registered successfully", response.message());
 
 		verify(passwordEncoder).encode("password123");
 		verify(fxUserRepository).save(any(FxUser.class));
@@ -191,17 +187,15 @@ class AuthControllerTest {
 		savedUser.setEmail("admin@example.com");
 		savedUser.setRole(UserRole.ADMIN);
 
-		when(fxUserRepository.existsByEmail("admin@example.com")).thenReturn(false);
 		when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 		when(fxUserRepository.save(any(FxUser.class))).thenReturn(savedUser);
 
 		// When
-		ResponseEntity<AuthSignupResponse> response = authController.signup(signUpRequest);
+		AuthSignupResponse response = authController.signup(signUpRequest);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.CREATED, response.getStatusCode());
-		assertEquals("Admin registered successfully", response.getBody().message());
+		assertEquals("Admin registered successfully", response.message());
 
 		verify(fxUserRepository).save(argThat(user ->
 				user.getRole() == UserRole.ADMIN &&
@@ -219,6 +213,7 @@ class AuthControllerTest {
 		when(fxUserRepository.save(any(FxUser.class)))
 				.thenThrow(new DataIntegrityViolationException("Unique constraint failed"));
 
+		// When & Then
 		UserAlreadyExistsException exception = assertThrows(UserAlreadyExistsException.class,
 				() -> authController.signup(signUpRequest));
 
@@ -235,7 +230,6 @@ class AuthControllerTest {
 		FxUser savedUser = new FxUser();
 		savedUser.setId(UUID.randomUUID());
 
-		when(fxUserRepository.existsByEmail("test@example.com")).thenReturn(false);
 		when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 		when(fxUserRepository.save(any(FxUser.class))).thenReturn(savedUser);
 
@@ -245,10 +239,10 @@ class AuthControllerTest {
 		// Then
 		verify(fxUserRepository).save(argThat(user ->
 				user.getEmail().equals("test@example.com") &&
-						user.getPassword().equals("encodedPassword") &&
+						Objects.equals(user.getPassword(), "encodedPassword") &&
 						user.getMobile().equals("+1234567890") &&
 						user.isEnabled() &&
 						user.getRole() == UserRole.USER
 		));
 	}
-} 
+}

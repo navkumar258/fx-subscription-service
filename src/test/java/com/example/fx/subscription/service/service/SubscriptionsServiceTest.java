@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.dto.subscription.*;
+import com.example.fx.subscription.service.exception.InvalidSubscriptionUpdateException;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.*;
@@ -18,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -378,6 +380,27 @@ class SubscriptionsServiceTest {
 		SubscriptionNotFoundException exception = assertThrows(SubscriptionNotFoundException.class,
 				() -> subscriptionsService.updateSubscriptionById(subscriptionId, updateRequest));
 		assertTrue(exception.getMessage().contains("Subscription not found with Id: " + testSubscriptionId));
+	}
+
+	@Test
+	void updateSubscriptionById_WhenRequestIsEmpty_ShouldThrowInvalidSubscriptionUpdateException() {
+		// Given
+		String subscriptionId = testSubscriptionId.toString();
+		SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
+				"",
+				null,
+				"",
+				"",
+				Collections.emptyList()
+		);
+
+		when(subscriptionRepository.findById(testSubscriptionId))
+				.thenReturn(Optional.of(testSubscription));
+
+		// When & Then
+		InvalidSubscriptionUpdateException exception = assertThrows(InvalidSubscriptionUpdateException.class,
+				() -> subscriptionsService.updateSubscriptionById(subscriptionId, updateRequest));
+		assertTrue(exception.getMessage().contains("At least one field must be provided for update."));
 	}
 
 	@Test

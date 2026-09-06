@@ -134,11 +134,26 @@ public class ControllerAdvice {
 			MissingServletRequestParameterException.class,
 			HttpMessageNotReadableException.class,
 			ConstraintViolationException.class,
-			MethodArgumentTypeMismatchException.class
+			MethodArgumentTypeMismatchException.class,
+			IllegalArgumentException.class
 	})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public ResponseEntity<ProblemDetail> handleBadRequestExceptions(
 			Exception ex,
+			WebRequest request
+	) {
+		logException(ex.getMessage(), ex, request);
+
+		return createProblemDetail(
+				HttpStatus.BAD_REQUEST,
+				ex.getMessage(),
+				BAD_REQUEST
+		);
+	}
+
+	@ExceptionHandler(InvalidSubscriptionUpdateException.class)
+	public ResponseEntity<ProblemDetail> handleInvalidSubscriptionUpdateException(
+			InvalidSubscriptionUpdateException ex,
 			WebRequest request
 	) {
 		logException(ex.getMessage(), ex, request);

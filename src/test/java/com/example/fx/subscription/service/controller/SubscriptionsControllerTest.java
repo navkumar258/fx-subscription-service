@@ -85,9 +85,35 @@ class SubscriptionsControllerTest {
 				.hasStatusOk()
 				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":" +
-						"[{\"id\":\"6f0ad90b-8b07-4342-a918-6866ce3b72d3\",\"user\":null,\"currencyPair\":\"GBP/USD\",\"threshold\":1.2,\"direction\":\"ABOVE\",\"notificationsChannels\":[\"email\",\"sms\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}," +
-						"{\"id\":\"af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2\",\"user\":null,\"currencyPair\":\"GBP/INR\",\"threshold\":110,\"direction\":\"BELOW\",\"notificationsChannels\":[\"email\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}],\"totalCount\":2}");
+				.isEqualTo("""
+        {
+          "subscriptions": [
+            {
+              "id": "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
+              "user": null,
+              "currencyPair": "GBP/USD",
+              "threshold": 1.2,
+              "direction": "ABOVE",
+              "notificationsChannels": ["email", "sms"],
+              "status": "ACTIVE",
+              "createdAt": null,
+              "updatedAt": null
+            },
+            {
+              "id": "af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2",
+              "user": null,
+              "currencyPair": "GBP/INR",
+              "threshold": 110,
+              "direction": "BELOW",
+              "notificationsChannels": ["email"],
+              "status": "ACTIVE",
+              "createdAt": null,
+              "updatedAt": null
+            }
+          ],
+          "totalCount": 2
+        }
+        """);
 	}
 
 	@Test
@@ -99,7 +125,12 @@ class SubscriptionsControllerTest {
 		assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=7ca3517a-1930-4e18-916e-cae40f5dcfbe"))
 				.hasStatusOk()
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
+				.isEqualTo("""
+        {
+          "subscriptions": [],
+          "totalCount": 0
+        }
+        """);
 	}
 
 	@Test
@@ -111,7 +142,12 @@ class SubscriptionsControllerTest {
 		assertThat(mockMvc.get().uri("/api/v1/subscriptions?userId=test_user_id"))
 				.hasStatusOk()
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
+				.isEqualTo("""
+        {
+          "subscriptions": [],
+          "totalCount": 0
+        }
+        """);
 	}
 
 	@Test
@@ -133,13 +169,24 @@ class SubscriptionsControllerTest {
 
 		when(subscriptionsService.findSubscriptionById(subscriptionId)).thenReturn(subscriptionResponse);
 
-
 		// When & Then
 		assertThat(mockMvc.get().uri("/api/v1/subscriptions/" + subscriptionId))
 				.hasStatusOk()
 				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
 				.bodyJson()
-				.isEqualTo("{\"id\":\"" + subscriptionId + "\",\"user\":null,\"currencyPair\":\"GBP/USD\",\"threshold\":1.25,\"direction\":\"ABOVE\",\"notificationsChannels\":[\"email\",\"sms\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}");
+				.isEqualTo("""
+        {
+          "id": "%s",
+          "user": null,
+          "currencyPair": "GBP/USD",
+          "threshold": 1.25,
+          "direction": "ABOVE",
+          "notificationsChannels": ["email", "sms"],
+          "status": "ACTIVE",
+          "createdAt": null,
+          "updatedAt": null
+        }
+        """.formatted(subscriptionId));
 
 		verify(subscriptionsService).findSubscriptionById(subscriptionId);
 	}
@@ -150,7 +197,8 @@ class SubscriptionsControllerTest {
 		// Given
 		String subscriptionId = "invalid-id";
 
-		when(subscriptionsService.findSubscriptionById(subscriptionId)).thenThrow(new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(subscriptionId), subscriptionId));
+		when(subscriptionsService.findSubscriptionById(subscriptionId))
+				.thenThrow(new SubscriptionNotFoundException(SUBSCRIPTION_NOT_FOUND.formatted(subscriptionId), subscriptionId));
 
 		// When & Then
 		assertThat(mockMvc.get().uri("/api/v1/subscriptions/" + subscriptionId))
@@ -205,7 +253,24 @@ class SubscriptionsControllerTest {
 				.hasStatusOk()
 				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[{\"id\":\"6f0ad90b-8b07-4342-a918-6866ce3b72d3\",\"user\":null,\"currencyPair\":\"GBP/USD\",\"threshold\":1.25,\"direction\":\"ABOVE\",\"notificationsChannels\":[\"email\",\"sms\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}],\"totalCount\":1}");
+				.isEqualTo("""
+        {
+          "subscriptions": [
+            {
+              "id": "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
+              "user": null,
+              "currencyPair": "GBP/USD",
+              "threshold": 1.25,
+              "direction": "ABOVE",
+              "notificationsChannels": ["email", "sms"],
+              "status": "ACTIVE",
+              "createdAt": null,
+              "updatedAt": null
+            }
+          ],
+          "totalCount": 1
+        }
+        """);
 
 		verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
 	}
@@ -222,7 +287,12 @@ class SubscriptionsControllerTest {
 		assertThat(mockMvc.get().uri("/api/v1/subscriptions/my"))
 				.hasStatusOk()
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
+				.isEqualTo("""
+        {
+          "subscriptions": [],
+          "totalCount": 0
+        }
+        """);
 
 		verify(subscriptionsService).findSubscriptionResponsesByUserId(anyString());
 	}
@@ -264,7 +334,10 @@ class SubscriptionsControllerTest {
 				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(objectMapper.writeValueAsString(createRequest)))
 				.hasStatus(HttpStatus.CREATED)
-				.hasContentType(MediaType.APPLICATION_JSON_VALUE);
+				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
+				.bodyJson()
+				.extractingPath("$.message")
+				.isEqualTo("Subscription created successfully!");
 
 		verify(subscriptionsService).createSubscription(any(SubscriptionCreateRequest.class), any(UUID.class));
 	}
@@ -345,7 +418,10 @@ class SubscriptionsControllerTest {
 				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(objectMapper.writeValueAsString(updateRequest)))
 				.hasStatusOk()
-				.hasContentType(MediaType.APPLICATION_JSON_VALUE);
+				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
+				.bodyJson()
+				.extractingPath("$.message")
+				.isEqualTo("Subscription updated successfully!");
 
 		verify(subscriptionsService).updateSubscriptionById(subscriptionId, updateRequest);
 		verify(subscriptionsService, never()).findSubscriptionEntityById(any());
@@ -477,7 +553,35 @@ class SubscriptionsControllerTest {
 				.hasStatusOk()
 				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[{\"id\":\"6f0ad90b-8b07-4342-a918-6866ce3b72d3\",\"user\":null,\"currencyPair\":\"GBP/USD\",\"threshold\":1.25,\"direction\":\"ABOVE\",\"notificationsChannels\":[\"email\",\"sms\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null},{\"id\":\"af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2\",\"user\":null,\"currencyPair\":\"EUR/USD\",\"threshold\":1.1,\"direction\":\"BELOW\",\"notificationsChannels\":[\"email\"],\"status\":\"ACTIVE\",\"createdAt\":null,\"updatedAt\":null}],\"totalCount\":2}");
+				.isEqualTo("""
+        {
+          "subscriptions": [
+            {
+              "id": "6f0ad90b-8b07-4342-a918-6866ce3b72d3",
+              "user": null,
+              "currencyPair": "GBP/USD",
+              "threshold": 1.25,
+              "direction": "ABOVE",
+              "notificationsChannels": ["email", "sms"],
+              "status": "ACTIVE",
+              "createdAt": null,
+              "updatedAt": null
+            },
+            {
+              "id": "af6ce3bc-39ad-44e4-a6a8-8314b52f8fa2",
+              "user": null,
+              "currencyPair": "EUR/USD",
+              "threshold": 1.1,
+              "direction": "BELOW",
+              "notificationsChannels": ["email"],
+              "status": "ACTIVE",
+              "createdAt": null,
+              "updatedAt": null
+            }
+          ],
+          "totalCount": 2
+        }
+        """);
 
 		verify(subscriptionsService).findAllSubscriptionResponses();
 	}
@@ -503,7 +607,12 @@ class SubscriptionsControllerTest {
 				.hasStatusOk()
 				.hasContentType(MediaType.APPLICATION_JSON_VALUE)
 				.bodyJson()
-				.isEqualTo("{\"subscriptions\":[],\"totalCount\":0}");
+				.isEqualTo("""
+        {
+          "subscriptions": [],
+          "totalCount": 0
+        }
+        """);
 
 		verify(subscriptionsService).findAllSubscriptionResponses();
 	}

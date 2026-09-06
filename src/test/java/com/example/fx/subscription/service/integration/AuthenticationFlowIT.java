@@ -2,6 +2,7 @@ package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.auth.AuthLoginResponse;
 import com.example.fx.subscription.service.dto.auth.AuthRequest;
+import com.example.fx.subscription.service.dto.auth.AuthSignupResponse;
 import com.example.fx.subscription.service.dto.user.UserSignUpRequest;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
@@ -53,27 +54,36 @@ class AuthenticationFlowIT {
 		UserSignUpRequest signUpRequest = new UserSignUpRequest(
 				"test@example.com", "password123", "+1234567890", false);
 
-		webTestClient.post()
+		AuthSignupResponse signupResponse = webTestClient.post()
 				.uri("/api/v1/auth/signup")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(signUpRequest)
 				.exchange()
 				.expectStatus().isCreated()
-				.expectBody()
-				.jsonPath("$.message").isEqualTo("User registered successfully");
+				.expectBody(AuthSignupResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(signupResponse).isNotNull();
+		assertThat(signupResponse.userId()).isNotNull();
+		assertThat(signupResponse.message()).isEqualTo("User registered successfully");
 
 		// 2. Login with registered user
 		AuthRequest authRequest = new AuthRequest("test@example.com", "password123");
 
-		webTestClient.post()
+		AuthLoginResponse loginResponse = webTestClient.post()
 				.uri("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(authRequest)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.token").exists()
-				.jsonPath("$.message").isEqualTo("Login successful");
+				.expectBody(AuthLoginResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(loginResponse).isNotNull();
+		assertThat(loginResponse.token()).isNotNull();
+		assertThat(loginResponse.message()).isEqualTo("Login successful");
 
 		// 3. Verify user exists in database
 		assertThat(fxUserRepository.findByEmail("test@example.com")).isPresent();
@@ -85,14 +95,19 @@ class AuthenticationFlowIT {
 		UserSignUpRequest adminSignUpRequest = new UserSignUpRequest(
 				"admin@example.com", "admin123", "+1234567890", true);
 
-		webTestClient.post()
+		AuthSignupResponse signupResponse = webTestClient.post()
 				.uri("/api/v1/auth/signup")
 				.contentType(MediaType.APPLICATION_JSON)
 				.bodyValue(adminSignUpRequest)
 				.exchange()
 				.expectStatus().isCreated()
-				.expectBody()
-				.jsonPath("$.message").isEqualTo("Admin registered successfully");
+				.expectBody(AuthSignupResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(signupResponse).isNotNull();
+		assertThat(signupResponse.userId()).isNotNull();
+		assertThat(signupResponse.message()).isEqualTo("Admin registered successfully");
 
 		// 2. Login as admin and extract typed response
 		AuthRequest adminAuthRequest = new AuthRequest("admin@example.com", "admin123");
@@ -129,5 +144,27 @@ class AuthenticationFlowIT {
 				.bodyValue(invalidRequest)
 				.exchange()
 				.expectStatus().isUnauthorized();
+	}
+
+	@Test
+	void signupWithDuplicateEmail_ShouldReturnConflictOrBadRequest() {
+		// Given
+		UserSignUpRequest signUpRequest = new UserSignUpRequest(
+				"duplicate@example.com", "password123", "+1234567890", false);
+
+		webTestClient.post()
+				.uri("/api/v1/auth/signup")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(signUpRequest)
+				.exchange()
+				.expectStatus().isCreated();
+
+		// When & Then (Attempt duplicate registration)
+		webTestClient.post()
+				.uri("/api/v1/auth/signup")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(signUpRequest)
+				.exchange()
+				.expectStatus().is4xxClientError();
 	}
 }

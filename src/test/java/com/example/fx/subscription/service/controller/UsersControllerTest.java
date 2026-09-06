@@ -13,8 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Instant;
@@ -54,13 +52,12 @@ class UsersControllerTest {
 		when(fxUsersService.findAllUsers(pageable)).thenReturn(usersPage);
 
 		// When
-		ResponseEntity<UserListResponse> response = usersController.getAllUsers(pageable);
+		UserListResponse response = usersController.getAllUsers(pageable);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(users.size(), response.getBody().users().size());
-		assertEquals(users.size(), response.getBody().totalElements());
+		assertEquals(users.size(), response.users().size());
+		assertEquals(users.size(), response.totalElements());
 
 		verify(fxUsersService).findAllUsers(pageable);
 	}
@@ -74,13 +71,12 @@ class UsersControllerTest {
 		when(fxUsersService.findUserById(userId)).thenReturn(Optional.of(user));
 
 		// When
-		ResponseEntity<UserDetailResponse> response = usersController.getUserById(userId);
+		UserDetailResponse response = usersController.getUserById(userId);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(userId, response.getBody().id());
-		assertEquals("test@example.com", response.getBody().email());
+		assertEquals(userId, response.id());
+		assertEquals("test@example.com", response.email());
 
 		verify(fxUsersService).findUserById(userId);
 	}
@@ -116,12 +112,11 @@ class UsersControllerTest {
 		when(fxUsersService.searchUsers(email, mobile, enabled, pageable)).thenReturn(usersPage);
 
 		// When
-		ResponseEntity<UserListResponse> response = usersController.searchUsers(email, mobile, enabled, pageable);
+		UserListResponse response = usersController.searchUsers(email, mobile, enabled, pageable);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(users.size(), response.getBody().users().size());
+		assertEquals(users.size(), response.users().size());
 
 		verify(fxUsersService).searchUsers(email, mobile, enabled, pageable);
 	}
@@ -139,13 +134,12 @@ class UsersControllerTest {
 		when(fxUsersService.updateUser(userId, updateRequest)).thenReturn(updatedUser);
 
 		// When
-		ResponseEntity<UserUpdateResponse> response = usersController.updateUser(userId, updateRequest);
+		UserUpdateResponse response = usersController.updateUser(userId, updateRequest);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(userId, response.getBody().userId());
-		assertEquals("updated@example.com", response.getBody().user().email());
+		assertEquals(userId, response.userId());
+		assertEquals("updated@example.com", response.user().email());
 
 		verify(fxUsersService).updateUser(userId, updateRequest);
 	}
@@ -180,13 +174,9 @@ class UsersControllerTest {
 		doNothing().when(fxUsersService).deleteUser(userId);
 
 		// When
-		ResponseEntity<Void> response = usersController.deleteUser(userId);
+		usersController.deleteUser(userId);
 
 		// Then
-		assertNotNull(response);
-		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-		assertNull(response.getBody());
-
 		verify(fxUsersService).deleteUser(userId);
 	}
 
@@ -203,12 +193,11 @@ class UsersControllerTest {
 		when(fxUsersService.getUserSubscriptions(userId)).thenReturn(subscriptionsResponse);
 
 		// When
-		ResponseEntity<UserSubscriptionsResponse> response = usersController.getUserSubscriptions(userId);
+		UserSubscriptionsResponse response = usersController.getUserSubscriptions(userId);
 
 		// Then
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(subscriptionsResponse, response.getBody());
+		assertEquals(subscriptionsResponse, response);
 
 		verify(fxUsersService).getUserSubscriptions(userId);
 	}
@@ -250,4 +239,4 @@ class UsersControllerTest {
 		user.setUpdatedAt(Instant.now());
 		return user;
 	}
-} 
+}

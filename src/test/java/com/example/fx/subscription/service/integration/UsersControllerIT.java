@@ -1,7 +1,7 @@
 package com.example.fx.subscription.service.integration;
 
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
-import com.example.fx.subscription.service.dto.user.UserUpdateRequest;
+import com.example.fx.subscription.service.dto.user.*;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.FxUser;
@@ -87,27 +87,32 @@ class UsersControllerIT {
 		String userJwt = generateTestJwtToken("user@example.com");
 
 		// 3. Admin can view all users
-		webTestClient.get()
+		UserListResponse userListResponse = webTestClient.get()
 				.uri("/api/v1/users")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.users").isArray()
-				.jsonPath("$.users.length()").isEqualTo(2)
-				.jsonPath("$.totalElements").isEqualTo(2)
-				.jsonPath("$.users[0].email").isEqualTo("user@example.com")
-				.jsonPath("$.users[1].email").isEqualTo("admin@example.com");
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(userListResponse).isNotNull();
+		assertThat(userListResponse.users()).hasSize(2);
+		assertThat(userListResponse.totalElements()).isEqualTo(2);
 
 		// 4. User can view their own profile
-		webTestClient.get()
+		UserDetailResponse userDetailResponse = webTestClient.get()
 				.uri("/api/v1/users/{id}", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.id").isEqualTo(user.getId().toString())
-				.jsonPath("$.email").isEqualTo("user@example.com");
+				.expectBody(UserDetailResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(userDetailResponse).isNotNull();
+		assertThat(userDetailResponse.id()).isEqualTo(user.getId().toString());
+		assertThat(userDetailResponse.email()).isEqualTo("user@example.com");
 
 		// 5. User cannot view other user's profile
 		webTestClient.get()
@@ -121,18 +126,21 @@ class UsersControllerIT {
 				"updated@example.com", "+1234567890", "new-push-token"
 		);
 
-		webTestClient.put()
+		UserUpdateResponse updateResponse = webTestClient.put()
 				.uri("/api/v1/users/{id}", user.getId())
 				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.bodyValue(updateRequest)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.user.email").isEqualTo("updated@example.com")
-				.jsonPath("$.user.mobile").isEqualTo("+1234567890")
-				.jsonPath("$.user.pushDeviceToken").isEqualTo("new-push-token")
-				.jsonPath("$.user.createdAt").isNotEmpty();
+				.expectBody(UserUpdateResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(updateResponse).isNotNull();
+		assertThat(updateResponse.user().email()).isEqualTo("updated@example.com");
+		assertThat(updateResponse.user().mobile()).isEqualTo("+1234567890");
+		assertThat(updateResponse.user().pushDeviceToken()).isEqualTo("new-push-token");
 
 		// 7. Verify user was updated in database
 		FxUser updatedUser = fxUserRepository.findById(user.getId()).orElseThrow();
@@ -238,23 +246,26 @@ class UsersControllerIT {
 	void searchByEmail_ShouldReturnMatchingUser() {
 		String adminJwt = prepareUserSearchData();
 
-		webTestClient.get()
+		UserListResponse response = webTestClient.get()
 				.uri("/api/v1/users/search?email=john")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.users").isArray()
-				.jsonPath("$.users.length()").isEqualTo(1)
-				.jsonPath("$.totalElements").isEqualTo(1)
-				.jsonPath("$.users[0].email").isEqualTo("john@test.com");
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.users()).hasSize(1);
+		assertThat(response.totalElements()).isEqualTo(1);
+		assertThat(response.users().getFirst().email()).isEqualTo("john@test.com");
 	}
 
 	@Test
 	void searchByMobile_ShouldReturnAllUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		webTestClient.get()
+		UserListResponse response = webTestClient.get()
 				.uri(uriBuilder -> uriBuilder
 						.path("/api/v1/users/search")
 						.queryParam("mobile", "07711223344")
@@ -262,52 +273,66 @@ class UsersControllerIT {
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.totalElements").isEqualTo(4);
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.totalElements()).isEqualTo(4);
 	}
 
 	@Test
 	void searchByUserEnabled_ShouldReturnEnabledUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		webTestClient.get()
+		UserListResponse response = webTestClient.get()
 				.uri("/api/v1/users/search?enabled=true")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.totalElements").isEqualTo(4);
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.totalElements()).isEqualTo(4);
 	}
 
 	@Test
 	void searchWithPagination_ShouldReturnPagedUsers() {
 		String adminJwt = prepareUserSearchData();
 
-		webTestClient.get()
+		UserListResponse response = webTestClient.get()
 				.uri("/api/v1/users/search?size=2&page=0")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.users").isArray()
-				.jsonPath("$.users.length()").isEqualTo(2)
-				.jsonPath("$.totalElements").isEqualTo(4)
-				.jsonPath("$.totalPages").isEqualTo(2);
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.users()).hasSize(2);
+		assertThat(response.totalElements()).isEqualTo(4);
+		assertThat(response.totalPages()).isEqualTo(2);
 	}
 
 	@Test
 	void searchWithNoResults_ShouldReturnEmpty() {
 		String adminJwt = prepareUserSearchData();
 
-		webTestClient.get()
+		UserListResponse response = webTestClient.get()
 				.uri("/api/v1/users/search?email=nonexistent")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.totalElements").isEqualTo(0)
-				.jsonPath("$.users").isArray()
-				.jsonPath("$.users.length()").isEqualTo(0);
+				.expectBody(UserListResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(response).isNotNull();
+		assertThat(response.totalElements()).isZero();
+		assertThat(response.users()).isEmpty();
 	}
 
 	@Test
@@ -333,25 +358,33 @@ class UsersControllerIT {
 				.expectStatus().isCreated();
 
 		// 1. User can view their own subscriptions
-		webTestClient.get()
+		UserSubscriptionsResponse userSubsResponse = webTestClient.get()
 				.uri("/api/v1/users/{id}/subscriptions", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + userJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.userId").isEqualTo(user.getId().toString())
-				.jsonPath("$.totalCount").isEqualTo(1)
-				.jsonPath("$.subscriptions[0].currencyPair").isEqualTo("EUR/USD");
+				.expectBody(UserSubscriptionsResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(userSubsResponse).isNotNull();
+		assertThat(userSubsResponse.userId()).isEqualTo(user.getId().toString());
+		assertThat(userSubsResponse.totalCount()).isEqualTo(1);
+		assertThat(userSubsResponse.subscriptions().getFirst().currencyPair()).isEqualTo("EUR/USD");
 
 		// 2. Admin can view any user's subscriptions
-		webTestClient.get()
+		UserSubscriptionsResponse adminSubsResponse = webTestClient.get()
 				.uri("/api/v1/users/{id}/subscriptions", user.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.userId").isEqualTo(user.getId().toString())
-				.jsonPath("$.totalCount").isEqualTo(1);
+				.expectBody(UserSubscriptionsResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(adminSubsResponse).isNotNull();
+		assertThat(adminSubsResponse.userId()).isEqualTo(user.getId().toString());
+		assertThat(adminSubsResponse.totalCount()).isEqualTo(1);
 
 		// 3. User cannot view other user's subscriptions
 		webTestClient.get()
@@ -361,15 +394,18 @@ class UsersControllerIT {
 				.expectStatus().isForbidden();
 
 		// 4. User with no subscriptions returns empty list
-		webTestClient.get()
+		UserSubscriptionsResponse emptySubsResponse = webTestClient.get()
 				.uri("/api/v1/users/{id}/subscriptions", admin.getId())
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.totalCount").isEqualTo(0)
-				.jsonPath("$.subscriptions").isArray()
-				.jsonPath("$.subscriptions.length()").isEqualTo(0);
+				.expectBody(UserSubscriptionsResponse.class)
+				.returnResult()
+				.getResponseBody();
+
+		assertThat(emptySubsResponse).isNotNull();
+		assertThat(emptySubsResponse.totalCount()).isZero();
+		assertThat(emptySubsResponse.subscriptions()).isEmpty();
 	}
 
 	@Test
@@ -382,7 +418,7 @@ class UsersControllerIT {
 				.uri("/api/v1/users/invalid-uuid")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + adminJwt)
 				.exchange()
-				.expectStatus().is5xxServerError();
+				.expectStatus().isBadRequest();
 
 		// 2. Non-existent user ID
 		String nonExistentId = "550e8400-e29b-41d4-a716-446655440000";

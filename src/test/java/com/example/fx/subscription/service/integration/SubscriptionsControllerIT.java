@@ -1,8 +1,6 @@
 package com.example.fx.subscription.service.integration;
 
-import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateRequest;
 import com.example.fx.subscription.service.dto.subscription.SubscriptionCreateResponse;
-import com.example.fx.subscription.service.dto.subscription.SubscriptionUpdateRequest;
 import com.example.fx.subscription.service.helper.PostgresTestContainerConfig;
 import com.example.fx.subscription.service.helper.WebSecurityTestConfig;
 import com.example.fx.subscription.service.model.FxUser;
@@ -32,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -107,15 +104,21 @@ class SubscriptionsControllerIT {
 
 	@Test
 	void authenticationFlow_ShouldHandleInvalidTokens() {
-		SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
-				"GBP/USD", BigDecimal.valueOf(1.20), "ABOVE", List.of("sms", "email"));
+		String createRequestJson = """
+      {
+        "currencyPair": "GBP/USD",
+        "threshold": 1.20,
+        "direction": "ABOVE",
+        "notificationsChannels": ["sms", "email"]
+      }
+      """;
 
 		// Test invalid JWT token
 		webTestClient.post()
 				.uri("/api/v1/subscriptions")
 				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
-				.bodyValue(createRequest)
+				.bodyValue(createRequestJson)
 				.exchange()
 				.expectStatus().isUnauthorized();
 
@@ -123,7 +126,7 @@ class SubscriptionsControllerIT {
 		webTestClient.post()
 				.uri("/api/v1/subscriptions")
 				.contentType(MediaType.APPLICATION_JSON)
-				.bodyValue(createRequest)
+				.bodyValue(createRequestJson)
 				.exchange()
 				.expectStatus().isUnauthorized();
 	}
@@ -148,14 +151,21 @@ class SubscriptionsControllerIT {
 				.expectStatus().isForbidden();
 
 		// User2 tries to update User1's subscription - should be forbidden
-		SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
-				"EUR/USD", BigDecimal.valueOf(1.15), "BELOW", "ACTIVE", List.of("email"));
+		String updateRequestJson = """
+      {
+        "currencyPair": "EUR/USD",
+        "threshold": 1.15,
+        "direction": "BELOW",
+        "status": "ACTIVE",
+        "notificationsChannels": ["email"]
+      }
+      """;
 
 		webTestClient.put()
 				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-				.bodyValue(updateRequest)
+				.bodyValue(updateRequestJson)
 				.exchange()
 				.expectStatus().isForbidden();
 
@@ -250,14 +260,20 @@ class SubscriptionsControllerIT {
 
 	// Helper methods for subscription operations
 	private String createSubscription(String jwt, BigDecimal threshold) {
-		SubscriptionCreateRequest createRequest = new SubscriptionCreateRequest(
-				"GBP/USD", threshold, "ABOVE", List.of("email", "sms"));
+		String createRequestJson = """
+      {
+        "currencyPair": "GBP/USD",
+        "threshold": %s,
+        "direction": "ABOVE",
+        "notificationChannels": ["email", "sms"]
+      }
+      """.formatted(threshold);
 
 		SubscriptionCreateResponse createResponse = webTestClient.post()
 				.uri("/api/v1/subscriptions")
 				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.bodyValue(createRequest)
+				.bodyValue(createRequestJson)
 				.exchange()
 				.expectStatus().isCreated()
 				.expectBody(SubscriptionCreateResponse.class)
@@ -265,6 +281,7 @@ class SubscriptionsControllerIT {
 				.getResponseBody();
 
 		assertThat(createResponse).isNotNull();
+		assertThat(createResponse.message()).isEqualTo("Subscription created successfully!");
 		assertThat(createResponse.subscription().currencyPair()).isEqualTo("GBP/USD");
 		assertThat(createResponse.subscription().threshold()).isEqualTo(threshold);
 		assertThat(createResponse.subscription().createdAt()).isNotNull();
@@ -284,17 +301,25 @@ class SubscriptionsControllerIT {
 	}
 
 	private void updateSubscription(String jwt, String subscriptionId, BigDecimal threshold) {
-		SubscriptionUpdateRequest updateRequest = new SubscriptionUpdateRequest(
-				"EUR/USD", threshold, "BELOW", "ACTIVE", List.of("email"));
+		String updateRequestJson = """
+      {
+        "currencyPair": "EUR/USD",
+        "threshold": %s,
+        "direction": "BELOW",
+        "status": "ACTIVE",
+        "notificationChannels": ["email"]
+      }
+      """.formatted(threshold);
 
 		webTestClient.put()
 				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-				.bodyValue(updateRequest)
+				.bodyValue(updateRequestJson)
 				.exchange()
 				.expectStatus().isOk()
 				.expectBody()
+				.jsonPath("$.message").isEqualTo("Subscription updated successfully!")
 				.jsonPath("$.subscription.currencyPair").isEqualTo("EUR/USD")
 				.jsonPath("$.subscription.threshold").isEqualTo(threshold.doubleValue())
 				.jsonPath("$.subscription.updatedAt").isNotEmpty();
@@ -317,7 +342,10 @@ class SubscriptionsControllerIT {
 				.uri("/api/v1/subscriptions/{id}", subscriptionId)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
 				.exchange()
-				.expectStatus().isOk();
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.subscriptionId").isEqualTo(subscriptionId)
+				.jsonPath("$.message").isEqualTo("Subscription deleted successfully");
 	}
 
 	private void verifySubscriptionDeleted(String jwt, String subscriptionId) {

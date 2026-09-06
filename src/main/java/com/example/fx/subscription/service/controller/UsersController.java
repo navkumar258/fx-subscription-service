@@ -12,8 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,42 +35,39 @@ public class UsersController {
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<UserListResponse> getAllUsers(
+	public UserListResponse getAllUsers(
 			@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 		Page<FxUser> usersPage = fxUsersService.findAllUsers(pageable);
 		List<UserSummaryResponse> userResponses = usersPage.getContent().stream()
 				.map(UserSummaryResponse::fromFxUser)
 				.toList();
 
-		UserListResponse response = new UserListResponse(
+		LOGGER.info("Retrieved {} users from page {} of {}",
+				usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
+
+		return new UserListResponse(
 				userResponses,
 				usersPage.getTotalElements(),
 				usersPage.getTotalPages(),
 				usersPage.getNumber(),
 				usersPage.getSize()
 		);
-
-		LOGGER.info("Retrieved {} users from page {} of {}",
-				usersPage.getNumberOfElements(), usersPage.getNumber(), usersPage.getTotalPages());
-
-		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-	public ResponseEntity<UserDetailResponse> getUserById(@PathVariable String id) {
+	public UserDetailResponse getUserById(@PathVariable String id) {
 		FxUser fxUser = fxUsersService.findUserById(id)
 				.orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id, id));
 
 		LOGGER.atInfo().log("Retrieved user: userId={}", sanitizeForLog(id));
 
-		UserDetailResponse response = UserDetailResponse.fromFxUser(fxUser);
-		return ResponseEntity.ok(response);
+		return UserDetailResponse.fromFxUser(fxUser);
 	}
 
 	@GetMapping(path = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<UserListResponse> searchUsers(
+	public UserListResponse searchUsers(
 			@RequestParam(required = false) String email,
 			@RequestParam(required = false) String mobile,
 			@RequestParam(defaultValue = "true") boolean enabled,
@@ -80,49 +77,42 @@ public class UsersController {
 				.map(UserSummaryResponse::fromFxUser)
 				.toList();
 
-		UserListResponse response = new UserListResponse(
+		return new UserListResponse(
 				userResponses,
 				usersPage.getTotalElements(),
 				usersPage.getTotalPages(),
 				usersPage.getNumber(),
 				usersPage.getSize()
 		);
-
-		LOGGER.atInfo().log("Search results: {} users found with email={}, mobile={}, enabled={}",
-				usersPage.getTotalElements(), sanitizeForLog(email), sanitizeForLog(mobile), enabled);
-
-		return ResponseEntity.ok(response);
 	}
 
 	@PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-	public ResponseEntity<UserUpdateResponse> updateUser(
+	public UserUpdateResponse updateUser(
 			@PathVariable String id,
 			@Valid @RequestBody UserUpdateRequest userUpdateRequest) {
 		FxUser updatedUser = fxUsersService.updateUser(id, userUpdateRequest);
-		UserUpdateResponse response = UserUpdateResponse.fromFxUser(updatedUser);
 
 		LOGGER.atInfo().log("User updated successfully: userId={}", sanitizeForLog(id));
 
-		return ResponseEntity.ok(response);
+		return UserUpdateResponse.fromFxUser(updatedUser);
 	}
 
 	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+	public void deleteUser(@PathVariable String id) {
 		fxUsersService.deleteUser(id);
 		LOGGER.atInfo().log("User deleted successfully: userId={}", sanitizeForLog(id));
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping(path = "/{id}/subscriptions", produces = MediaType.APPLICATION_JSON_VALUE)
 	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id.toString()")
-	public ResponseEntity<UserSubscriptionsResponse> getUserSubscriptions(@PathVariable String id) {
+	public UserSubscriptionsResponse getUserSubscriptions(@PathVariable String id) {
 		UserSubscriptionsResponse response = fxUsersService.getUserSubscriptions(id);
 
 		LOGGER.atInfo().log("Retrieved subscriptions for user: userId={}, count={}", sanitizeForLog(id), response.totalCount());
 
-		return ResponseEntity.ok(response);
+		return response;
 	}
-} 
+}

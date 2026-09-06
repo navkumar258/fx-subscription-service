@@ -1,6 +1,7 @@
 package com.example.fx.subscription.service.service;
 
 import com.example.fx.subscription.service.dto.subscription.*;
+import com.example.fx.subscription.service.exception.InvalidSubscriptionUpdateException;
 import com.example.fx.subscription.service.exception.SubscriptionNotFoundException;
 import com.example.fx.subscription.service.exception.UserNotFoundException;
 import com.example.fx.subscription.service.model.*;
@@ -113,6 +114,10 @@ public class SubscriptionsService {
 		Subscription subscription = subscriptionRepository.findById(UUID.fromString(id))
 				.orElseThrow(() -> new SubscriptionNotFoundException(
 						SUBSCRIPTION_NOT_FOUND.formatted(id), id));
+
+		if (subscriptionUpdateRequest.isEmpty()) {
+			throw new InvalidSubscriptionUpdateException("At least one field must be provided for update.");
+		}
 
 		Optional.ofNullable(subscriptionUpdateRequest.currencyPair()).ifPresent(subscription::setCurrencyPair);
 
